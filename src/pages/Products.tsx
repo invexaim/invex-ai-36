@@ -84,7 +84,7 @@ const Products = () => {
     },
     {
       title: "Low Stock Items",
-      value: products.filter(p => p.units < p.reorder_level).length,
+      value: products.filter(p => parseInt(p.units as string) < p.reorder_level).length,
       icon: <ChartBarIcon className="h-5 w-5 text-warning" />,
     },
     {
