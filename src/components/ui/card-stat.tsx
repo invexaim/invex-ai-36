@@ -6,7 +6,7 @@ export const CardStat = ({ title, value, icon, className }: CardProps) => {
   return (
     <div 
       className={cn(
-        "bg-card p-5 rounded-lg border shadow-sm hover:shadow-md transition-all", 
+        "bg-card p-5 rounded-lg border shadow-sm hover:shadow-md transition-all hover:-translate-y-1", 
         className
       )}
     >
