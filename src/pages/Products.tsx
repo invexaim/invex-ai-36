@@ -2,9 +2,11 @@
 import { useState } from "react";
 import { mockProducts } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
-import { Calendar, Package, Plus, Search } from "lucide-react";
+import { Calendar, ChartBarIcon, FileText, Package, Plus, Search, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Product } from "@/types";
+import { CardStat } from "@/components/ui/card-stat";
+import { AIInsightCard } from "@/components/ai/AIInsightCard";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +39,7 @@ const Products = () => {
     price: 0,
   });
   const [predictionResult, setPredictionResult] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -56,10 +59,12 @@ const Products = () => {
 
   const handleGeneratePrediction = () => {
     // Mock prediction logic
+    setLoading(true);
     setTimeout(() => {
       setPredictionResult(
         "Based on historical data and current trends, we predict sales of 12 units in the next 30 days. Consider stocking at least 15 units to maintain optimal inventory levels."
       );
+      setLoading(false);
       toast.success("Prediction generated", {
         description: "AI has analyzed your data and provided predictions",
       });
@@ -69,6 +74,30 @@ const Products = () => {
   const filteredProducts = products.filter((product) =>
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Stats for the top cards
+  const stats = [
+    {
+      title: "Total Products",
+      value: products.length,
+      icon: <Package className="h-5 w-5 text-primary" />,
+    },
+    {
+      title: "Low Stock Items",
+      value: products.filter(p => p.units < p.reorder_level).length,
+      icon: <ChartBarIcon className="h-5 w-5 text-warning" />,
+    },
+    {
+      title: "Categories",
+      value: [...new Set(products.map(p => p.category))].length,
+      icon: <FileText className="h-5 w-5 text-info" />,
+    },
+    {
+      title: "Value",
+      value: `$${products.reduce((sum, p) => sum + p.price, 0).toFixed(2)}`,
+      icon: <TrendingUp className="h-5 w-5 text-success" />,
+    }
+  ];
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -85,6 +114,36 @@ const Products = () => {
         >
           <Plus className="mr-2 h-4 w-4" /> Add Product
         </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <CardStat
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+          />
+        ))}
+      </div>
+
+      {/* AI Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AIInsightCard 
+          insight={{
+            title: "Stock Optimization",
+            description: "Your inventory has 5 products below reorder levels. Consider restocking soon to avoid stockouts.",
+            type: "warning"
+          }}
+        />
+        <AIInsightCard 
+          insight={{
+            title: "Seasonal Trend",
+            description: "Based on historical data, you may need to increase stock of 'Office Supplies' for the upcoming back-to-school season.",
+            type: "info"
+          }}
+        />
       </div>
 
       {/* Stock Predictor Section */}
@@ -199,14 +258,15 @@ const Products = () => {
           <Button
             onClick={handleGeneratePrediction}
             className="w-full"
+            disabled={loading}
           >
-            Generate Prediction
+            {loading ? "Generating..." : "Generate Prediction"}
           </Button>
 
           {predictionResult && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-1">Prediction Results</h4>
-              <p className="text-blue-700">{predictionResult}</p>
+            <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <h4 className="font-medium text-primary mb-1">Prediction Results</h4>
+              <p className="text-foreground">{predictionResult}</p>
             </div>
           )}
         </div>
