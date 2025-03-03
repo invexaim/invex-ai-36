@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Calendar, ChartBarIcon, ChartLineIcon, History, Package } from "lucide-react";
+import { Calendar, ChartBarIcon, ChartLineIcon, History, Package, Sun, Moon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -35,6 +36,21 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    localStorage.getItem('theme') as 'light' | 'dark' || 'light'
+  );
+
+  useEffect(() => {
+    // Update the data-theme attribute on the document element when the theme changes
+    const html = document.documentElement;
+    html.classList.remove('light', 'dark');
+    html.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
 
   const sidebarItems = [
     {
@@ -63,13 +79,20 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Sidebar */}
       <aside className="w-full md:w-64 border-r border-border bg-card">
-        <div className="h-16 flex items-center px-4 border-b">
+        <div className="h-16 flex items-center justify-between px-4 border-b">
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-primary" />
             </div>
             <span className="text-xl font-semibold">Invex AI</span>
           </Link>
+          
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+            {theme === 'light' ? 
+              <Moon className="h-5 w-5" /> : 
+              <Sun className="h-5 w-5" />
+            }
+          </Button>
         </div>
         <nav className="p-4 space-y-1">
           {sidebarItems.map((item) => (
