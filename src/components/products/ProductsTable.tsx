@@ -1,6 +1,8 @@
 
-import { Search } from "lucide-react";
+import { useState } from "react";
+import { Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Product } from "@/types";
+import { toast } from "sonner";
 
 interface ProductsTableProps {
   products: Product[];
@@ -17,10 +20,23 @@ interface ProductsTableProps {
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const ProductsTable = ({ products, searchTerm, onSearchChange }: ProductsTableProps) => {
-  const filteredProducts = products.filter((product) =>
-    product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+export const ProductsTable = ({
+  products: initialProducts,
+  searchTerm,
+  onSearchChange,
+}: ProductsTableProps) => {
+  const [products, setProducts] = useState(initialProducts);
+
+  const handleDeleteProduct = (productId: number) => {
+    setProducts(products.filter(product => product.product_id !== productId));
+    toast.success("Product deleted successfully");
+  };
+
+  const filteredProducts = products.filter((product) => {
+    return product.product_name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="bg-card rounded-lg border shadow-sm">
@@ -43,13 +59,12 @@ export const ProductsTable = ({ products, searchTerm, onSearchChange }: Products
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Product Name</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Units</TableHead>
-              <TableHead>Reorder Level</TableHead>
-              <TableHead className="text-right">Created At</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -57,21 +72,43 @@ export const ProductsTable = ({ products, searchTerm, onSearchChange }: Products
               filteredProducts.map((product) => (
                 <TableRow key={product.product_id}>
                   <TableCell className="font-medium">
-                    {product.product_id}
+                    {product.product_name}
                   </TableCell>
-                  <TableCell>{product.product_name}</TableCell>
                   <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.stock_quantity}</TableCell>
                   <TableCell>₹{product.price.toFixed(2)}</TableCell>
-                  <TableCell>{product.units}</TableCell>
-                  <TableCell>{product.reorder_level}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        product.stock_quantity > 10
+                          ? "bg-green-100 text-green-800"
+                          : product.stock_quantity > 0
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {product.stock_quantity > 10
+                        ? "In Stock"
+                        : product.stock_quantity > 0
+                        ? "Low Stock"
+                        : "Out of Stock"}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right">
-                    {new Date(product.created_at).toLocaleDateString()}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteProduct(product.product_id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+                <TableCell colSpan={6} className="text-center py-4">
                   No products found
                 </TableCell>
               </TableRow>

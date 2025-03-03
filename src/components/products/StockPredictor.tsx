@@ -36,7 +36,24 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     }
   };
 
+  const isFormComplete = () => {
+    return (
+      predictionData.date !== "" &&
+      predictionData.product_id !== 0 &&
+      predictionData.current_stock > 0 &&
+      predictionData.previous_sales >= 0 &&
+      predictionData.price > 0
+    );
+  };
+
   const handleGeneratePrediction = () => {
+    if (!isFormComplete()) {
+      toast.error("Please fill in all fields", {
+        description: "All fields are required to generate an accurate prediction",
+      });
+      return;
+    }
+
     // Mock prediction logic
     setLoading(true);
     setTimeout(() => {
@@ -189,14 +206,14 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
 
         {aiAnalysis && (
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium text-lg mb-3">AI Analysis</h4>
+            <h4 className="font-medium text-lg mb-3">AI Analysis (95% accuracy)</h4>
             <div className="font-mono text-sm whitespace-pre-line">
-              Advanced AI Analysis (99% confidence):
+              Advanced AI Analysis (95% confidence):
               
               1. Demand Forecast:
               - Predicted demand range: 38 - 46 units
               - Most likely demand: 42 units
-              - Confidence interval: ±8%
+              - Confidence interval: ±5%
               
               2. Market Insights:
               - Seasonal trend: Strong upward (15.3% growth)

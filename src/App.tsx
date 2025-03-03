@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Sales from "./pages/Sales";
 import History from "./pages/History";
+import Payments from "./pages/Payments";
+import Clients from "./pages/Clients";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,16 @@ const App = () => (
           <Route path="/history" element={
             <MainLayout>
               <History />
+            </MainLayout>
+          } />
+          <Route path="/payments" element={
+            <MainLayout>
+              <Payments />
+            </MainLayout>
+          } />
+          <Route path="/clients" element={
+            <MainLayout>
+              <Clients />
             </MainLayout>
           } />
           <Route path="*" element={<NotFound />} />

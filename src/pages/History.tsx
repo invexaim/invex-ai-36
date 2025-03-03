@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { mockSales } from "@/data/mockData";
 import { CardStat } from "@/components/ui/card-stat";
-import { Calendar, ChartLineIcon, Package, Search, TrendingUp } from "lucide-react";
+import { Calendar, ChartLineIcon, Package, Search, TrendingUp, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Sale } from "@/types";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,8 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const History = () => {
+  const [transactions, setTransactions] = useState(mockSales);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
@@ -23,12 +26,12 @@ const History = () => {
   const [transactionType, setTransactionType] = useState("all");
 
   // Calculate totals
-  const totalTransactions = mockSales.length;
-  const totalProductsSold = mockSales.reduce(
+  const totalTransactions = transactions.length;
+  const totalProductsSold = transactions.reduce(
     (acc, sale) => acc + sale.quantity_sold,
     0
   );
-  const totalRevenue = mockSales.reduce(
+  const totalRevenue = transactions.reduce(
     (acc, sale) => acc + sale.quantity_sold * sale.selling_price,
     0
   );
@@ -45,13 +48,18 @@ const History = () => {
     setTransactionType(e.target.value);
   };
 
+  const handleDeleteTransaction = (id: number) => {
+    setTransactions(transactions.filter(transaction => transaction.sale_id !== id));
+    toast.success("Transaction deleted successfully");
+  };
+
   // Function to determine transaction type (for demo purposes)
   const getTransactionType = (index: number): "sale" | "restock" => {
     return index % 2 === 0 ? "sale" : "restock";
   };
 
   // Filter transactions
-  const filteredTransactions = mockSales.filter((sale) => {
+  const filteredTransactions = transactions.filter((sale) => {
     const productName = sale.product?.product_name.toLowerCase() || "";
     const saleDate = format(new Date(sale.sale_date), "yyyy-MM-dd");
     const type = getTransactionType(sale.sale_id);
@@ -143,7 +151,8 @@ const History = () => {
                 <TableHead>Product</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -173,15 +182,25 @@ const History = () => {
                       </TableCell>
                       <TableCell>{sale.quantity_sold}</TableCell>
                       <TableCell>₹{sale.selling_price.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
                         ₹{total.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteTransaction(sale.sale_id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     No transactions found
                   </TableCell>
                 </TableRow>

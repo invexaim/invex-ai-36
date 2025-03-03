@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { mockProducts, mockSales } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
-import { ChartLineIcon, Plus, Search } from "lucide-react";
+import { ChartLineIcon, Plus, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Product, Sale } from "@/types";
 import {
@@ -68,6 +68,11 @@ const Sales = () => {
         selling_price: 0,
       });
     }
+  };
+
+  const handleDeleteSale = (saleId: number) => {
+    setSales(sales.filter(sale => sale.sale_id !== saleId));
+    toast.success("Sale deleted successfully");
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -203,7 +208,8 @@ const Sales = () => {
                 <TableHead>Product</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Unit Price</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -216,14 +222,24 @@ const Sales = () => {
                     <TableCell>{sale.product?.product_name}</TableCell>
                     <TableCell>{sale.quantity_sold}</TableCell>
                     <TableCell>₹{sale.selling_price.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                       ₹{(sale.quantity_sold * sale.selling_price).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteSale(sale.sale_id)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     No sales found
                   </TableCell>
                 </TableRow>
