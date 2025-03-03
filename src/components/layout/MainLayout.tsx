@@ -2,7 +2,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Calendar, ChartBarIcon, ChartLineIcon, History, Package, Sun, Moon } from "lucide-react";
+import { 
+  Calendar, 
+  Package, 
+  History, 
+  Users, 
+  LayoutDashboard, 
+  ShoppingCart, 
+  CreditCard,
+  Sun, 
+  Moon 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SidebarItemProps {
@@ -20,7 +30,7 @@ const SidebarItem = ({ icon, label, href, isActive }: SidebarItemProps) => {
         "flex items-center space-x-3 px-4 py-3 rounded-md transition-all",
         isActive
           ? "bg-primary text-primary-foreground"
-          : "hover:bg-secondary"
+          : "hover:bg-secondary text-white"
       )}
     >
       {icon}
@@ -59,7 +69,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const sidebarItems = [
     {
-      icon: <ChartBarIcon className="w-5 h-5" />,
+      icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
       href: "/",
     },
@@ -69,7 +79,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       href: "/products",
     },
     {
-      icon: <ChartLineIcon className="w-5 h-5" />,
+      icon: <ShoppingCart className="w-5 h-5" />,
       label: "Sales",
       href: "/sales",
     },
@@ -77,6 +87,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       icon: <History className="w-5 h-5" />,
       label: "History",
       href: "/history",
+    },
+    {
+      icon: <CreditCard className="w-5 h-5" />,
+      label: "Payments",
+      href: "/payments",
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Clients",
+      href: "/clients",
     },
   ];
 

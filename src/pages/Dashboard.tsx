@@ -6,7 +6,6 @@ import { AIInsightCard } from "@/components/ai/AIInsightCard";
 import {
   AlertCircle,
   Calendar,
-  ChartLineIcon,
   ChartPieIcon,
   TrendingUp,
 } from "lucide-react";
@@ -83,10 +82,7 @@ const Dashboard = () => {
       {/* AI Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card p-6 rounded-lg border shadow-sm">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <ChartLineIcon className="w-5 h-5 text-primary" />
-            AI Insights
-          </h3>
+          <h3 className="text-xl font-semibold mb-4">AI Insights</h3>
           <div className="space-y-4">
             {mockAIInsights.slice(0, 2).map((insight, index) => (
               <AIInsightCard key={index} insight={insight} />
