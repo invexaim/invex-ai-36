@@ -119,7 +119,7 @@ const Sales = () => {
                   <option value="">Select a product</option>
                   {mockProducts.map((product) => (
                     <option key={product.product_id} value={product.product_id}>
-                      {product.product_name} - ${product.price.toFixed(2)}
+                      {product.product_name} - ₹{product.price.toFixed(2)}
                     </option>
                   ))}
                 </select>
@@ -141,19 +141,24 @@ const Sales = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={newSaleData.selling_price || ""}
-                  onChange={(e) =>
-                    setNewSaleData({
-                      ...newSaleData,
-                      selling_price: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newSaleData.selling_price || ""}
+                    onChange={(e) =>
+                      setNewSaleData({
+                        ...newSaleData,
+                        selling_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                  <span className="absolute right-3 top-2.5 text-muted-foreground">
+                    INR
+                  </span>
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -210,9 +215,9 @@ const Sales = () => {
                     </TableCell>
                     <TableCell>{sale.product?.product_name}</TableCell>
                     <TableCell>{sale.quantity_sold}</TableCell>
-                    <TableCell>${sale.selling_price.toFixed(2)}</TableCell>
+                    <TableCell>₹{sale.selling_price.toFixed(2)}</TableCell>
                     <TableCell className="text-right">
-                      ${(sale.quantity_sold * sale.selling_price).toFixed(2)}
+                      ₹{(sale.quantity_sold * sale.selling_price).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))

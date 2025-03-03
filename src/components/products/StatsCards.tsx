@@ -27,7 +27,7 @@ export const StatsCards = ({ products }: StatsCardsProps) => {
     },
     {
       title: "Value",
-      value: `$${products.reduce((sum, p) => sum + p.price, 0).toFixed(2)}`,
+      value: `₹${products.reduce((sum, p) => sum + p.price, 0).toFixed(2)}`,
       icon: <TrendingUp className="h-5 w-5 text-success" />,
     }
   ];

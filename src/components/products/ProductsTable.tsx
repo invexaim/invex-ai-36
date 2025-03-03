@@ -61,7 +61,7 @@ export const ProductsTable = ({ products, searchTerm, onSearchChange }: Products
                   </TableCell>
                   <TableCell>{product.product_name}</TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>₹{product.price.toFixed(2)}</TableCell>
                   <TableCell>{product.units}</TableCell>
                   <TableCell>{product.reorder_level}</TableCell>
                   <TableCell className="text-right">

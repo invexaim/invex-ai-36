@@ -23,15 +23,17 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   const [aiAnalysis, setAiAnalysis] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
 
-  const handleFileUpload = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setAiAnalysis(true);
-      setLoading(false);
-      toast.success("File uploaded successfully", {
-        description: "Your product data has been processed and analyzed",
-      });
-    }, 1500);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setLoading(true);
+      setTimeout(() => {
+        setAiAnalysis(true);
+        setLoading(false);
+        toast.success("File uploaded successfully", {
+          description: "Your product data has been processed and analyzed",
+        });
+      }, 1500);
+    }
   };
 
   const handleGeneratePrediction = () => {
@@ -57,8 +59,6 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       </div>
 
       <div className="bg-muted/50 p-6 rounded-lg">
-        <h3 className="text-lg font-medium mb-6">Manual Stock Prediction</h3>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
@@ -117,19 +117,24 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="price">Price</Label>
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={predictionData.price || ""}
-              onChange={(e) =>
-                setPredictionData({
-                  ...predictionData,
-                  price: parseFloat(e.target.value) || 0,
-                })
-              }
-            />
+            <div className="relative">
+              <Input
+                id="price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={predictionData.price || ""}
+                onChange={(e) =>
+                  setPredictionData({
+                    ...predictionData,
+                    price: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+              <span className="absolute right-3 top-2.5 text-muted-foreground">
+                INR
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -147,28 +152,33 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
               }
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="file-upload">Upload Historical Data (Optional)</Label>
-            <div className="relative">
-              <Input
-                id="file-upload"
-                type="file"
-                onChange={() => handleFileUpload()}
-                className="pl-10"
-              />
-              <FileUp className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
         </div>
 
         <Button
           onClick={handleGeneratePrediction}
-          className="w-full"
+          className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white"
           disabled={loading}
         >
           {loading ? "Generating..." : "Generate Prediction"}
         </Button>
+
+        <div className="text-center text-muted-foreground my-4">OR</div>
+
+        <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-lg p-8">
+          <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+            <FileUp className="h-8 w-8 text-muted-foreground mb-2" />
+            <span className="text-sm font-medium">Upload any file with historical stock data</span>
+            <Input
+              id="file-upload"
+              type="file"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <span className="mt-2 text-xs text-muted-foreground">
+              CSV, Excel, or JSON formats accepted
+            </span>
+          </Label>
+        </div>
 
         {predictionResult && !aiAnalysis && (
           <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
@@ -194,8 +204,8 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
               - Competition impact: 2.5% market pressure
               
               3. Pricing Strategy:
-              - Current price: $500.00
-              - Optimal price point: $570.58
+              - Current price: ₹500.00
+              - Optimal price point: ₹570.58
               - Price elasticity: 1.03
               
               4. Inventory Optimization:

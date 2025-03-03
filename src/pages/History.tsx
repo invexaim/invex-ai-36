@@ -89,7 +89,7 @@ const History = () => {
         />
         <CardStat
           title="Revenue"
-          value={`$${totalRevenue.toLocaleString()}`}
+          value={`₹${totalRevenue.toLocaleString()}`}
           icon={<TrendingUp className="w-5 h-5 text-primary" />}
           className="bg-purple-50"
         />
@@ -172,9 +172,9 @@ const History = () => {
                         {sale.product?.product_name}
                       </TableCell>
                       <TableCell>{sale.quantity_sold}</TableCell>
-                      <TableCell>${sale.selling_price.toFixed(2)}</TableCell>
+                      <TableCell>₹{sale.selling_price.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        ${total.toFixed(2)}
+                        ₹{total.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   );
