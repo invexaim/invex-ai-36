@@ -75,21 +75,21 @@ export const ProductsTable = ({
                     {product.product_name}
                   </TableCell>
                   <TableCell>{product.category}</TableCell>
-                  <TableCell>{product.stock_quantity}</TableCell>
+                  <TableCell>{product.units}</TableCell>
                   <TableCell>₹{product.price.toFixed(2)}</TableCell>
                   <TableCell>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.stock_quantity > 10
+                        parseInt(product.units as string) > 10
                           ? "bg-green-100 text-green-800"
-                          : product.stock_quantity > 0
+                          : parseInt(product.units as string) > 0
                           ? "bg-yellow-100 text-yellow-800"
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {product.stock_quantity > 10
+                      {parseInt(product.units as string) > 10
                         ? "In Stock"
-                        : product.stock_quantity > 0
+                        : parseInt(product.units as string) > 0
                         ? "Low Stock"
                         : "Out of Stock"}
                     </span>
