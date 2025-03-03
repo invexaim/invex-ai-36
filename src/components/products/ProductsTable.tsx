@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Product } from "@/types";
-import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 interface ProductsTableProps {
   products: Product[];
@@ -21,16 +20,11 @@ interface ProductsTableProps {
 }
 
 export const ProductsTable = ({
-  products: initialProducts,
+  products,
   searchTerm,
   onSearchChange,
 }: ProductsTableProps) => {
-  const [products, setProducts] = useState(initialProducts);
-
-  const handleDeleteProduct = (productId: number) => {
-    setProducts(products.filter(product => product.product_id !== productId));
-    toast.success("Product deleted successfully");
-  };
+  const { deleteProduct } = useAppStore();
 
   const filteredProducts = products.filter((product) => {
     return product.product_name
@@ -98,7 +92,7 @@ export const ProductsTable = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteProduct(product.product_id)}
+                      onClick={() => deleteProduct(product.product_id)}
                       className="text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -109,7 +103,9 @@ export const ProductsTable = ({
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-4">
-                  No products found
+                  {products.length === 0 
+                    ? "No products available. Add some products or import from CSV."
+                    : "No products found matching your search."}
                 </TableCell>
               </TableRow>
             )}

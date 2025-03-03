@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { CardStat } from "@/components/ui/card-stat";
-import { DollarSign, Search, ShoppingCart, Users, Trash2 } from "lucide-react";
+import { DollarSign, Plus, Search, ShoppingCart, Users, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,81 +12,59 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
-
-interface Client {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  totalPurchases: number;
-  totalSpent: number;
-  lastPurchase: string;
-}
-
-const mockClients: Client[] = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    email: "rahul.sharma@example.com",
-    phone: "+91 98765 43210",
-    totalPurchases: 12,
-    totalSpent: 45000,
-    lastPurchase: "2023-10-15",
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    email: "priya.patel@example.com",
-    phone: "+91 87654 32109",
-    totalPurchases: 8,
-    totalSpent: 32000,
-    lastPurchase: "2023-10-12",
-  },
-  {
-    id: 3,
-    name: "Amit Kumar",
-    email: "amit.kumar@example.com",
-    phone: "+91 76543 21098",
-    totalPurchases: 5,
-    totalSpent: 18000,
-    lastPurchase: "2023-10-08",
-  },
-  {
-    id: 4,
-    name: "Neha Singh",
-    email: "neha.singh@example.com",
-    phone: "+91 65432 10987",
-    totalPurchases: 3,
-    totalSpent: 12000,
-    lastPurchase: "2023-10-05",
-  },
-  {
-    id: 5,
-    name: "Vikram Desai",
-    email: "vikram.desai@example.com",
-    phone: "+91 54321 09876",
-    totalPurchases: 10,
-    totalSpent: 40000,
-    lastPurchase: "2023-10-01",
-  },
-];
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import useAppStore from "@/store/appStore";
 
 const Clients = () => {
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const { clients, addClient, deleteClient } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
 
   const totalClients = clients.length;
-  const totalSpent = clients.reduce((sum, client) => sum + client.totalSpent, 0);
   const totalPurchases = clients.reduce((sum, client) => sum + client.totalPurchases, 0);
+  const totalSpent = clients.reduce((sum, client) => sum + client.totalSpent, 0);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleDeleteClient = (id: number) => {
-    setClients(clients.filter(client => client.id !== id));
-    toast.success("Client deleted successfully");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name.trim()) {
+      return;
+    }
+    
+    // Add client
+    addClient(formData);
+    
+    // Reset form
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+    });
+    
+    // Close dialog
+    setIsAddClientOpen(false);
   };
 
   const filteredClients = clients.filter((client) =>
@@ -96,11 +74,19 @@ const Clients = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your clients and their information
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your clients and their information
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsAddClientOpen(true)}
+          className="self-start sm:self-auto"
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Client
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -171,7 +157,7 @@ const Clients = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteClient(client.id)}
+                        onClick={() => deleteClient(client.id)}
                         className="text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -182,7 +168,9 @@ const Clients = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-4">
-                    No clients found
+                    {clients.length === 0 
+                      ? "No clients added yet. Add a client using the button above."
+                      : "No clients found matching your search."}
                   </TableCell>
                 </TableRow>
               )}
@@ -190,6 +178,61 @@ const Clients = () => {
           </Table>
         </div>
       </div>
+
+      {/* Add Client Dialog */}
+      <Dialog open={isAddClientOpen} onOpenChange={setIsAddClientOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new client below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter client's full name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter client's email"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Enter client's phone number"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddClientOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              Add Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

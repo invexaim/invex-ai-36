@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { CardStat } from "@/components/ui/card-stat";
-import { CreditCard, DollarSign, Search, Trash2 } from "lucide-react";
+import { CreditCard, DollarSign, Plus, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -12,63 +13,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import useAppStore from "@/store/appStore";
 
-interface Payment {
-  id: number;
-  date: string;
-  clientName: string;
-  amount: number;
-  status: "paid" | "pending" | "failed";
-  method: string;
-}
-
-const mockPayments: Payment[] = [
-  {
-    id: 1,
-    date: "2023-10-15",
-    clientName: "Rahul Sharma",
-    amount: 15000,
-    status: "paid",
-    method: "Credit Card",
-  },
-  {
-    id: 2,
-    date: "2023-10-12",
-    clientName: "Priya Patel",
-    amount: 8500,
-    status: "paid",
-    method: "UPI",
-  },
-  {
-    id: 3,
-    date: "2023-10-08",
-    clientName: "Amit Kumar",
-    amount: 12000,
-    status: "pending",
-    method: "Bank Transfer",
-  },
-  {
-    id: 4,
-    date: "2023-10-05",
-    clientName: "Neha Singh",
-    amount: 9000,
-    status: "failed",
-    method: "Credit Card",
-  },
-  {
-    id: 5,
-    date: "2023-10-01",
-    clientName: "Vikram Desai",
-    amount: 20000,
-    status: "paid",
-    method: "UPI",
-  },
-];
+const paymentMethods = ["Credit Card", "UPI", "Bank Transfer", "Cash", "Cheque"];
 
 const Payments = () => {
-  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  const { payments, addPayment, deletePayment, clients } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    clientName: "",
+    amount: 0,
+    status: "paid" as "paid" | "pending" | "failed",
+    method: "",
+  });
 
   const totalPaid = payments
     .filter((payment) => payment.status === "paid")
@@ -82,9 +48,40 @@ const Payments = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleDeletePayment = (id: number) => {
-    setPayments(payments.filter(payment => payment.id !== id));
-    toast.success("Payment deleted successfully");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === "amount") {
+      setFormData({
+        ...formData,
+        [name]: parseFloat(value) || 0,
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!formData.clientName || formData.amount <= 0 || !formData.method) {
+      return;
+    }
+    
+    // Add payment
+    addPayment(formData);
+    
+    // Reset form
+    setFormData({
+      clientName: "",
+      amount: 0,
+      status: "paid",
+      method: "",
+    });
+    
+    // Close dialog
+    setIsAddPaymentOpen(false);
   };
 
   const filteredPayments = payments.filter((payment) =>
@@ -93,11 +90,20 @@ const Payments = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your payment transactions
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your payment transactions
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsAddPaymentOpen(true)}
+          className="self-start sm:self-auto"
+          disabled={clients.length === 0}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Payment
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -178,7 +184,7 @@ const Payments = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeletePayment(payment.id)}
+                        onClick={() => deletePayment(payment.id)}
                         className="text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -189,7 +195,9 @@ const Payments = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
-                    No payments found
+                    {payments.length === 0 
+                      ? "No payments recorded yet. Add a payment using the button above."
+                      : "No payments found matching your search."}
                   </TableCell>
                 </TableRow>
               )}
@@ -197,6 +205,95 @@ const Payments = () => {
           </Table>
         </div>
       </div>
+
+      {/* Add Payment Dialog */}
+      <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Record New Payment</DialogTitle>
+            <DialogDescription>
+              Enter the payment details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="clientName">Client</Label>
+              <select
+                id="clientName"
+                name="clientName"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={formData.clientName}
+                onChange={handleChange}
+              >
+                <option value="">Select a client</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.name}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount (₹)</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.amount || ""}
+                onChange={handleChange}
+                placeholder="Enter payment amount"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                name="status"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="method">Payment Method</Label>
+              <select
+                id="method"
+                name="method"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={formData.method}
+                onChange={handleChange}
+              >
+                <option value="">Select payment method</option>
+                {paymentMethods.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddPaymentOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={!formData.clientName || formData.amount <= 0 || !formData.method}
+            >
+              Record Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

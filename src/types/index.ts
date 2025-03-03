@@ -36,6 +36,25 @@ export interface Sale {
   product?: Product;
 }
 
+export interface Client {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  totalPurchases: number;
+  totalSpent: number;
+  lastPurchase: string;
+}
+
+export interface Payment {
+  id: number;
+  date: string;
+  clientName: string;
+  amount: number;
+  status: "paid" | "pending" | "failed";
+  method: string;
+}
+
 export interface InventoryAnalysis {
   analysis_id: number;
   product_id: number;

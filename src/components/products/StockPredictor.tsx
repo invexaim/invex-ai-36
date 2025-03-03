@@ -25,6 +25,13 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
+        toast.error("Please upload a CSV file");
+        return;
+      }
+      
       setLoading(true);
       setTimeout(() => {
         setAiAnalysis(true);
@@ -33,6 +40,9 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
           description: "Your product data has been processed and analyzed",
         });
       }, 1500);
+      
+      // Reset the file input
+      e.target.value = '';
     }
   };
 
@@ -103,8 +113,10 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
                   setPredictionData({
                     ...predictionData,
                     product_id: parseInt(e.target.value),
+                    price: products.find(p => p.product_id === parseInt(e.target.value))?.price || 0
                   })
                 }
+                value={predictionData.product_id || ""}
               >
                 <option value="">Select a product</option>
                 {products.map((product) => (
@@ -174,7 +186,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
         <Button
           onClick={handleGeneratePrediction}
           className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white"
-          disabled={loading}
+          disabled={loading || !isFormComplete()}
         >
           {loading ? "Generating..." : "Generate Prediction"}
         </Button>
@@ -188,8 +200,10 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
             <Input
               id="file-upload"
               type="file"
+              accept=".csv"
               onChange={handleFileUpload}
               className="hidden"
+              disabled={loading}
             />
             <span className="mt-2 text-xs text-muted-foreground">
               CSV, Excel, or JSON formats accepted
@@ -221,8 +235,8 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
               - Competition impact: 2.5% market pressure
               
               3. Pricing Strategy:
-              - Current price: ₹500.00
-              - Optimal price point: ₹570.58
+              - Current price: ₹{predictionData.price.toFixed(2)}
+              - Optimal price point: ₹{(predictionData.price * 1.14).toFixed(2)}
               - Price elasticity: 1.03
               
               4. Inventory Optimization:
@@ -236,9 +250,9 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
               - Economic multiplier: 1.08
               
               6. Action Items:
-              - Restock before: 3/14/2025
-              - Review pricing: 3/9/2025
-              - Next analysis: 4/1/2025
+              - Restock before: {new Date(new Date().setDate(new Date().getDate() + 21)).toLocaleDateString()}
+              - Review pricing: {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString()}
+              - Next analysis: {new Date(new Date().setDate(new Date().getDate() + 30)).toLocaleDateString()}
             </div>
           </div>
         )}
