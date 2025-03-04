@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -75,13 +74,13 @@
     --ring: 212.7 26.8% 83.9%;
     
     --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 210 40% 98%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 210 40% 98%;
     
     --info: 221 83% 53%;
-    --info-foreground: 0 0% 100%;
+    --info-foreground: 210 40% 98%;
   }
 }
 
@@ -171,4 +170,53 @@
 
 .empty-state-subtext {
   @apply text-muted-foreground mt-1 mb-6;
+}
+
+/* Add specific dark mode styles for status badges and cards */
+.dark .bg-green-100 {
+  @apply bg-green-900 bg-opacity-30 text-green-300;
+}
+
+.dark .bg-yellow-100 {
+  @apply bg-yellow-900 bg-opacity-30 text-yellow-300;
+}
+
+.dark .bg-red-100 {
+  @apply bg-red-900 bg-opacity-30 text-red-300;
+}
+
+.dark .bg-blue-100 {
+  @apply bg-blue-900 bg-opacity-30 text-blue-300;
+}
+
+.dark .bg-blue-50,
+.dark .bg-green-50,
+.dark .bg-purple-50,
+.dark .bg-red-50 {
+  @apply bg-gray-800;
+}
+
+/* Make sure table text is visible in dark mode */
+.dark tbody td,
+.dark tbody th {
+  @apply text-gray-200;
+}
+
+/* Fix visibility of status badges in dark mode */
+.dark [class*="bg-"][class*="text-"] {
+  @apply text-opacity-90;
+}
+
+/* Fix input text colors in dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  @apply text-gray-200;
+}
+
+/* Fix stat card numbers in dark mode */
+.dark .font-bold, 
+.dark h3.text-2xl,
+.dark h3.text-3xl {
+  @apply text-white;
 }
