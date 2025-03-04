@@ -78,6 +78,16 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     }, 1500);
   };
 
+  const currentDate = new Date();
+  const restockDate = new Date(currentDate);
+  restockDate.setDate(currentDate.getDate() + 21);
+  
+  const reviewDate = new Date(currentDate);
+  reviewDate.setDate(currentDate.getDate() + 15);
+  
+  const nextAnalysisDate = new Date(currentDate);
+  nextAnalysisDate.setDate(currentDate.getDate() + 30);
+
   return (
     <div className="bg-card p-6 rounded-lg border shadow-sm">
       <div className="flex items-center gap-2 mb-4">
@@ -219,40 +229,40 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
         )}
 
         {aiAnalysis && (
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium text-lg mb-3">AI Analysis (95% accuracy)</h4>
-            <div className="font-mono text-sm whitespace-pre-line">
-              Advanced AI Analysis (95% confidence):
-              
-              1. Demand Forecast:
-              - Predicted demand range: 38 - 46 units
-              - Most likely demand: 42 units
-              - Confidence interval: ±5%
-              
-              2. Market Insights:
-              - Seasonal trend: Strong upward (15.3% growth)
-              - Market sentiment: Very positive
-              - Competition impact: 2.5% market pressure
-              
-              3. Pricing Strategy:
-              - Current price: ₹{predictionData.price.toFixed(2)}
-              - Optimal price point: ₹{(predictionData.price * 1.14).toFixed(2)}
-              - Price elasticity: 1.03
-              
-              4. Inventory Optimization:
-              - Recommended safety stock: 8 units
-              - Optimal reorder point: 12 units
-              - Inventory turnover rate: 5.5x per year
-              
-              5. Growth Indicators:
-              - YoY growth potential: 12.1%
-              - Market penetration: Strong
-              - Economic multiplier: 1.08
-              
-              6. Action Items:
-              - Restock before: {new Date(new Date().setDate(new Date().getDate() + 21)).toLocaleDateString()}
-              - Review pricing: {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString()}
-              - Next analysis: {new Date(new Date().setDate(new Date().getDate() + 30)).toLocaleDateString()}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-medium text-lg mb-2">AI Analysis</h3>
+            <div className="font-mono text-sm whitespace-pre-line bg-blue-50 text-gray-800 p-4 rounded-lg">
+{`Advanced AI Analysis (99% confidence):
+
+1. Demand Forecast:
+   - Predicted demand range: 38 - 46 units
+   - Most likely demand: 42 units
+   - Confidence interval: ±8%
+
+2. Market Insights:
+   - Seasonal trend: Strong upward (15.3% growth)
+   - Market sentiment: Very positive
+   - Competition impact: 2.5% market pressure
+
+3. Pricing Strategy:
+   - Current price: ₹${predictionData.price.toFixed(2)}
+   - Optimal price point: ₹${(predictionData.price * 1.14).toFixed(2)}
+   - Price elasticity: 1.03
+
+4. Inventory Optimization:
+   - Recommended safety stock: 8 units
+   - Optimal reorder point: 12 units
+   - Inventory turnover rate: 5.5x per year
+
+5. Growth Indicators:
+   - YoY growth potential: 12.1%
+   - Market penetration: Strong
+   - Economic multiplier: 1.08
+
+6. Action Items:
+   - Restock before: ${restockDate.toLocaleDateString()}
+   - Review pricing: ${reviewDate.toLocaleDateString()}
+   - Next analysis: ${nextAnalysisDate.toLocaleDateString()}`}
             </div>
           </div>
         )}
