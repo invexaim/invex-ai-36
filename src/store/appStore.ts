@@ -153,6 +153,7 @@ const useAppStore = create<AppState>((set) => ({
       amount: paymentData.amount,
       status: paymentData.status,
       method: paymentData.method,
+      description: paymentData.description, // Include description field from payment data
     };
     
     // Update client if exists

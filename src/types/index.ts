@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -53,6 +52,7 @@ export interface Payment {
   amount: number;
   status: "paid" | "pending" | "failed";
   method: string;
+  description?: string;
 }
 
 export interface InventoryAnalysis {
