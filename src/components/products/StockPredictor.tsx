@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Package, FileUp } from "lucide-react";
+import { Atom, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     current_stock: 0,
     previous_sales: 0,
     price: 0,
+    custom_product: "",
+    is_custom_product: false
   });
   const [predictionResult, setPredictionResult] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<boolean>(false);
@@ -47,6 +49,16 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   };
 
   const isFormComplete = () => {
+    if (predictionData.is_custom_product) {
+      return (
+        predictionData.date !== "" &&
+        predictionData.custom_product.trim() !== "" &&
+        predictionData.current_stock > 0 &&
+        predictionData.previous_sales >= 0 &&
+        predictionData.price > 0
+      );
+    }
+    
     return (
       predictionData.date !== "" &&
       predictionData.product_id !== 0 &&
@@ -78,6 +90,25 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     }, 1500);
   };
 
+  const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === "other") {
+      setPredictionData({
+        ...predictionData,
+        is_custom_product: true,
+        product_id: 0
+      });
+    } else {
+      const productId = parseInt(value);
+      setPredictionData({
+        ...predictionData,
+        product_id: productId,
+        is_custom_product: false,
+        price: products.find(p => p.product_id === productId)?.price || 0
+      });
+    }
+  };
+
   const currentDate = new Date();
   const restockDate = new Date(currentDate);
   restockDate.setDate(currentDate.getDate() + 21);
@@ -91,52 +122,59 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   return (
     <div className="bg-card p-6 rounded-lg border shadow-sm">
       <div className="flex items-center gap-2 mb-4">
-        <Package className="h-5 w-5 text-primary" />
+        <Atom className="h-5 w-5 text-primary" />
         <h2 className="text-xl font-semibold">Stock Predictor</h2>
       </div>
 
-      <div className="bg-muted/50 p-6 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="bg-background rounded-lg p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <div className="relative">
-              <Input
-                id="date"
-                type="date"
-                value={predictionData.date}
-                onChange={(e) =>
-                  setPredictionData({ ...predictionData, date: e.target.value })
-                }
-                className="pl-10"
-              />
-              <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            </div>
+            <Input
+              id="date"
+              type="date"
+              value={predictionData.date}
+              onChange={(e) =>
+                setPredictionData({ ...predictionData, date: e.target.value })
+              }
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="product">Product</Label>
-            <div className="relative">
-              <select
-                id="product"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            <select
+              id="product"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onChange={handleProductChange}
+              value={predictionData.is_custom_product ? "other" : (predictionData.product_id || "")}
+            >
+              <option value="">Select product</option>
+              {products.map((product) => (
+                <option key={product.product_id} value={product.product_id}>
+                  {product.product_name}
+                </option>
+              ))}
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          {predictionData.is_custom_product && (
+            <div className="space-y-2">
+              <Label htmlFor="custom-product">Enter Product Name</Label>
+              <Input
+                id="custom-product"
+                type="text"
+                placeholder="Enter product name"
+                value={predictionData.custom_product}
                 onChange={(e) =>
                   setPredictionData({
                     ...predictionData,
-                    product_id: parseInt(e.target.value),
-                    price: products.find(p => p.product_id === parseInt(e.target.value))?.price || 0
+                    custom_product: e.target.value,
                   })
                 }
-                value={predictionData.product_id || ""}
-              >
-                <option value="">Select a product</option>
-                {products.map((product) => (
-                  <option key={product.product_id} value={product.product_id}>
-                    {product.product_name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="current-stock">Current Stock</Label>
@@ -156,24 +194,19 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="price">Price</Label>
-            <div className="relative">
-              <Input
-                id="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={predictionData.price || ""}
-                onChange={(e) =>
-                  setPredictionData({
-                    ...predictionData,
-                    price: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-              <span className="absolute right-3 top-2.5 text-muted-foreground">
-                INR
-              </span>
-            </div>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={predictionData.price || ""}
+              onChange={(e) =>
+                setPredictionData({
+                  ...predictionData,
+                  price: parseFloat(e.target.value) || 0,
+                })
+              }
+            />
           </div>
 
           <div className="space-y-2">
@@ -195,30 +228,30 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
 
         <Button
           onClick={handleGeneratePrediction}
-          className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white"
+          className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white mt-6"
           disabled={loading || !isFormComplete()}
         >
+          <Atom className="mr-2 h-4 w-4" />
           {loading ? "Generating..." : "Generate Prediction"}
         </Button>
 
         <div className="text-center text-muted-foreground my-4">OR</div>
 
-        <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-lg p-8">
-          <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-            <FileUp className="h-8 w-8 text-muted-foreground mb-2" />
-            <span className="text-sm font-medium">Upload any file with historical stock data</span>
-            <Input
-              id="file-upload"
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-              disabled={loading}
-            />
-            <span className="mt-2 text-xs text-muted-foreground">
-              CSV, Excel, or JSON formats accepted
-            </span>
-          </Label>
+        <div className="relative border border-dashed border-muted-foreground/20 rounded-lg p-4 text-center">
+          <input
+            id="file-upload"
+            type="file"
+            accept=".csv"
+            onChange={handleFileUpload}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={loading}
+          />
+          <div className="flex flex-col items-center justify-center py-4">
+            <p className="text-sm font-medium mb-1">Choose File</p>
+            <p className="text-xs text-muted-foreground">
+              Upload any file with historical stock data
+            </p>
+          </div>
         </div>
 
         {predictionResult && !aiAnalysis && (
@@ -229,9 +262,9 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
         )}
 
         {aiAnalysis && (
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-gray-800 rounded-lg">
             <h3 className="font-medium text-lg mb-2">AI Analysis</h3>
-            <div className="font-mono text-sm whitespace-pre-line bg-blue-50 text-gray-800 p-4 rounded-lg">
+            <div className="font-mono text-sm whitespace-pre-line bg-blue-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-4 rounded-lg">
 {`Advanced AI Analysis (99% confidence):
 
 1. Demand Forecast:
