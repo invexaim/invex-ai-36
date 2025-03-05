@@ -73,11 +73,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Main content */}
-      <main className="flex-1 flex flex-col h-screen overflow-auto pt-16 md:pt-0 md:pr-64">
+      <main className="flex-1 flex flex-col h-screen overflow-auto pt-16 md:pt-0 md:pl-64">
         <div className="p-4 md:p-6">{children}</div>
       </main>
 
-      {/* Desktop Sidebar - now positioned on the right */}
+      {/* Desktop Sidebar - now positioned on the left */}
       <DesktopSidebar 
         sidebarItems={sidebarItems} 
         currentPath={currentPath} 
