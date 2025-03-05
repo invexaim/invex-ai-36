@@ -8,9 +8,7 @@ import {
   Users, 
   LayoutDashboard, 
   ShoppingCart, 
-  CreditCard,
-  Sun, 
-  Moon 
+  CreditCard
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
@@ -73,8 +71,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Main content */}
+      <main className="flex-1 flex flex-col h-screen overflow-auto pt-16 md:pt-0 md:pr-64">
+        <div className="p-4 md:p-6">{children}</div>
+      </main>
+
+      {/* Desktop Sidebar - now positioned on the right */}
       <DesktopSidebar 
         sidebarItems={sidebarItems} 
         currentPath={currentPath} 
@@ -89,11 +92,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         theme={theme} 
         toggleTheme={toggleTheme} 
       />
-
-      {/* Main content */}
-      <main className="flex-1 flex flex-col h-screen overflow-auto md:ml-64 pt-16 md:pt-0">
-        <div className="p-4 md:p-6">{children}</div>
-      </main>
     </div>
   );
 };

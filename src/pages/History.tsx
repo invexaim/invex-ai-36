@@ -1,10 +1,9 @@
 
 import { useState } from "react";
-import { mockSales } from "@/data/mockData";
+import useAppStore from "@/store/appStore";
 import { CardStat } from "@/components/ui/card-stat";
 import { Calendar, ChartLineIcon, Package, Search, TrendingUp, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Sale } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,20 +17,18 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 const History = () => {
-  const [transactions, setTransactions] = useState(mockSales);
+  const { sales, deleteSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd")
-  );
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [transactionType, setTransactionType] = useState("all");
 
-  // Calculate totals
-  const totalTransactions = transactions.length;
-  const totalProductsSold = transactions.reduce(
+  // Calculate totals from actual data
+  const totalTransactions = sales.length;
+  const totalProductsSold = sales.reduce(
     (acc, sale) => acc + sale.quantity_sold,
     0
   );
-  const totalRevenue = transactions.reduce(
+  const totalRevenue = sales.reduce(
     (acc, sale) => acc + sale.quantity_sold * sale.selling_price,
     0
   );
@@ -49,25 +46,17 @@ const History = () => {
   };
 
   const handleDeleteTransaction = (id: number) => {
-    setTransactions(transactions.filter(transaction => transaction.sale_id !== id));
-    toast.success("Transaction deleted successfully");
+    deleteSale(id);
   };
 
-  // Function to determine transaction type (for demo purposes)
-  const getTransactionType = (index: number): "sale" | "restock" => {
-    return index % 2 === 0 ? "sale" : "restock";
-  };
-
-  // Filter transactions
-  const filteredTransactions = transactions.filter((sale) => {
+  // Filter transactions based on user input
+  const filteredTransactions = sales.filter((sale) => {
     const productName = sale.product?.product_name.toLowerCase() || "";
-    const saleDate = format(new Date(sale.sale_date), "yyyy-MM-dd");
-    const type = getTransactionType(sale.sale_id);
-
+    const saleDate = selectedDate ? format(new Date(sale.sale_date), "yyyy-MM-dd") : "";
+    
     const matchesSearch = productName.includes(searchTerm.toLowerCase());
     const matchesDate = !selectedDate || saleDate === selectedDate;
-    const matchesType =
-      transactionType === "all" || type === transactionType;
+    const matchesType = transactionType === "all" || transactionType === "sale"; // All sales are type 'sale'
 
     return matchesSearch && matchesDate && matchesType;
   });
@@ -87,19 +76,19 @@ const History = () => {
           title="Total Transactions"
           value={totalTransactions.toLocaleString()}
           icon={<Calendar className="w-5 h-5 text-primary" />}
-          className="bg-blue-50"
+          className="bg-blue-50 dark:bg-blue-950/30"
         />
         <CardStat
           title="Products Sold"
           value={totalProductsSold.toLocaleString()}
           icon={<Package className="w-5 h-5 text-primary" />}
-          className="bg-green-50"
+          className="bg-green-50 dark:bg-green-950/30"
         />
         <CardStat
           title="Revenue"
           value={`₹${totalRevenue.toLocaleString()}`}
           icon={<TrendingUp className="w-5 h-5 text-primary" />}
-          className="bg-purple-50"
+          className="bg-purple-50 dark:bg-purple-950/30"
         />
       </div>
 
@@ -117,17 +106,17 @@ const History = () => {
                 type="date"
                 value={selectedDate}
                 onChange={handleDateChange}
+                className="dark:text-white"
               />
             </div>
             <div>
               <select
                 value={transactionType}
                 onChange={handleTypeChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white"
               >
                 <option value="all">All Types</option>
                 <option value="sale">Sales</option>
-                <option value="restock">Restocks</option>
               </select>
             </div>
             <div className="relative">
@@ -136,7 +125,7 @@ const History = () => {
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="pl-10"
+                className="pl-10 dark:text-white"
               />
             </div>
           </div>
@@ -157,8 +146,7 @@ const History = () => {
             </TableHeader>
             <TableBody>
               {filteredTransactions.length > 0 ? (
-                filteredTransactions.map((sale, index) => {
-                  const transactionType = getTransactionType(sale.sale_id);
+                filteredTransactions.map((sale) => {
                   const total = sale.quantity_sold * sale.selling_price;
 
                   return (
@@ -167,14 +155,8 @@ const History = () => {
                         {format(new Date(sale.sale_date), "yyyy-MM-dd")}
                       </TableCell>
                       <TableCell>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            transactionType === "sale"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {transactionType}
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                          sale
                         </span>
                       </TableCell>
                       <TableCell className="font-medium">
