@@ -5,6 +5,7 @@ import { Calendar, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
+import { cn } from "@/lib/utils";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
@@ -67,23 +68,37 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
         </Button>
       </div>
       
-      {/* Mobile menu */}
-      {isMobileMenuOpen && (
-        <nav className="p-4 space-y-1 bg-white dark:bg-slate-900">
-          {sidebarItems.map((item) => (
-            <SidebarItem
-              key={item.href}
-              icon={item.icon}
-              label={item.label}
-              href={item.href}
-              isActive={
-                currentPath === item.href ||
-                (item.href !== "/" && currentPath.startsWith(item.href))
-              }
-            />
-          ))}
-        </nav>
-      )}
+      {/* Mobile menu with slide animation */}
+      <div 
+        className={cn(
+          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-300",
+          isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onClick={toggleMobileMenu}
+      >
+        <div 
+          className={cn(
+            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-transform duration-300 ease-in-out",
+            isMobileMenuOpen ? "translate-x-0 animate-slide-in-from-right" : "-translate-x-full"
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <nav className="space-y-1">
+            {sidebarItems.map((item) => (
+              <SidebarItem
+                key={item.href}
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                isActive={
+                  currentPath === item.href ||
+                  (item.href !== "/" && currentPath.startsWith(item.href))
+                }
+              />
+            ))}
+          </nav>
+        </div>
+      </div>
     </div>
   );
 };
