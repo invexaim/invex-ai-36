@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils";
 import { CardProps } from "@/types";
 
-export const CardStat = ({ title, value, icon, className }: CardProps) => {
+export const CardStat = ({ title, value, icon, className, children }: CardProps) => {
   return (
     <div 
       className={cn(
@@ -14,6 +14,7 @@ export const CardStat = ({ title, value, icon, className }: CardProps) => {
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
           <h3 className="text-2xl font-bold">{value}</h3>
+          {children}
         </div>
         {icon && (
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">

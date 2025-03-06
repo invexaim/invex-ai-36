@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -76,6 +77,7 @@ export interface CardProps {
   value: string | number;
   icon?: React.ReactNode;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export interface ChartData {
