@@ -10,13 +10,18 @@ const Clients = () => {
   const { clients, addClient, deleteClient } = useAppStore();
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
 
+  const handleAddClientClick = () => {
+    setIsAddClientOpen(true);
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in">
-      <ClientsHeader onAddClientClick={() => setIsAddClientOpen(true)} />
+    <div className="space-y-8 animate-fade-in smooth-scroll">
+      <ClientsHeader onAddClientClick={handleAddClientClick} />
       <StatsCards clients={clients} />
       <ClientList 
         clients={clients} 
-        onDeleteClient={deleteClient} 
+        onDeleteClient={deleteClient}
+        onAddClientClick={handleAddClientClick}
       />
       <AddClientDialog 
         isOpen={isAddClientOpen}

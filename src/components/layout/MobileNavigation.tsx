@@ -18,7 +18,7 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Function to handle navigation with slower, smoother scrolling
+  // Function to handle navigation with extra slow, smoother scrolling
   const handleNavigation = (href: string) => {
     setIsMobileMenuOpen(false);
     
@@ -31,7 +31,7 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
         top: 0,
         behavior: 'smooth'
       });
-    }, 500); // Increased from 300ms to 500ms for a slower transition
+    }, 700); // Increased from 500ms to 700ms for an even slower transition
   };
 
   const toggleMobileMenu = () => {
@@ -98,17 +98,17 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
         </Button>
       </div>
       
-      {/* Mobile menu with slower slide animation */}
+      {/* Mobile menu with super slow slide animation */}
       <div 
         className={cn(
-          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-500", // Increased from 300ms to 500ms
+          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-700", // Increased from 500ms to 700ms
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={toggleMobileMenu}
       >
         <div 
           className={cn(
-            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-500 ease-in-out", // Increased from 300ms to 500ms
+            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-700 ease-in-out", // Increased from 500ms to 700ms
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
           onClick={(e) => e.stopPropagation()}
@@ -118,7 +118,7 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
               <div 
                 key={item.href}
                 onClick={() => handleNavigation(item.href)}
-                className="cursor-pointer"
+                className="cursor-pointer transition-all duration-500"
               >
                 <SidebarItem
                   icon={item.icon}

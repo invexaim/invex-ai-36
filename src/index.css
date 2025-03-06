@@ -112,13 +112,13 @@
 }
 
 .fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.8s ease-out forwards;
 }
 
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
+  transition-duration: 500ms;
 }
 
 .chart-container {
@@ -228,7 +228,7 @@
 
 /* Smooth page transitions */
 .page-transition {
-  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+  transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
 }
 
 .page-transition-enter {
@@ -251,13 +251,22 @@
   transform: translateY(10px);
 }
 
-/* New styles for slower mobile transitions */
+/* Enhanced smooth scrolling for mobile */
 @media (max-width: 768px) {
+  html, body {
+    scroll-behavior: smooth;
+  }
+  
   .transition-all {
-    transition-duration: 500ms;
+    transition-duration: 700ms;
   }
   
   .fade-in {
-    animation-duration: 0.8s;
+    animation-duration: 1s;
+  }
+  
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    transition: all 0.8s ease-in-out;
   }
 }

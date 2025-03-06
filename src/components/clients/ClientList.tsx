@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Search, Trash2 } from "lucide-react";
+import { RefreshCw, Search, Trash2, Users, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +17,10 @@ import { Client } from "@/types";
 interface ClientListProps {
   clients: Client[];
   onDeleteClient: (id: number) => void;
+  onAddClientClick: () => void;
 }
 
-export const ClientList = ({ clients, onDeleteClient }: ClientListProps) => {
+export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: ClientListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,13 +117,13 @@ export const ClientList = ({ clients, onDeleteClient }: ClientListProps) => {
           </Table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center smooth-scroll">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <Users className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold">No Clients Yet</h3>
           <p className="text-muted-foreground mt-1 mb-6">Add your first client to get started</p>
-          <Button onClick={() => {}}>
+          <Button onClick={onAddClientClick}>
             <Plus className="mr-2 h-4 w-4" /> Add Your First Client
           </Button>
         </div>
@@ -130,6 +131,3 @@ export const ClientList = ({ clients, onDeleteClient }: ClientListProps) => {
     </div>
   );
 };
-
-// Add missing import
-import { Users, Plus } from "lucide-react";

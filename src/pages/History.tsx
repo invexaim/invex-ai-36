@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import useAppStore from "@/store/appStore";
 import { CardStat } from "@/components/ui/card-stat";
 import { Calendar, ChartLineIcon, Package, Search, TrendingUp, Trash2 } from "lucide-react";
@@ -19,13 +19,11 @@ import { LineChart } from "@/components/charts/LineChart";
 import { BarChart } from "@/components/charts/BarChart";
 
 const History = () => {
-  const { sales, deleteSale } = useAppStore();
+  const { sales, deleteSale, products } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [transactionType, setTransactionType] = useState("all");
-  const [salesChartData, setSalesChartData] = useState<any[]>([]);
-  const [categoryChartData, setCategoryChartData] = useState<any[]>([]);
-
+  
   // Calculate totals from actual data
   const totalTransactions = sales.length;
   const totalProductsSold = sales.reduce(
@@ -37,10 +35,10 @@ const History = () => {
     0
   );
 
-  // Prepare chart data whenever sales change
-  useEffect(() => {
+  // Generate sales trend data
+  const salesChartData = useMemo(() => {
     // Generate data for the last 7 days
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: 7 }, (_, i) => {
       const date = subDays(new Date(), 6 - i);
       const formattedDate = format(date, "MMM dd");
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
@@ -63,25 +61,23 @@ const History = () => {
         value: revenue
       };
     });
-    
-    setSalesChartData(last7Days);
-    
-    // Generate category data
-    const categories = sales.reduce((acc: Record<string, number>, sale) => {
+  }, [sales]);
+  
+  // Generate category data
+  const categoryChartData = useMemo(() => {
+    const categories = sales.reduce((acc, sale) => {
       const category = sale.product?.category || "Uncategorized";
       if (!acc[category]) {
         acc[category] = 0;
       }
       acc[category] += sale.quantity_sold * sale.selling_price;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
     
-    const categoryData = Object.entries(categories).map(([name, value]) => ({
+    return Object.entries(categories).map(([name, value]) => ({
       name,
       value
     }));
-    
-    setCategoryChartData(categoryData);
   }, [sales]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,8 +109,17 @@ const History = () => {
     return matchesSearch && matchesDate && matchesType;
   });
 
+  // Show initial welcome toast
+  useEffect(() => {
+    if (products.length === 0 && sales.length === 0) {
+      toast.info("Add products and record sales to see transaction history", {
+        duration: 5000,
+      });
+    }
+  }, [products.length, sales.length]);
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in smooth-scroll">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">History</h1>
         <p className="text-muted-foreground mt-1">
@@ -149,24 +154,36 @@ const History = () => {
         <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
           <h3 className="text-lg font-semibold mb-4">Sales Trend (Last 7 Days)</h3>
           <div className="h-[270px]">
-            <LineChart 
-              data={salesChartData} 
-              dataKey="value" 
-              xAxisDataKey="name"
-              stroke="#4f46e5"
-            />
+            {sales.length > 0 ? (
+              <LineChart 
+                data={salesChartData} 
+                dataKey="value" 
+                xAxisDataKey="name"
+                stroke="#4f46e5"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>No sales data available yet</p>
+              </div>
+            )}
           </div>
         </div>
         
         <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
           <h3 className="text-lg font-semibold mb-4">Revenue by Category</h3>
           <div className="h-[270px]">
-            <BarChart 
-              data={categoryChartData} 
-              dataKey="value" 
-              xAxisDataKey="name"
-              fill="#22c55e"
-            />
+            {sales.length > 0 ? (
+              <BarChart 
+                data={categoryChartData} 
+                dataKey="value" 
+                xAxisDataKey="name"
+                fill="#22c55e"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>No category data available yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -261,8 +278,16 @@ const History = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
-                    No transactions found
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex flex-col items-center justify-center">
+                      <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No transactions found</h3>
+                      <p className="text-muted-foreground">
+                        {products.length > 0 
+                          ? "Record sales to view transaction history" 
+                          : "Add products and record sales to view transaction history"}
+                      </p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
