@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Phone, Plus, RefreshCw, Search, Trash2, User, Users } from "lucide-react";
@@ -58,8 +57,12 @@ const Clients = () => {
       return;
     }
     
-    // Add client
-    addClient(formData);
+    // Add client with the required joinDate and openInvoices properties
+    addClient({
+      ...formData,
+      joinDate: new Date().toISOString(),
+      openInvoices: 0
+    });
     
     // Reset form
     setFormData({
