@@ -1,10 +1,6 @@
 
 import { Product } from "@/types";
 
-export interface StockPredictorProps {
-  products: Product[];
-}
-
 export interface PredictionData {
   date: string;
   product_id: number;
@@ -15,7 +11,11 @@ export interface PredictionData {
   is_custom_product: boolean;
 }
 
-export interface FormSectionProps {
+export interface StockPredictorProps {
+  products: Product[];
+}
+
+export interface PredictionFormProps {
   predictionData: PredictionData;
   setPredictionData: React.Dispatch<React.SetStateAction<PredictionData>>;
   products: Product[];
@@ -32,4 +32,5 @@ export interface ResultSectionProps {
   restockDate: Date;
   reviewDate: Date;
   nextAnalysisDate: Date;
+  ref?: React.Ref<HTMLDivElement>;
 }

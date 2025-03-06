@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAppStore from "@/store/appStore";
 import { CardStat } from "@/components/ui/card-stat";
 import { Calendar, ChartLineIcon, Package, Search, TrendingUp, Trash2 } from "lucide-react";
@@ -13,14 +13,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, subDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
+import { LineChart } from "@/components/charts/LineChart";
+import { BarChart } from "@/components/charts/BarChart";
 
 const History = () => {
   const { sales, deleteSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [transactionType, setTransactionType] = useState("all");
+  const [salesChartData, setSalesChartData] = useState<any[]>([]);
+  const [categoryChartData, setCategoryChartData] = useState<any[]>([]);
 
   // Calculate totals from actual data
   const totalTransactions = sales.length;
@@ -32,6 +36,53 @@ const History = () => {
     (acc, sale) => acc + sale.quantity_sold * sale.selling_price,
     0
   );
+
+  // Prepare chart data whenever sales change
+  useEffect(() => {
+    // Generate data for the last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), 6 - i);
+      const formattedDate = format(date, "MMM dd");
+      const dayStart = new Date(date.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      
+      // Filter sales for this day
+      const daySales = sales.filter(sale => {
+        const saleDate = parseISO(sale.sale_date);
+        return isWithinInterval(saleDate, { start: dayStart, end: dayEnd });
+      });
+      
+      // Calculate revenue for the day
+      const revenue = daySales.reduce(
+        (acc, sale) => acc + (sale.quantity_sold * sale.selling_price), 
+        0
+      );
+      
+      return {
+        name: formattedDate,
+        value: revenue
+      };
+    });
+    
+    setSalesChartData(last7Days);
+    
+    // Generate category data
+    const categories = sales.reduce((acc: Record<string, number>, sale) => {
+      const category = sale.product?.category || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      acc[category] += sale.quantity_sold * sale.selling_price;
+      return acc;
+    }, {});
+    
+    const categoryData = Object.entries(categories).map(([name, value]) => ({
+      name,
+      value
+    }));
+    
+    setCategoryChartData(categoryData);
+  }, [sales]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -47,6 +98,7 @@ const History = () => {
 
   const handleDeleteTransaction = (id: number) => {
     deleteSale(id);
+    toast.success("Transaction deleted successfully");
   };
 
   // Filter transactions based on user input
@@ -90,6 +142,33 @@ const History = () => {
           icon={<TrendingUp className="w-5 h-5 text-primary" />}
           className="bg-purple-50 dark:bg-purple-950/30"
         />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
+          <h3 className="text-lg font-semibold mb-4">Sales Trend (Last 7 Days)</h3>
+          <div className="h-[270px]">
+            <LineChart 
+              data={salesChartData} 
+              dataKey="value" 
+              xAxisDataKey="name"
+              stroke="#4f46e5"
+            />
+          </div>
+        </div>
+        
+        <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
+          <h3 className="text-lg font-semibold mb-4">Revenue by Category</h3>
+          <div className="h-[270px]">
+            <BarChart 
+              data={categoryChartData} 
+              dataKey="value" 
+              xAxisDataKey="name"
+              fill="#22c55e"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Transaction History */}

@@ -11,6 +11,7 @@ import Sales from "./pages/Sales";
 import History from "./pages/History";
 import Payments from "./pages/Payments";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,11 @@ const App = () => (
           <Route path="/clients" element={
             <MainLayout>
               <Clients />
+            </MainLayout>
+          } />
+          <Route path="/clients/:clientId" element={
+            <MainLayout>
+              <ClientDetail />
             </MainLayout>
           } />
           <Route path="*" element={<NotFound />} />

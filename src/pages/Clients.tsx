@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Phone, Plus, RefreshCw, Search, Trash2, User, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -182,7 +183,14 @@ const Clients = () => {
                 {filteredClients.length > 0 ? (
                   filteredClients.map((client) => (
                     <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <Link 
+                          to={`/clients/${client.id}`}
+                          className="hover:text-primary hover:underline transition-colors"
+                        >
+                          {client.name}
+                        </Link>
+                      </TableCell>
                       <TableCell>{client.email}</TableCell>
                       <TableCell>{client.phone}</TableCell>
                       <TableCell>{client.totalPurchases}</TableCell>

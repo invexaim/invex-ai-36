@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/types";
@@ -25,6 +25,18 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   const [predictionResult, setPredictionResult] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  
+  // Reference to the results section for scrolling
+  const resultsRef = useRef<HTMLDivElement>(null);
+  
+  // Effect to scroll to results when they appear
+  useEffect(() => {
+    if ((predictionResult || aiAnalysis) && resultsRef.current) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [predictionResult, aiAnalysis]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -128,13 +140,15 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
           loading={loading}
         />
 
-        <ResultSection 
-          predictionResult={predictionResult}
-          aiAnalysis={aiAnalysis}
-          restockDate={restockDate}
-          reviewDate={reviewDate}
-          nextAnalysisDate={nextAnalysisDate}
-        />
+        <div ref={resultsRef}>
+          <ResultSection 
+            predictionResult={predictionResult}
+            aiAnalysis={aiAnalysis}
+            restockDate={restockDate}
+            reviewDate={reviewDate}
+            nextAnalysisDate={nextAnalysisDate}
+          />
+        </div>
       </div>
     </div>
   );
