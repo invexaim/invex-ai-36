@@ -21,6 +21,13 @@ export interface PredictionFormProps {
   products: Product[];
 }
 
+// Renamed from FormSectionProps to match what's used in PredictionForm.tsx
+export interface FormSectionProps {
+  predictionData: PredictionData;
+  setPredictionData: React.Dispatch<React.SetStateAction<PredictionData>>;
+  products: Product[];
+}
+
 export interface FileUploadSectionProps {
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   loading: boolean;

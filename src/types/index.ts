@@ -43,6 +43,8 @@ export interface Client {
   totalPurchases: number;
   totalSpent: number;
   lastPurchase: string;
+  joinDate: string;
+  openInvoices: number;
 }
 
 export interface Payment {

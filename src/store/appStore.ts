@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product, Sale, Client, Payment } from '@/types';
@@ -22,6 +21,7 @@ interface AppState {
   // Actions for clients
   addClient: (client: Omit<Client, 'id' | 'lastPurchase' | 'totalPurchases' | 'totalSpent'>) => void;
   deleteClient: (clientId: number) => void;
+  removeClient: (clientId: number) => void;
   
   // Actions for payments
   addPayment: (payment: Omit<Payment, 'id' | 'date'>) => void;
@@ -136,6 +136,8 @@ const useAppStore = create<AppState>()(
           totalPurchases: 0,
           totalSpent: 0,
           lastPurchase: new Date().toISOString(),
+          joinDate: new Date().toISOString(),
+          openInvoices: 0,
         };
         
         toast.success("Client added successfully");
@@ -143,6 +145,11 @@ const useAppStore = create<AppState>()(
       }),
       
       deleteClient: (clientId) => set((state) => {
+        toast.success("Client deleted successfully");
+        return { clients: state.clients.filter(client => client.id !== clientId) };
+      }),
+      
+      removeClient: (clientId) => set((state) => {
         toast.success("Client deleted successfully");
         return { clients: state.clients.filter(client => client.id !== clientId) };
       }),

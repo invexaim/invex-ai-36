@@ -3,19 +3,32 @@ import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis
 
 interface LineChartProps {
   data: any[];
-  dataKey: string;
+  dataKey?: string; // Made optional to maintain compatibility
   xAxisDataKey?: string;
   stroke?: string;
   title?: string;
+  // Adding these props to support the current usage in ClientDetail.tsx
+  xKey?: string;
+  yKey?: string;
+  color?: string;
 }
 
 export const LineChart = ({ 
   data, 
-  dataKey, 
+  dataKey = "value", // Default value for backward compatibility
   xAxisDataKey = "name", 
   stroke = "#4f46e5",
-  title
+  title,
+  // Support new prop format while maintaining backward compatibility
+  xKey,
+  yKey,
+  color
 }: LineChartProps) => {
+  // Use the new props if provided, otherwise use the original ones
+  const actualDataKey = yKey || dataKey;
+  const actualXAxisDataKey = xKey || xAxisDataKey;
+  const actualStroke = color || stroke;
+
   return (
     <div className="w-full">
       {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
@@ -27,7 +40,7 @@ export const LineChart = ({
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis 
-              dataKey={xAxisDataKey} 
+              dataKey={actualXAxisDataKey} 
               tick={{ fontSize: 12 }} 
               tickLine={false}
               axisLine={{ stroke: '#e2e8f0' }}
@@ -48,12 +61,12 @@ export const LineChart = ({
             <Legend />
             <Line 
               type="monotone" 
-              dataKey={dataKey} 
-              stroke={stroke} 
+              dataKey={actualDataKey} 
+              stroke={actualStroke} 
               activeDot={{ r: 6 }} 
               strokeWidth={2}
               animationDuration={1500}
-              dot={{ stroke: stroke, strokeWidth: 2, r: 4, fill: 'white' }}
+              dot={{ stroke: actualStroke, strokeWidth: 2, r: 4, fill: 'white' }}
             />
           </RechartsLineChart>
         </ResponsiveContainer>
