@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,15 +28,16 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   // Reference to the results section for scrolling
   const resultsRef = useRef<HTMLDivElement>(null);
   
-  // Effect to scroll to results when they appear
+  // Effect to scroll to results when they appear - with slower animation
   useEffect(() => {
     if ((predictionResult || aiAnalysis) && resultsRef.current) {
+      // Delayed to ensure components are fully rendered
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'start' 
         });
-      }, 100);
+      }, 300); // Increased delay for smoother transition
     }
   }, [predictionResult, aiAnalysis]);
 
@@ -92,7 +92,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       return;
     }
 
-    // Mock prediction logic
+    // Mock prediction logic with longer loading time for smoother experience
     setLoading(true);
     setTimeout(() => {
       setPredictionResult(
@@ -103,7 +103,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       toast.success("Prediction generated", {
         description: "AI has analyzed your data and provided predictions",
       });
-    }, 1500);
+    }, 2000); // Increased to 2 seconds for more noticeable effect
   };
 
   const currentDate = new Date();
@@ -143,7 +143,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
           loading={loading}
         />
 
-        <div ref={resultsRef}>
+        <div ref={resultsRef} className="scroll-mt-16">
           <ResultSection 
             predictionResult={predictionResult}
             aiAnalysis={aiAnalysis}

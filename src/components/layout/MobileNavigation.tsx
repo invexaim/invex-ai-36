@@ -18,20 +18,20 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Function to handle navigation with smooth scrolling
+  // Function to handle navigation with slower, smoother scrolling
   const handleNavigation = (href: string) => {
     setIsMobileMenuOpen(false);
     
-    // Wait for menu to close before navigating
+    // Wait longer for menu to close before navigating
     setTimeout(() => {
       navigate(href);
       
-      // Scroll to top smoothly after navigation
+      // Scroll to top with slower, smoother animation
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
       });
-    }, 300);
+    }, 500); // Increased from 300ms to 500ms for a slower transition
   };
 
   const toggleMobileMenu = () => {
@@ -98,17 +98,17 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
         </Button>
       </div>
       
-      {/* Mobile menu with slide animation */}
+      {/* Mobile menu with slower slide animation */}
       <div 
         className={cn(
-          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-300",
+          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-500", // Increased from 300ms to 500ms
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={toggleMobileMenu}
       >
         <div 
           className={cn(
-            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-300 ease-in-out",
+            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-500 ease-in-out", // Increased from 300ms to 500ms
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
           onClick={(e) => e.stopPropagation()}

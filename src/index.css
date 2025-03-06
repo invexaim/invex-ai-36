@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,6 +91,7 @@
 
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 1rem;
   }
 
   body {
@@ -112,13 +112,13 @@
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-duration: 300ms;
 }
 
 .chart-container {
@@ -228,7 +228,7 @@
 
 /* Smooth page transitions */
 .page-transition {
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
 }
 
 .page-transition-enter {
@@ -249,4 +249,15 @@
 .page-transition-exit-active {
   opacity: 0;
   transform: translateY(10px);
+}
+
+/* New styles for slower mobile transitions */
+@media (max-width: 768px) {
+  .transition-all {
+    transition-duration: 500ms;
+  }
+  
+  .fade-in {
+    animation-duration: 0.8s;
+  }
 }
