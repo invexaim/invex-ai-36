@@ -33,7 +33,10 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   useEffect(() => {
     if ((predictionResult || aiAnalysis) && resultsRef.current) {
       setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        resultsRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
       }, 100);
     }
   }, [predictionResult, aiAnalysis]);

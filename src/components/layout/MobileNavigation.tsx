@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
@@ -16,10 +16,40 @@ interface MobileNavigationProps {
 
 const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: MobileNavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Function to handle navigation with smooth scrolling
+  const handleNavigation = (href: string) => {
+    setIsMobileMenuOpen(false);
+    
+    // Wait for menu to close before navigating
+    setTimeout(() => {
+      navigate(href);
+      
+      // Scroll to top smoothly after navigation
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 300);
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  // Handle body scrolling when menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <div className="md:hidden bg-white text-gray-800 dark:bg-slate-900 dark:text-white border-b border-border/20 dark:border-gray-700 fixed top-0 left-0 right-0 z-30">
@@ -78,23 +108,28 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
       >
         <div 
           className={cn(
-            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-transform duration-300 ease-in-out",
-            isMobileMenuOpen ? "translate-x-0 animate-slide-in-from-right" : "-translate-x-full"
+            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-300 ease-in-out",
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
           onClick={(e) => e.stopPropagation()}
         >
           <nav className="space-y-1">
             {sidebarItems.map((item) => (
-              <SidebarItem
+              <div 
                 key={item.href}
-                icon={item.icon}
-                label={item.label}
-                href={item.href}
-                isActive={
-                  currentPath === item.href ||
-                  (item.href !== "/" && currentPath.startsWith(item.href))
-                }
-              />
+                onClick={() => handleNavigation(item.href)}
+                className="cursor-pointer"
+              >
+                <SidebarItem
+                  icon={item.icon}
+                  label={item.label}
+                  href={item.href}
+                  isActive={
+                    currentPath === item.href ||
+                    (item.href !== "/" && currentPath.startsWith(item.href))
+                  }
+                />
+              </div>
             ))}
           </nav>
         </div>

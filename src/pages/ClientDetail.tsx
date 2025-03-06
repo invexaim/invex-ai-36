@@ -1,165 +1,194 @@
 
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import useAppStore from "@/store/appStore";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowLeft, Mail, Phone, Building } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Clock, 
+  CreditCard, 
+  FileText, 
+  MessageSquare, 
+  Package, 
+  Phone, 
+  ShoppingCart, 
+  Trash, 
+  UserPlus 
+} from "lucide-react";
+import { LineChart } from "@/components/charts/LineChart";
 import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 const ClientDetail = () => {
   const { clientId } = useParams();
   const navigate = useNavigate();
-  const { clients, payments, deleteClient } = useAppStore();
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Find the client by ID
-  const client = clients.find((c) => c.id === Number(clientId));
-
-  // Get client's payment history
-  const clientPayments = payments.filter(
-    (payment) => client && payment.clientName === client.name
-  );
-
+  const { clients, removeClient } = useAppStore();
+  
+  // Find the client by id
+  const client = clients.find(c => c.id.toString() === clientId);
+  
   if (!client) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
-        <h2 className="text-2xl font-bold mb-4">Client Not Found</h2>
-        <p className="text-muted-foreground mb-6">
-          The client you're looking for doesn't exist or has been deleted.
-        </p>
-        <Button asChild>
-          <Link to="/clients">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Clients
-          </Link>
-        </Button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <h1 className="text-2xl font-bold mb-2">Client Not Found</h1>
+        <p className="text-muted-foreground mb-6">The client you're looking for doesn't exist or has been removed.</p>
+        <Button onClick={() => navigate('/clients')}>Back to Clients</Button>
       </div>
     );
   }
-
-  const handleDeleteClient = () => {
-    setIsDeleting(true);
-    setTimeout(() => {
-      deleteClient(client.id);
-      toast.success("Client deleted successfully");
-      navigate("/clients");
-    }, 500);
+  
+  const handleDelete = () => {
+    removeClient(client.id);
+    toast.success("Client deleted successfully");
+    navigate('/clients');
   };
-
+  
+  // Mock data for charts
+  const purchaseData = [
+    { name: 'Jan', value: 2400 },
+    { name: 'Feb', value: 1398 },
+    { name: 'Mar', value: 9800 },
+    { name: 'Apr', value: 3908 },
+    { name: 'May', value: 4800 },
+    { name: 'Jun', value: 3800 },
+  ];
+  
+  const paymentData = [
+    { name: 'Jan', value: 2000 },
+    { name: 'Feb', value: 1200 },
+    { name: 'Mar', value: 9000 },
+    { name: 'Apr', value: 3500 },
+    { name: 'May', value: 4000 },
+    { name: 'Jun', value: 3000 },
+  ];
+  
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            asChild
-            className="rounded-full h-8 w-8"
-          >
-            <Link to="/clients">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
+          <p className="text-muted-foreground">{client.email}</p>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleDelete} className="text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950">
+            <Trash className="w-4 h-4 mr-1" />
+            Delete Client
           </Button>
-          <h1 className="text-3xl font-bold">Back to Clients</h1>
-        </div>
-        <Button
-          variant="destructive"
-          onClick={handleDeleteClient}
-          disabled={isDeleting}
-          className="flex-shrink-0"
-        >
-          <Trash2 className="mr-2 h-4 w-4" /> Delete Client
-        </Button>
-      </div>
-
-      <div className="bg-card border shadow-sm rounded-lg">
-        <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold">{client.name}</h2>
-          <p className="text-muted-foreground mt-1">Client Details</p>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Email</p>
-                <p className="text-foreground">{client.email || "No email provided"}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Phone</p>
-                <p className="text-foreground">{client.phone || "No phone provided"}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Building className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Company</p>
-                <p className="text-foreground">{"marzlet" || "No company provided"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-2">Activity Status</p>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                active
-              </span>
-              <span className="text-sm text-muted-foreground">
-                Last purchase: {new Date(client.lastPurchase).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
-
-      <div className="bg-card border shadow-sm rounded-lg">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold">Purchase History</h2>
-        </div>
-        <div className="p-6">
-          {clientPayments.length > 0 ? (
-            <div className="space-y-4">
-              {clientPayments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex justify-between items-center p-4 border rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">{payment.description || "Payment"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(payment.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">₹{payment.amount.toLocaleString()}</p>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        payment.status === "paid"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                          : payment.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Contact Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center">
+              <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+              <span>{client.phone || "No phone number"}</span>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No purchase history available</p>
+            <div className="flex items-center">
+              <MessageSquare className="w-4 h-4 mr-2 text-muted-foreground" />
+              <span>{client.email}</span>
             </div>
-          )}
-        </div>
+            <div className="flex items-center">
+              <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
+              <span>Client since {client.joinDate}</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Payment Status</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CreditCard className="w-4 h-4 mr-2 text-muted-foreground" />
+                <span>Total Spent</span>
+              </div>
+              <span className="font-medium">${client.totalSpent.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-muted-foreground" />
+                <span>Open Invoices</span>
+              </div>
+              <span className="font-medium">{client.openInvoices || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <ShoppingCart className="w-4 h-4 mr-2 text-muted-foreground" />
+                <span>Last Purchase</span>
+              </div>
+              <span className="font-medium">{client.lastPurchase || "Never"}</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button variant="outline" className="w-full justify-start">
+              <FileText className="w-4 h-4 mr-2" />
+              Create Invoice
+            </Button>
+            <Button variant="outline" className="w-full justify-start">
+              <Package className="w-4 h-4 mr-2" />
+              Add Products
+            </Button>
+            <Button variant="outline" className="w-full justify-start">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Schedule Meeting
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+      
+      <Tabs defaultValue="purchases">
+        <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
+          <TabsTrigger value="purchases">Purchases</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+        </TabsList>
+        <TabsContent value="purchases" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Purchase History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <LineChart 
+                  data={purchaseData} 
+                  xKey="name" 
+                  yKey="value" 
+                  title="Monthly Purchases" 
+                  color="#3b82f6" 
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="payments" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <LineChart 
+                  data={paymentData} 
+                  xKey="name" 
+                  yKey="value" 
+                  title="Monthly Payments" 
+                  color="#10b981" 
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
