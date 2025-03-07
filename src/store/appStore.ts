@@ -18,7 +18,10 @@ interface AppState extends
 // Create a combined store with all slices
 const useAppStore = create<AppState>()(
   persist(
-    (set, get) => {
+    (...args) => {
+      // Extract set and get from args
+      const [set, get] = args;
+      
       // Create individual slices with cross-slice access
       const productSlice = createProductSlice(set, get);
       

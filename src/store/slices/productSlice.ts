@@ -37,15 +37,15 @@ export const createProductSlice = (set: any, get: any) => ({
     return { products: state.products.filter(product => product.product_id !== productId) };
   }),
   
-  importProductsFromCSV: async (file) => {
-    return new Promise((resolve, reject) => {
+  importProductsFromCSV: async (file: File): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = (event) => {
         try {
           if (!event.target?.result) {
             toast.error("Error reading file");
-            reject("Error reading file");
+            reject(new Error("Error reading file"));
             return;
           }
           
@@ -67,7 +67,7 @@ export const createProductSlice = (set: any, get: any) => ({
           
           if (nameIndex === -1 || priceIndex === -1 || unitsIndex === -1) {
             toast.error("CSV format not recognized. Required columns: product name, price, and stock/units");
-            reject("CSV format not recognized");
+            reject(new Error("CSV format not recognized"));
             return;
           }
           
@@ -106,7 +106,7 @@ export const createProductSlice = (set: any, get: any) => ({
             
             if (importedProducts.length === 0) {
               toast.error("No valid products found in CSV");
-              reject("No valid products found");
+              reject(new Error("No valid products found"));
               return state;
             }
             
@@ -117,13 +117,13 @@ export const createProductSlice = (set: any, get: any) => ({
           resolve();
         } catch (error) {
           toast.error("Error parsing CSV file");
-          reject("Error parsing CSV");
+          reject(error);
         }
       };
       
-      reader.onerror = () => {
+      reader.onerror = (error) => {
         toast.error("Error reading file");
-        reject("Error reading file");
+        reject(error);
       };
       
       reader.readAsText(file);
@@ -132,7 +132,7 @@ export const createProductSlice = (set: any, get: any) => ({
 });
 
 // Create a standalone store for direct usage if needed
-export const useProductStore = create<ProductState>((set, get) => 
+const useProductStore = create<ProductState>((set, get) => 
   createProductSlice(set, get)
 );
 
