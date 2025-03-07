@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,18 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       }
       
       setLoading(true);
+      
+      // Simulate CSV data parsing and set some default values
       setTimeout(() => {
+        // Set random values if uploading a file
+        setPredictionData({
+          ...predictionData,
+          current_stock: Math.floor(Math.random() * 50) + 20,
+          previous_sales: Math.floor(Math.random() * 30) + 10,
+          price: Math.floor(Math.random() * 1000) + 100,
+          custom_product: "Imported Product",
+          is_custom_product: true
+        });
         setAiAnalysis(true);
         setLoading(false);
         toast.success("File uploaded successfully", {
@@ -96,7 +108,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     setLoading(true);
     setTimeout(() => {
       setPredictionResult(
-        "Based on historical data and current trends, we predict sales of 12 units in the next 30 days. Consider stocking at least 15 units to maintain optimal inventory levels."
+        `Based on historical data and current trends, we predict sales of ${Math.ceil(predictionData.previous_sales * 1.2)} units in the next 30 days. Consider stocking at least ${Math.ceil(predictionData.previous_sales * 1.5)} units to maintain optimal inventory levels.`
       );
       setAiAnalysis(true);
       setLoading(false);
@@ -150,6 +162,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
             restockDate={restockDate}
             reviewDate={reviewDate}
             nextAnalysisDate={nextAnalysisDate}
+            predictionData={predictionData}
           />
         </div>
       </div>

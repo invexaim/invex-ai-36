@@ -39,5 +39,6 @@ export interface ResultSectionProps {
   restockDate: Date;
   reviewDate: Date;
   nextAnalysisDate: Date;
+  predictionData?: PredictionData;
   ref?: React.Ref<HTMLDivElement>;
 }
