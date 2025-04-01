@@ -13,7 +13,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { mockAIInsights } from "@/data/mockData";
+import { AIInsight } from "@/types";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import { format, subDays, parseISO, isWithinInterval } from "date-fns";
@@ -86,8 +86,120 @@ const Dashboard = () => {
       total + (sale.quantity_sold * sale.selling_price), 0);
   }, [sales]);
 
-  // Calculate growth rate (mock for now - in real app would use historical data)
-  const growthRate = sales.length > 0 ? "24%" : "0%";
+  // Generate AI insights based on actual data
+  const generateAIInsights = useMemo((): AIInsight[] => {
+    const insights: AIInsight[] = [];
+    
+    // Only generate insights if we have products
+    if (products.length === 0) {
+      return [
+        {
+          title: "Add Products",
+          description: "Start by adding products to your inventory to get personalized AI insights.",
+          type: "info"
+        },
+        {
+          title: "Track Sales",
+          description: "Record sales transactions to enable sales analytics and forecasting.",
+          type: "info"
+        }
+      ];
+    }
+    
+    // 1. Low stock alerts
+    const lowStockProducts = products.filter(p => parseInt(p.units as string) < p.reorder_level);
+    if (lowStockProducts.length > 0) {
+      insights.push({
+        title: "Low Stock Alert",
+        description: `${lowStockProducts.length} product${lowStockProducts.length > 1 ? 's are' : ' is'} below reorder level${lowStockProducts.length > 1 ? 's' : ''}: ${lowStockProducts.slice(0, 2).map(p => p.product_name).join(', ')}${lowStockProducts.length > 2 ? ', and more.' : '.'}`,
+        type: "warning"
+      });
+    }
+    
+    // 2. Price optimization insight
+    if (sales.length > 0) {
+      // Find products with highest profit margin
+      const productSaleData = {} as Record<number, {revenue: number, count: number}>;
+      sales.forEach(sale => {
+        if (!productSaleData[sale.product_id]) {
+          productSaleData[sale.product_id] = {revenue: 0, count: 0};
+        }
+        productSaleData[sale.product_id].revenue += sale.quantity_sold * sale.selling_price;
+        productSaleData[sale.product_id].count += sale.quantity_sold;
+      });
+      
+      // Find product with highest per-unit revenue
+      let highestMarginProductId = -1;
+      let highestMargin = 0;
+      
+      Object.entries(productSaleData).forEach(([productId, data]) => {
+        const avgUnitRevenue = data.revenue / data.count;
+        if (avgUnitRevenue > highestMargin) {
+          highestMargin = avgUnitRevenue;
+          highestMarginProductId = parseInt(productId);
+        }
+      });
+      
+      const highMarginProduct = products.find(p => p.product_id === highestMarginProductId);
+      
+      if (highMarginProduct) {
+        insights.push({
+          title: "Price Optimization",
+          description: `"${highMarginProduct.product_name}" has your highest profit margin. Consider similar pricing strategies for related products in your ${highMarginProduct.category} category.`,
+          type: "success"
+        });
+      }
+    }
+    
+    // 3. Recent sales trends
+    if (sales.length > 0) {
+      // Calculate growth rate based on recent sales
+      const recentSales = sales.sort((a, b) => 
+        new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
+      );
+      
+      if (recentSales.length >= 2) {
+        const newestProductId = recentSales[0].product_id;
+        const newestProduct = products.find(p => p.product_id === newestProductId);
+        
+        if (newestProduct) {
+          insights.push({
+            title: "Recent Sales Trend",
+            description: `"${newestProduct.product_name}" is showing recent sales activity. Consider promoting related items from the ${newestProduct.category} category to increase cross-selling opportunities.`,
+            type: "info"
+          });
+        }
+      }
+    }
+    
+    // 4. Inventory health
+    const totalInventory = products.reduce((sum, p) => sum + parseInt(p.units as string), 0);
+    const avgStock = totalInventory / products.length;
+    
+    if (avgStock > 30) {
+      insights.push({
+        title: "Inventory Health",
+        description: `Your average stock level (${Math.round(avgStock)} units/product) is high. Consider special promotions to reduce excess inventory and improve cash flow.`,
+        type: "warning"
+      });
+    } else if (avgStock < 10) {
+      insights.push({
+        title: "Inventory Warning",
+        description: `Your average stock level (${Math.round(avgStock)} units/product) is low. Consider restocking popular items to avoid stockouts and lost sales.`,
+        type: "warning"
+      });
+    } else {
+      insights.push({
+        title: "Balanced Inventory",
+        description: `Your inventory levels appear well-balanced with an average of ${Math.round(avgStock)} units per product. Continue monitoring for optimal stock management.`,
+        type: "success"
+      });
+    }
+    
+    return insights;
+  }, [products, sales]);
+
+  const aiInsights = generateAIInsights;
 
   return (
     <div className="space-y-8 animate-fade-in smooth-scroll">
@@ -152,7 +264,7 @@ const Dashboard = () => {
           <h3 className="text-xl font-semibold mb-4">AI Insights</h3>
           <div className="space-y-4">
             {products.length > 0 ? (
-              mockAIInsights.slice(0, 2).map((insight, index) => (
+              aiInsights.slice(0, 2).map((insight, index) => (
                 <AIInsightCard key={index} insight={insight} />
               ))
             ) : (
@@ -166,7 +278,7 @@ const Dashboard = () => {
           <h3 className="text-xl font-semibold mb-4">Weekly Analysis</h3>
           <div className="space-y-4">
             {products.length > 0 ? (
-              mockAIInsights.slice(2, 4).map((insight, index) => (
+              aiInsights.slice(2, 4).map((insight, index) => (
                 <AIInsightCard key={index} insight={insight} />
               ))
             ) : (
