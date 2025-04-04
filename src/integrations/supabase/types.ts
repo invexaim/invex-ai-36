@@ -124,6 +124,7 @@ export type Database = {
           signature_url: string | null
           state: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           account_holder_name?: string
@@ -141,6 +142,7 @@ export type Database = {
           signature_url?: string | null
           state?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           account_holder_name?: string
@@ -158,6 +160,7 @@ export type Database = {
           signature_url?: string | null
           state?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
