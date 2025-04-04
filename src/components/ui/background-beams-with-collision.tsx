@@ -18,6 +18,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 10,
       translateX: 10,
+      initialY: -200,
+      translateY: 1800,
       duration: 7,
       repeatDelay: 3,
       delay: 2,
@@ -25,6 +27,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 600,
       translateX: 600,
+      initialY: -200,
+      translateY: 1800,
       duration: 3,
       repeatDelay: 3,
       delay: 4,
@@ -32,6 +36,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 100,
       translateX: 100,
+      initialY: -200,
+      translateY: 1800,
       duration: 7,
       repeatDelay: 7,
       className: "h-6",
@@ -39,6 +45,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 400,
       translateX: 400,
+      initialY: -200,
+      translateY: 1800,
       duration: 5,
       repeatDelay: 14,
       delay: 4,
@@ -46,6 +54,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 800,
       translateX: 800,
+      initialY: -200,
+      translateY: 1800,
       duration: 11,
       repeatDelay: 2,
       className: "h-20",
@@ -53,6 +63,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 1000,
       translateX: 1000,
+      initialY: -200,
+      translateY: 1800,
       duration: 4,
       repeatDelay: 2,
       className: "h-12",
@@ -60,6 +72,8 @@ export const BackgroundBeamsWithCollision = ({
     {
       initialX: 1200,
       translateX: 1200,
+      initialY: -200,
+      translateY: 1800,
       duration: 6,
       repeatDelay: 4,
       delay: 2,
@@ -71,8 +85,7 @@ export const BackgroundBeamsWithCollision = ({
     <div
       ref={parentRef}
       className={cn(
-        "h-96 md:h-[40rem] bg-gradient-to-b from-purple-500 via-violet-500 to-pink-500 dark:from-purple-800 dark:via-violet-700 dark:to-pink-700 relative flex items-center w-full justify-center overflow-hidden",
-        // h-screen if you want bigger
+        "h-screen w-full bg-gradient-to-b from-purple-400 via-pink-500 to-purple-500 dark:from-purple-700 dark:via-pink-600 dark:to-purple-700 relative flex items-center justify-center overflow-hidden",
         className
       )}
     >
@@ -88,8 +101,9 @@ export const BackgroundBeamsWithCollision = ({
       {children}
       <div
         ref={containerRef}
-        className="absolute bottom-0 bg-neutral-100 w-full inset-x-0 pointer-events-none"
+        className="absolute bottom-0 bg-transparent w-full inset-x-0 pointer-events-none"
         style={{
+          height: "1px",
           boxShadow:
             "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset",
         }}
@@ -201,7 +215,7 @@ const CollisionMechanism = React.forwardRef<
           repeatDelay: beamOptions.repeatDelay || 0,
         }}
         className={cn(
-          "absolute left-0 top-20 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent",
+          "absolute left-0 top-0 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent",
           beamOptions.className
         )}
       />

@@ -50,9 +50,12 @@ const Auth = () => {
   };
 
   return (
-    <BackgroundBeamsWithCollision className="h-screen flex items-center justify-center bg-gradient-to-b from-purple-500 via-violet-500 to-pink-500 dark:from-purple-800 dark:via-violet-700 dark:to-pink-700">
-      <div className="relative z-10 w-full max-w-md px-4">
-        <Card className="backdrop-blur-sm bg-white/30 dark:bg-black/30 border-none shadow-lg">
+    <BackgroundBeamsWithCollision>
+      <div className="relative z-10 w-full max-w-md px-4 text-center">
+        <h1 className="text-4xl font-bold mb-8 text-white">Invex AI</h1>
+        <p className="text-white mb-8 text-lg">Your AI-powered investment assistant</p>
+        
+        <Card className="backdrop-blur-sm bg-white/20 dark:bg-black/20 border-none shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
               {isLogin ? "Welcome Back" : "Create an Account"}
