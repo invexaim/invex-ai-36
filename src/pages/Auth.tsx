@@ -50,7 +50,7 @@ const Auth = () => {
   };
 
   return (
-    <BackgroundBeamsWithCollision className="h-screen">
+    <BackgroundBeamsWithCollision className="h-screen flex items-center justify-center bg-gradient-to-b from-purple-500 via-violet-500 to-pink-500 dark:from-purple-800 dark:via-violet-700 dark:to-pink-700">
       <div className="relative z-10 w-full max-w-md px-4">
         <Card className="backdrop-blur-sm bg-white/30 dark:bg-black/30 border-none shadow-lg">
           <CardHeader className="text-center">
