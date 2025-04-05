@@ -96,10 +96,10 @@ const useAppStore = create<AppState>()(
           if (existingData) {
             // If data exists in Supabase, parse JSON data and update local state
             set({
-              products: Array.isArray(existingData.products) ? existingData.products as Product[] : [],
-              sales: Array.isArray(existingData.sales) ? existingData.sales as Sale[] : [],
-              clients: Array.isArray(existingData.clients) ? existingData.clients as Client[] : [],
-              payments: Array.isArray(existingData.payments) ? existingData.payments as Payment[] : []
+              products: Array.isArray(existingData.products) ? (existingData.products as unknown) as Product[] : [],
+              sales: Array.isArray(existingData.sales) ? (existingData.sales as unknown) as Sale[] : [],
+              clients: Array.isArray(existingData.clients) ? (existingData.clients as unknown) as Client[] : [],
+              payments: Array.isArray(existingData.payments) ? (existingData.payments as unknown) as Payment[] : []
             });
           } else {
             // If no data exists yet, save current data to Supabase
