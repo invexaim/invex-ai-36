@@ -21,12 +21,15 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
+        setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
@@ -34,6 +37,8 @@ const App = () => {
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Existing session check:", session?.user?.id);
+      setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -54,6 +59,28 @@ const App = () => {
     return <>{children}</>;
   };
 
+  // Public route that redirects to dashboard if already authenticated
+  const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+    if (loading) {
+      return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+    }
+    
+    if (user) {
+      return <Navigate to="/" />;
+    }
+    
+    return <>{children}</>;
+  };
+
+  // Root route handler - direct to Auth by default
+  const RootRedirect = () => {
+    if (loading) {
+      return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+    }
+    
+    return <Navigate to={user ? "/" : "/auth"} />;
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -61,14 +88,18 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/auth" element={<Auth />} />
-            
             <Route path="/" element={
               <ProtectedRoute>
                 <MainLayout>
                   <Dashboard />
                 </MainLayout>
               </ProtectedRoute>
+            } />
+            
+            <Route path="/auth" element={
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
             } />
             
             <Route path="/products" element={

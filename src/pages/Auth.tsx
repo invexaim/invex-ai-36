@@ -52,8 +52,8 @@ const Auth = () => {
   return (
     <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">Invex AI</h1>
-        <p className="text-gray-800 mb-8 text-lg">Your AI-powered investment assistant</p>
+        <h1 className="text-4xl font-bold mb-8" style={{ color: "#9b87f5" }}>Invex AI</h1>
+        <p className="mb-8 text-lg" style={{ color: "#9b87f5" }}>Your AI-powered investment assistant</p>
         
         <Card className="backdrop-blur-sm bg-white/20 dark:bg-black/20 border-none shadow-lg">
           <CardHeader className="text-center">
