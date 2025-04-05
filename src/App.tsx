@@ -16,6 +16,7 @@ import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Index from "./pages/Index";
 import useAppStore from "./store/appStore";
 
 const queryClient = new QueryClient();
@@ -82,9 +83,10 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <MainLayout>
                   <Dashboard />

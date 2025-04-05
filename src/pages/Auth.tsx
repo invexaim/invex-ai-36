@@ -52,7 +52,7 @@ const Auth = () => {
   return (
     <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">Invex AI</h1>
+        <h1 className="text-4xl font-bold mb-8 text-[#9b6ee7]">Invex AI</h1>
         <p className="text-gray-800 mb-8 text-lg">Your AI-powered investment assistant</p>
         
         <Card className="backdrop-blur-sm bg-white/20 dark:bg-black/20 border-none shadow-lg">
@@ -99,7 +99,7 @@ const Auth = () => {
             <CardFooter className="flex flex-col space-y-3">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="w-full bg-gradient-to-r from-[#9b6ee7] to-[#b57af0] hover:from-[#8f61de] hover:to-[#a46be0]"
                 disabled={loading}
               >
                 {loading ? "Processing..." : isLogin ? "Sign In" : "Sign Up"}
@@ -110,7 +110,7 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setIsLogin(!isLogin)}
-                  className="ml-1 font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                  className="ml-1 font-medium text-[#9b6ee7] hover:text-[#8a5ad3] dark:text-[#b57af0] dark:hover:text-[#a46be0]"
                 >
                   {isLogin ? "Sign Up" : "Sign In"}
                 </button>
