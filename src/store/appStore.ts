@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product, Sale, Client, Payment } from '@/types';
@@ -15,6 +16,7 @@ interface AppState extends
   ClientState,
   PaymentState {
     currentUser: string | null;
+    setCurrentUser: (userId: string | null) => void; // Add this to the interface
   }
 
 // Create a combined store with all slices

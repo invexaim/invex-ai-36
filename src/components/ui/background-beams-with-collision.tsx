@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useEffect, useState } from "react";
 import { useMotionValue, motion, animate } from "framer-motion";
@@ -7,10 +8,10 @@ export const BackgroundBeamsWithCollision = ({
 }: {
   children: React.ReactNode;
 }) => {
-  // The effect that runs
+  // Remove the gsap reference that's causing an error
   useEffect(() => {
-    const ctx = gsap.context(() => {});
-    return () => ctx.revert();
+    // No need for gsap context here
+    return () => {};
   }, []);
 
   const pointerLocation = useMotionValue({ x: 0, y: 0 });
@@ -46,8 +47,8 @@ export const BackgroundBeamsWithCollision = ({
           <motion.div
             style={{
               position: "absolute",
-              top: hasPointerMoved ? pointerLocation.y : "50%",
-              left: hasPointerMoved ? pointerLocation.x : "50%",
+              top: hasPointerMoved ? pointerLocation.get().y : "50%",
+              left: hasPointerMoved ? pointerLocation.get().x : "50%",
               transform: "translate(-50%, -50%)",
               width: "400px",
               height: "400px",
