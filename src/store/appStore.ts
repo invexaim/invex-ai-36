@@ -13,6 +13,7 @@ import { PaymentState, createPaymentSlice } from './slices/paymentSlice';
 interface UserState {
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
+  syncDataWithSupabase: () => Promise<void>;
 }
 
 // Combine all state types
@@ -59,12 +60,6 @@ const useAppStore = create<AppState>()(
         }
       );
       
-      // User state
-      const userState: UserState = {
-        currentUser: null,
-        setCurrentUser: (user) => set({ currentUser: user })
-      };
-      
       // Helper functions to sync with Supabase
       const syncDataWithSupabase = async () => {
         const { currentUser } = get();
@@ -87,25 +82,26 @@ const useAppStore = create<AppState>()(
           
           if (existingData) {
             // If data exists in Supabase, update local state
+            const userData = existingData as any;
             set({
-              products: existingData.products || [],
-              sales: existingData.sales || [],
-              clients: existingData.clients || [],
-              payments: existingData.payments || []
+              products: userData.products || [],
+              sales: userData.sales || [],
+              clients: userData.clients || [],
+              payments: userData.payments || []
             });
           } else {
             // If no data exists yet, save current data to Supabase
             const currentData = {
+              user_id: userId,
               products: get().products,
               sales: get().sales,
               clients: get().clients,
-              payments: get().payments,
+              payments: get().payments
             };
             
-            await supabase.from('user_data').insert({
-              user_id: userId,
-              ...currentData
-            });
+            await supabase
+              .from('user_data')
+              .insert(currentData);
           }
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
@@ -119,19 +115,17 @@ const useAppStore = create<AppState>()(
         try {
           const userId = currentUser.id;
           const currentData = {
+            user_id: userId,
             products: get().products,
             sales: get().sales,
             clients: get().clients,
             payments: get().payments,
+            updated_at: new Date().toISOString()
           };
           
           const { error } = await supabase
             .from('user_data')
-            .upsert({ 
-              user_id: userId,
-              ...currentData,
-              updated_at: new Date().toISOString()
-            });
+            .upsert(currentData);
           
           if (error) {
             console.error('Error saving data to Supabase:', error);
@@ -139,6 +133,13 @@ const useAppStore = create<AppState>()(
         } catch (error) {
           console.error('Error saving to Supabase:', error);
         }
+      };
+      
+      // User state
+      const userState: UserState = {
+        currentUser: null,
+        setCurrentUser: (user) => set({ currentUser: user }),
+        syncDataWithSupabase
       };
       
       // Add listeners to save data when it changes
@@ -172,9 +173,6 @@ const useAppStore = create<AppState>()(
         setPayments: (payments) => {
           setWithSave({ payments });
         },
-        
-        // Method to sync data when user logs in
-        syncDataWithSupabase,
       };
     },
     {
