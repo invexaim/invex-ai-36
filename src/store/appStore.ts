@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product, Sale, Client, Payment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 import { ProductState, createProductSlice } from './slices/productSlice';
 import { SaleState, createSaleSlice } from './slices/saleSlice';
@@ -23,6 +24,18 @@ interface AppState extends
   ClientState,
   PaymentState,
   UserState {}
+
+// Type helper for Supabase user_data table
+interface UserDataRow {
+  user_id: string;
+  products: Json;
+  sales: Json;
+  clients: Json;
+  payments: Json;
+  created_at?: string | null;
+  updated_at?: string | null;
+  id?: string;
+}
 
 // Create a combined store with all slices
 const useAppStore = create<AppState>()(
@@ -81,26 +94,26 @@ const useAppStore = create<AppState>()(
           }
           
           if (existingData) {
-            // If data exists in Supabase, update local state
+            // If data exists in Supabase, parse JSON data and update local state
             set({
-              products: existingData.products || [],
-              sales: existingData.sales || [],
-              clients: existingData.clients || [],
-              payments: existingData.payments || []
+              products: Array.isArray(existingData.products) ? existingData.products as Product[] : [],
+              sales: Array.isArray(existingData.sales) ? existingData.sales as Sale[] : [],
+              clients: Array.isArray(existingData.clients) ? existingData.clients as Client[] : [],
+              payments: Array.isArray(existingData.payments) ? existingData.payments as Payment[] : []
             });
           } else {
             // If no data exists yet, save current data to Supabase
-            const currentData = {
+            const userData: UserDataRow = {
               user_id: userId,
-              products: get().products,
-              sales: get().sales,
-              clients: get().clients,
-              payments: get().payments
+              products: get().products as unknown as Json,
+              sales: get().sales as unknown as Json,
+              clients: get().clients as unknown as Json,
+              payments: get().payments as unknown as Json
             };
             
             await supabase
               .from('user_data')
-              .insert(currentData);
+              .insert(userData);
           }
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
@@ -113,18 +126,18 @@ const useAppStore = create<AppState>()(
         
         try {
           const userId = currentUser.id;
-          const currentData = {
+          const userData: UserDataRow = {
             user_id: userId,
-            products: get().products,
-            sales: get().sales,
-            clients: get().clients,
-            payments: get().payments,
+            products: get().products as unknown as Json,
+            sales: get().sales as unknown as Json,
+            clients: get().clients as unknown as Json,
+            payments: get().payments as unknown as Json,
             updated_at: new Date().toISOString()
           };
           
           const { error } = await supabase
             .from('user_data')
-            .upsert(currentData);
+            .upsert(userData);
           
           if (error) {
             console.error('Error saving data to Supabase:', error);
