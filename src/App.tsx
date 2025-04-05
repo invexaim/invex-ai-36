@@ -16,30 +16,51 @@ import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import useAppStore from "./store/appStore";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const setCurrentUser = useAppStore(state => state.setCurrentUser);
+  const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
 
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        setCurrentUser(currentUser);
+        
+        if (currentUser) {
+          // When user logs in, sync their data
+          setTimeout(() => {
+            syncDataWithSupabase();
+          }, 0);
+        }
+        
         setLoading(false);
       }
     );
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      setCurrentUser(currentUser);
+      
+      if (currentUser) {
+        // If user is already logged in, sync their data
+        syncDataWithSupabase();
+      }
+      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [setCurrentUser, syncDataWithSupabase]);
 
   // Protected route component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
