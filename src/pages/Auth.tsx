@@ -30,7 +30,7 @@ const Auth = () => {
 
         if (error) throw error;
         toast.success("Logged in successfully");
-        navigate("/");
+        navigate("/dashboard");
       } else {
         // Sign up
         const { data, error } = await supabase.auth.signUp({
