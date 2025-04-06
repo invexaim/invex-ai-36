@@ -137,7 +137,7 @@ const useAppStore = create<AppState>()(
           
           const { error } = await supabase
             .from('user_data')
-            .upsert(userData);
+            .upsert(userData, { onConflict: 'user_id' });
           
           if (error) {
             console.error('Error saving data to Supabase:', error);
