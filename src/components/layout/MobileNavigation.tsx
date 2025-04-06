@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, Moon, Sun } from "lucide-react";
+import { Calendar, Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
@@ -17,6 +19,19 @@ interface MobileNavigationProps {
 const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: MobileNavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast.success("Logged out successfully");
+      setIsMobileMenuOpen(false);
+      navigate("/auth");
+    } catch (error: any) {
+      toast.error(error.message || "Error logging out");
+    }
+  };
 
   // Function to handle navigation with extra slow, smoother scrolling
   const handleNavigation = (href: string) => {
@@ -108,12 +123,12 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
       >
         <div 
           className={cn(
-            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-700 ease-in-out", // Increased from 500ms to 700ms
+            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-700 ease-in-out flex flex-col", // Added flex flex-col
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <nav className="space-y-1">
+          <nav className="space-y-1 flex-1">
             {sidebarItems.map((item) => (
               <div 
                 key={item.href}
@@ -132,6 +147,17 @@ const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: Mob
               </div>
             ))}
           </nav>
+          
+          {/* Logout button at the bottom */}
+          <div className="mt-auto pt-4 border-t border-border/20 dark:border-gray-700">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <LogOut className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
