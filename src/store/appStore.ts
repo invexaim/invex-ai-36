@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 import { Product, Sale, Client, Payment } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 import { ProductState, createProductSlice } from './slices/productSlice';
 import { SaleState, createSaleSlice } from './slices/saleSlice';
@@ -76,9 +77,13 @@ const useAppStore = create<AppState>()(
       // Helper functions to sync with Supabase
       const syncDataWithSupabase = async () => {
         const { currentUser } = get();
-        if (!currentUser) return;
+        if (!currentUser) {
+          console.log("No current user, skipping data sync");
+          return;
+        }
         
         try {
+          console.log("Starting data sync for user:", currentUser.id);
           const userId = currentUser.id;
           
           // First, try to fetch existing data from Supabase
@@ -88,23 +93,59 @@ const useAppStore = create<AppState>()(
             .eq('user_id', userId)
             .single();
           
-          if (error && error.code !== 'PGRST116') {
-            console.error('Error fetching data:', error);
-            return;
+          if (error) {
+            if (error.code === 'PGRST116') {
+              console.log("No existing data found for user, will create new entry");
+            } else {
+              console.error('Error fetching data:', error);
+              toast.error("Failed to load your data");
+              return;
+            }
           }
           
           if (existingData) {
             // If data exists in Supabase, parse JSON data and update local state
-            console.log('Found existing data:', existingData);
-            set({
-              products: Array.isArray(existingData.products) ? (existingData.products as unknown) as Product[] : [],
-              sales: Array.isArray(existingData.sales) ? (existingData.sales as unknown) as Sale[] : [],
-              clients: Array.isArray(existingData.clients) ? (existingData.clients as unknown) as Client[] : [],
-              payments: Array.isArray(existingData.payments) ? (existingData.payments as unknown) as Payment[] : []
+            console.log('Found existing data for user:', existingData);
+            
+            // Safely parse and set products
+            const products = Array.isArray(existingData.products) 
+              ? (existingData.products as unknown) as Product[] 
+              : [];
+            
+            // Safely parse and set sales
+            const sales = Array.isArray(existingData.sales) 
+              ? (existingData.sales as unknown) as Sale[] 
+              : [];
+            
+            // Safely parse and set clients
+            const clients = Array.isArray(existingData.clients) 
+              ? (existingData.clients as unknown) as Client[] 
+              : [];
+            
+            // Safely parse and set payments
+            const payments = Array.isArray(existingData.payments) 
+              ? (existingData.payments as unknown) as Payment[] 
+              : [];
+            
+            console.log("Setting data from Supabase:", { 
+              productsCount: products.length,
+              salesCount: sales.length,
+              clientsCount: clients.length,
+              paymentsCount: payments.length
             });
+            
+            // Update store with fetched data
+            set({
+              products,
+              sales,
+              clients,
+              payments
+            });
+            
+            console.log("Data loaded successfully from Supabase");
           } else {
             // If no data exists yet, save current data to Supabase
-            console.log('No existing data, saving current state');
+            console.log('No existing data, saving current state to Supabase');
             const userData: UserDataRow = {
               user_id: userId,
               products: get().products as unknown as Json,
@@ -119,18 +160,26 @@ const useAppStore = create<AppState>()(
               
             if (insertError) {
               console.error('Error inserting data to Supabase:', insertError);
+              toast.error("Failed to save your data");
+            } else {
+              console.log("Successfully saved initial data to Supabase");
             }
           }
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
+          toast.error("Error synchronizing your data");
         }
       };
       
       const saveDataToSupabase = async () => {
         const { currentUser } = get();
-        if (!currentUser) return;
+        if (!currentUser) {
+          console.log("No current user, skipping data save");
+          return;
+        }
         
         try {
+          console.log("Saving data to Supabase for user:", currentUser.id);
           const userId = currentUser.id;
           const userData: UserDataRow = {
             user_id: userId,
@@ -147,9 +196,13 @@ const useAppStore = create<AppState>()(
           
           if (error) {
             console.error('Error saving data to Supabase:', error);
+            toast.error("Failed to save your changes");
+          } else {
+            console.log("Data successfully saved to Supabase");
           }
         } catch (error) {
           console.error('Error saving to Supabase:', error);
+          toast.error("Error saving your changes");
         }
       };
       
@@ -195,6 +248,12 @@ const useAppStore = create<AppState>()(
     },
     {
       name: 'invex-store', // Name for the persisted storage
+      partialize: (state) => {
+        // Only persist data, not the current user
+        // This ensures we always fetch fresh data from Supabase on login
+        const { currentUser, ...rest } = state;
+        return rest;
+      },
     }
   )
 );

@@ -17,6 +17,7 @@ import ClientDetail from "./pages/ClientDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import useAppStore from "./store/appStore";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -29,16 +30,21 @@ const App = () => {
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log("Auth state changed:", event);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         setCurrentUser(currentUser);
         
         if (currentUser) {
           // When user logs in, sync their data
-          setTimeout(() => {
-            syncDataWithSupabase();
-          }, 0);
+          try {
+            await syncDataWithSupabase();
+            console.log("Data synced successfully after auth change");
+          } catch (error) {
+            console.error("Error syncing data after auth change:", error);
+            toast.error("Failed to load your data. Please refresh the page.");
+          }
         }
         
         setLoading(false);
@@ -46,14 +52,20 @@ const App = () => {
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setCurrentUser(currentUser);
       
       if (currentUser) {
         // If user is already logged in, sync their data
-        syncDataWithSupabase();
+        try {
+          await syncDataWithSupabase();
+          console.log("Data synced successfully on initial load");
+        } catch (error) {
+          console.error("Error syncing data on initial load:", error);
+          toast.error("Failed to load your data. Please refresh the page.");
+        }
       }
       
       setLoading(false);

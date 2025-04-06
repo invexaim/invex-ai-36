@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,18 +8,22 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
       if (isLogin) {
         // Login
+        console.log("Attempting to log in with email:", email);
         const {
           data,
           error
@@ -26,11 +31,15 @@ const Auth = () => {
           email,
           password
         });
+        
         if (error) throw error;
+        
+        console.log("Login successful:", data);
         toast.success("Logged in successfully");
         navigate("/");
       } else {
         // Sign up
+        console.log("Attempting to sign up with email:", email);
         const {
           data,
           error
@@ -38,16 +47,21 @@ const Auth = () => {
           email,
           password
         });
+        
         if (error) throw error;
+        
+        console.log("Signup successful:", data);
         toast.success("Account created successfully. Please check your email to verify your account.");
         setIsLogin(true);
       }
     } catch (error: any) {
+      console.error("Authentication error:", error);
       toast.error(error.message || "An error occurred during authentication");
     } finally {
       setLoading(false);
     }
   };
+
   return <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
         <h1 className="text-4xl font-bold mb-8 text-[#9b60d6]">Invex AI</h1>
@@ -76,7 +90,7 @@ const Auth = () => {
               </div>
               
               <div className="pt-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400 italic">For safety purposes, we request you to sign up or sign in with the same email ID and password,    Thank you</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic">For safety purposes, we request you to sign up or sign in with the same email ID and password. Thank you</p>
               </div>
             </CardContent>
             
@@ -97,4 +111,5 @@ const Auth = () => {
       </div>
     </BackgroundBeamsWithCollision>;
 };
+
 export default Auth;
