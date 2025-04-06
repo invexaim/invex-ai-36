@@ -21,7 +21,7 @@ const DesktopSidebar = ({ sidebarItems, currentPath, theme, toggleTheme }: Deskt
           <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
             <Calendar className="w-5 h-5 text-amber-500" />
           </div>
-          <span className="text-xl font-semibold">Invex AI</span>
+          <span className="text-xl font-semibold text-[#9b60d6]">Invex AI</span>
         </Link>
         
         <Button 

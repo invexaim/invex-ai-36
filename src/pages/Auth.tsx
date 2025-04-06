@@ -52,7 +52,7 @@ const Auth = () => {
   return (
     <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">Invex AI</h1>
+        <h1 className="text-4xl font-bold mb-8 text-[#9b60d6]">Invex AI</h1>
         <p className="text-gray-800 mb-8 text-lg">Your AI-powered investment assistant</p>
         
         <Card className="backdrop-blur-sm bg-white/20 dark:bg-black/20 border-none shadow-lg">
@@ -93,6 +93,12 @@ const Auth = () => {
                   required
                   className="bg-white/50 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700"
                 />
+              </div>
+              
+              <div className="pt-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                  For safety purposes, we request you to sign up or sign in with the same email ID and password, thank you.
+                </p>
               </div>
             </CardContent>
             
