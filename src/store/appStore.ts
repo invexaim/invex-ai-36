@@ -95,6 +95,7 @@ const useAppStore = create<AppState>()(
           
           if (existingData) {
             // If data exists in Supabase, parse JSON data and update local state
+            console.log('Found existing data:', existingData);
             set({
               products: Array.isArray(existingData.products) ? (existingData.products as unknown) as Product[] : [],
               sales: Array.isArray(existingData.sales) ? (existingData.sales as unknown) as Sale[] : [],
@@ -103,6 +104,7 @@ const useAppStore = create<AppState>()(
             });
           } else {
             // If no data exists yet, save current data to Supabase
+            console.log('No existing data, saving current state');
             const userData: UserDataRow = {
               user_id: userId,
               products: get().products as unknown as Json,
@@ -111,9 +113,13 @@ const useAppStore = create<AppState>()(
               payments: get().payments as unknown as Json
             };
             
-            await supabase
+            const { error: insertError } = await supabase
               .from('user_data')
               .insert(userData);
+              
+            if (insertError) {
+              console.error('Error inserting data to Supabase:', insertError);
+            }
           }
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
