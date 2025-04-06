@@ -18,10 +18,10 @@ const DesktopSidebar = ({ sidebarItems, currentPath, theme, toggleTheme }: Deskt
     <aside className="w-full md:w-64 border-r border-border bg-white text-gray-800 dark:bg-slate-900 dark:text-white hidden md:block fixed top-0 bottom-0 left-0 z-30">
       <div className="h-16 flex items-center justify-between px-4 border-b border-border/20 dark:border-gray-700">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-[#9b6ee7]/20 flex items-center justify-center">
-            <Calendar className="w-5 h-5 text-[#9b6ee7]" />
+          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-amber-500" />
           </div>
-          <span className="text-xl font-semibold text-[#9b6ee7]">Invex AI</span>
+          <span className="text-xl font-semibold">Invex AI</span>
         </Link>
         
         <Button 

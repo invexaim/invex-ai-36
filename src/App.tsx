@@ -82,23 +82,9 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Root path redirects to dashboard if logged in, auth if not */}
+            <Route path="/auth" element={<Auth />} />
+            
             <Route path="/" element={
-              loading ? (
-                <div className="flex h-screen w-full items-center justify-center">Loading...</div>
-              ) : user ? (
-                <Navigate to="/dashboard" />
-              ) : (
-                <Navigate to="/auth" />
-              )
-            } />
-            
-            {/* Auth route - redirect to dashboard if already logged in */}
-            <Route path="/auth" element={
-              user ? <Navigate to="/dashboard" /> : <Auth />
-            } />
-            
-            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <MainLayout>
                   <Dashboard />

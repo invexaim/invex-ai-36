@@ -1,45 +1,28 @@
 
+import React from "react";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
   label: string;
   href: string;
   isActive: boolean;
-  onClick?: () => void;
 }
 
-const SidebarItem = ({ icon, label, href, isActive, onClick }: SidebarItemProps) => {
-  // Determine if this is a regular link or a button (for logout)
-  const isButton = href === "#" && onClick;
-
-  const ItemContent = () => (
-    <div
-      className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
-        isActive
-          ? "bg-primary/10 text-primary"
-          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-      }`}
-    >
-      <span className="text-current">{icon}</span>
-      <span className="font-medium">{label}</span>
-    </div>
-  );
-
-  if (isButton) {
-    return (
-      <button 
-        onClick={onClick} 
-        className="w-full text-left"
-      >
-        <ItemContent />
-      </button>
-    );
-  }
-
+const SidebarItem = ({ icon, label, href, isActive }: SidebarItemProps) => {
   return (
-    <Link to={href}>
-      <ItemContent />
+    <Link
+      to={href}
+      className={cn(
+        "flex items-center space-x-3 px-4 py-3 rounded-md transition-all",
+        isActive
+          ? "bg-slate-900 text-white dark:bg-white dark:text-black"
+          : "hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+      )}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
     </Link>
   );
 };

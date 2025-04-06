@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { 
   Calendar, 
   Package, 
@@ -8,14 +8,11 @@ import {
   Users, 
   LayoutDashboard, 
   ShoppingCart, 
-  CreditCard,
-  LogOut
+  CreditCard
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
 import { SidebarItemType } from "./types";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -23,7 +20,6 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const currentPath = location.pathname;
   const [theme, setTheme] = useState<'light' | 'dark'>(
     localStorage.getItem('theme') as 'light' | 'dark' || 'light'
@@ -41,17 +37,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success("Logged out successfully");
-    navigate("/auth");
-  };
-
   const sidebarItems: SidebarItemType[] = [
     {
       icon: <LayoutDashboard className="w-5 h-5" />,
       label: "Dashboard",
-      href: "/dashboard",
+      href: "/",
     },
     {
       icon: <Package className="w-5 h-5" />,
@@ -77,12 +67,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       icon: <Users className="w-5 h-5" />,
       label: "Clients",
       href: "/clients",
-    },
-    {
-      icon: <LogOut className="w-5 h-5" />,
-      label: "Logout",
-      href: "#",
-      onClick: handleLogout,
     },
   ];
 
