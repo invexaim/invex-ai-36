@@ -1,164 +1,86 @@
 
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Calendar, Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useState } from "react";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
   currentPath: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  onLogout: () => void;
 }
 
-const MobileNavigation = ({ sidebarItems, currentPath, theme, toggleTheme }: MobileNavigationProps) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+const MobileNavigation = ({ 
+  sidebarItems, 
+  currentPath, 
+  theme, 
+  toggleTheme,
+  onLogout
+}: MobileNavigationProps) => {
+  const [open, setOpen] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      toast.success("Logged out successfully");
-      setIsMobileMenuOpen(false);
-      navigate("/auth");
-    } catch (error: any) {
-      toast.error(error.message || "Error logging out");
-    }
+  const handleItemClick = () => {
+    setOpen(false);
   };
-
-  // Function to handle navigation with extra slow, smoother scrolling
-  const handleNavigation = (href: string) => {
-    setIsMobileMenuOpen(false);
-    
-    // Wait longer for menu to close before navigating
-    setTimeout(() => {
-      navigate(href);
-      
-      // Scroll to top with slower, smoother animation
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }, 700); // Increased from 500ms to 700ms for an even slower transition
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  // Handle body scrolling when menu is open
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMobileMenuOpen]);
 
   return (
-    <div className="md:hidden bg-white text-gray-800 dark:bg-slate-900 dark:text-white border-b border-border/20 dark:border-gray-700 fixed top-0 left-0 right-0 z-30">
-      <div className="h-16 flex items-center justify-between px-4">
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleMobileMenu} 
-            className="text-gray-700 dark:text-gray-300"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {isMobileMenuOpen ? (
-                <>
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </>
-              ) : (
-                <>
-                  <line x1="4" y1="12" x2="20" y2="12"></line>
-                  <line x1="4" y1="6" x2="20" y2="6"></line>
-                  <line x1="4" y1="18" x2="20" y2="18"></line>
-                </>
-              )}
-            </svg>
-          </Button>
-          
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-amber-500" />
-            </div>
-            <span className="text-xl font-semibold text-[#9b60d6]">Invex AI</span>
-          </Link>
-        </div>
-        
+    <div className="fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between z-10 md:hidden px-4 bg-background">
+      <h1 className="text-xl font-semibold">Invex AI</h1>
+      <div className="flex items-center gap-4">
         <Button 
-          variant="ghost" 
-          size="icon" 
           onClick={toggleTheme} 
-          className="rounded-full text-gray-700 dark:text-gray-300"
+          variant="outline" 
+          size="icon"
         >
-          {theme === 'light' ? 
-            <Moon className="h-5 w-5" /> : 
-            <Sun className="h-5 w-5" />
-          }
+          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
-      </div>
-      
-      {/* Mobile menu with super slow slide animation */}
-      <div 
-        className={cn(
-          "fixed inset-0 bg-black/20 dark:bg-black/50 z-40 transition-opacity duration-700", // Increased from 500ms to 700ms
-          isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-        onClick={toggleMobileMenu}
-      >
-        <div 
-          className={cn(
-            "absolute left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-slate-900 p-4 transition-all duration-700 ease-in-out flex flex-col", // Added flex flex-col
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          )}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <nav className="space-y-1 flex-1">
-            {sidebarItems.map((item) => (
-              <div 
-                key={item.href}
-                onClick={() => handleNavigation(item.href)}
-                className="cursor-pointer transition-all duration-500"
+        
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 flex flex-col">
+            <div className="px-4 py-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Menu</h2>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+              {sidebarItems.map((item) => (
+                <div key={item.href} onClick={handleItemClick}>
+                  <SidebarItem
+                    icon={item.icon}
+                    label={item.label}
+                    href={item.href}
+                    isActive={currentPath === item.href}
+                  />
+                </div>
+              ))}
+            </nav>
+            <div className="p-4 border-t">
+              <Button 
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }} 
+                className="flex items-center justify-start w-full text-destructive" 
+                variant="ghost"
               >
-                <SidebarItem
-                  icon={item.icon}
-                  label={item.label}
-                  href={item.href}
-                  isActive={
-                    currentPath === item.href ||
-                    (item.href !== "/" && currentPath.startsWith(item.href))
-                  }
-                />
-              </div>
-            ))}
-          </nav>
-          
-          {/* Logout button at the bottom */}
-          <div className="mt-auto pt-4 border-t border-border/20 dark:border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <LogOut className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
+                <span className="flex items-center gap-3">
+                  <LogOut className="w-5 h-5" />
+                  <span>Logout</span>
+                </span>
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );

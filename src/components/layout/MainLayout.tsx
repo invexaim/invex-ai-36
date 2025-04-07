@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Calendar, 
   Package, 
@@ -8,11 +8,15 @@ import {
   Users, 
   LayoutDashboard, 
   ShoppingCart, 
-  CreditCard
+  CreditCard,
+  LogOut
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
 import { SidebarItemType } from "./types";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -20,10 +24,12 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   const [theme, setTheme] = useState<'light' | 'dark'>(
     localStorage.getItem('theme') as 'light' | 'dark' || 'light'
   );
+  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   useEffect(() => {
     // Update the data-theme attribute on the document element when the theme changes
@@ -35,6 +41,28 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Before signing out, ensure all data is saved to Supabase
+      // (This is handled by the saveDataToSupabase in appStore)
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Clear local data and navigate to login
+      toast.success("Logged out successfully");
+      clearLocalData();
+      navigate("/auth");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast.error(error.message || "Error logging out");
+    }
   };
 
   const sidebarItems: SidebarItemType[] = [
@@ -82,7 +110,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         sidebarItems={sidebarItems} 
         currentPath={currentPath} 
         theme={theme} 
-        toggleTheme={toggleTheme} 
+        toggleTheme={toggleTheme}
+        onLogout={handleLogout}
       />
 
       {/* Mobile Navigation */}
@@ -90,7 +119,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         sidebarItems={sidebarItems} 
         currentPath={currentPath} 
         theme={theme} 
-        toggleTheme={toggleTheme} 
+        toggleTheme={toggleTheme}
+        onLogout={handleLogout}
       />
     </div>
   );

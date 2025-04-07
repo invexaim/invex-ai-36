@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +38,16 @@ const Auth = () => {
         
         console.log("Login successful:", data);
         toast.success("Logged in successfully");
+        
+        try {
+          // Explicitly sync data after login
+          await syncDataWithSupabase();
+          console.log("Data synced successfully after explicit login");
+        } catch (syncError) {
+          console.error("Error syncing data after login:", syncError);
+          // Don't block navigation even if sync fails
+        }
+        
         navigate("/");
       } else {
         // Sign up

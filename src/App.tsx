@@ -26,8 +26,11 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
+  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   useEffect(() => {
+    console.log("Setting up auth state listeners...");
+    
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -37,14 +40,20 @@ const App = () => {
         setCurrentUser(currentUser);
         
         if (currentUser) {
-          // When user logs in, sync their data
+          // When user logs in, sync their data from Supabase to local state
           try {
+            console.log("User authenticated, syncing data...");
             await syncDataWithSupabase();
             console.log("Data synced successfully after auth change");
+            toast.success("Your data has been loaded");
           } catch (error) {
             console.error("Error syncing data after auth change:", error);
             toast.error("Failed to load your data. Please refresh the page.");
           }
+        } else if (event === 'SIGNED_OUT') {
+          // When user logs out, clear local data
+          console.log("User signed out, clearing local data");
+          clearLocalData();
         }
         
         setLoading(false);
@@ -54,12 +63,15 @@ const App = () => {
     // Then check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user ?? null;
+      console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
+      
       setUser(currentUser);
       setCurrentUser(currentUser);
       
       if (currentUser) {
         // If user is already logged in, sync their data
         try {
+          console.log("User already authenticated, syncing data on initial load...");
           await syncDataWithSupabase();
           console.log("Data synced successfully on initial load");
         } catch (error) {
@@ -72,7 +84,7 @@ const App = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [setCurrentUser, syncDataWithSupabase]);
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
   // Protected route component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

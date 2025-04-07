@@ -16,6 +16,7 @@ interface UserState {
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
   syncDataWithSupabase: () => Promise<void>;
+  clearLocalData: () => void;
 }
 
 // Combine all state types
@@ -96,14 +97,33 @@ const useAppStore = create<AppState>()(
           if (error) {
             if (error.code === 'PGRST116') {
               console.log("No existing data found for user, will create new entry");
+              
+              // If no data exists yet, save current data to Supabase
+              console.log('No existing data, saving current state to Supabase');
+              const userData: UserDataRow = {
+                user_id: userId,
+                products: get().products as unknown as Json,
+                sales: get().sales as unknown as Json,
+                clients: get().clients as unknown as Json,
+                payments: get().payments as unknown as Json
+              };
+              
+              const { error: insertError } = await supabase
+                .from('user_data')
+                .insert(userData);
+                
+              if (insertError) {
+                console.error('Error inserting data to Supabase:', insertError);
+                toast.error("Failed to save your data");
+              } else {
+                console.log("Successfully saved initial data to Supabase");
+              }
             } else {
               console.error('Error fetching data:', error);
               toast.error("Failed to load your data");
               return;
             }
-          }
-          
-          if (existingData) {
+          } else if (existingData) {
             // If data exists in Supabase, parse JSON data and update local state
             console.log('Found existing data for user:', existingData);
             
@@ -143,27 +163,6 @@ const useAppStore = create<AppState>()(
             });
             
             console.log("Data loaded successfully from Supabase");
-          } else {
-            // If no data exists yet, save current data to Supabase
-            console.log('No existing data, saving current state to Supabase');
-            const userData: UserDataRow = {
-              user_id: userId,
-              products: get().products as unknown as Json,
-              sales: get().sales as unknown as Json,
-              clients: get().clients as unknown as Json,
-              payments: get().payments as unknown as Json
-            };
-            
-            const { error: insertError } = await supabase
-              .from('user_data')
-              .insert(userData);
-              
-            if (insertError) {
-              console.error('Error inserting data to Supabase:', insertError);
-              toast.error("Failed to save your data");
-            } else {
-              console.log("Successfully saved initial data to Supabase");
-            }
           }
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
@@ -210,7 +209,15 @@ const useAppStore = create<AppState>()(
       const userState: UserState = {
         currentUser: null,
         setCurrentUser: (user) => set({ currentUser: user }),
-        syncDataWithSupabase
+        syncDataWithSupabase,
+        clearLocalData: () => {
+          set({ 
+            products: [], 
+            sales: [], 
+            clients: [], 
+            payments: [] 
+          });
+        }
       };
       
       // Add listeners to save data when it changes
