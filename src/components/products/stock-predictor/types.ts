@@ -9,36 +9,16 @@ export interface PredictionData {
   price: number;
   custom_product: string;
   is_custom_product: boolean;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface StockPredictorProps {
   products: Product[];
 }
 
-export interface PredictionFormProps {
-  predictionData: PredictionData;
-  setPredictionData: React.Dispatch<React.SetStateAction<PredictionData>>;
-  products: Product[];
-}
-
-// Renamed from FormSectionProps to match what's used in PredictionForm.tsx
 export interface FormSectionProps {
   predictionData: PredictionData;
   setPredictionData: React.Dispatch<React.SetStateAction<PredictionData>>;
   products: Product[];
-}
-
-export interface FileUploadSectionProps {
-  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  loading: boolean;
-}
-
-export interface ResultSectionProps {
-  predictionResult: string | null;
-  aiAnalysis: boolean;
-  restockDate: Date;
-  reviewDate: Date;
-  nextAnalysisDate: Date;
-  predictionData?: PredictionData;
-  ref?: React.Ref<HTMLDivElement>;
 }

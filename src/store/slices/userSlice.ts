@@ -44,26 +44,63 @@ export const createUserSlice = (
         if (error.code === 'PGRST116') {
           console.log("No existing data found for user, will create new entry");
           
-          // If no data exists yet, save current data to Supabase
-          console.log('No existing data, saving current state to Supabase');
-          const userData: UserDataRow = {
-            user_id: userId,
-            products: get().products,
-            sales: get().sales,
-            clients: get().clients,
-            payments: get().payments
-          };
+          // If the local state has data, save it to Supabase first
+          const localProducts = get().products || [];
+          const localSales = get().sales || [];
+          const localClients = get().clients || [];
+          const localPayments = get().payments || [];
           
-          const { error: insertError } = await supabase
-            .from('user_data')
-            .insert(userData);
+          if (localProducts.length > 0 || localSales.length > 0 || 
+              localClients.length > 0 || localPayments.length > 0) {
+            console.log('Saving local data to Supabase for new user');
+            const userData: UserDataRow = {
+              user_id: userId,
+              products: localProducts,
+              sales: localSales,
+              clients: localClients,
+              payments: localPayments
+            };
             
-          if (insertError) {
-            console.error('Error inserting data to Supabase:', insertError);
-            toast.error("Failed to save your data");
-            throw insertError;
+            const { error: insertError } = await supabase
+              .from('user_data')
+              .insert(userData);
+              
+            if (insertError) {
+              console.error('Error inserting data to Supabase:', insertError);
+              toast.error("Failed to save your data");
+              throw insertError;
+            } else {
+              console.log("Successfully saved initial data to Supabase");
+              return; // Return early as we're already using local data
+            }
           } else {
-            console.log("Successfully saved initial data to Supabase");
+            // Create empty user data record
+            const userData: UserDataRow = {
+              user_id: userId,
+              products: [],
+              sales: [],
+              clients: [],
+              payments: []
+            };
+            
+            const { error: insertError } = await supabase
+              .from('user_data')
+              .insert(userData);
+              
+            if (insertError) {
+              console.error('Error inserting empty data to Supabase:', insertError);
+              toast.error("Failed to initialize your data");
+              throw insertError;
+            } else {
+              console.log("Successfully created empty data record in Supabase");
+              set({
+                products: [],
+                sales: [],
+                clients: [],
+                payments: []
+              });
+              return;
+            }
           }
         } else {
           console.error('Error fetching data:', error);
@@ -128,6 +165,8 @@ export const createUserSlice = (
     try {
       console.log("Saving data to Supabase for user:", currentUser.id);
       const userId = currentUser.id;
+      
+      // Get current data to save
       const userData: UserDataRow = {
         user_id: userId,
         products: get().products,
@@ -139,7 +178,10 @@ export const createUserSlice = (
       
       const { error } = await supabase
         .from('user_data')
-        .upsert(userData, { onConflict: 'user_id' });
+        .upsert(userData, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        });
       
       if (error) {
         console.error('Error saving data to Supabase:', error);

@@ -79,6 +79,7 @@ export interface CardProps {
   icon?: React.ReactNode;
   className?: string;
   children?: React.ReactNode;
+  onClick?: () => void;
 }
 
 export interface ChartData {

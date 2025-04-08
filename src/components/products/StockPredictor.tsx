@@ -13,14 +13,24 @@ import { StockPredictorHeader } from "./stock-predictor/StockPredictorHeader";
 import { PredictionData, StockPredictorProps } from "./stock-predictor/types";
 
 export const StockPredictor = ({ products }: StockPredictorProps) => {
+  // Get current date and default end date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate default end date (30 days from today)
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+  const defaultEndDateStr = defaultEndDate.toISOString().split('T')[0];
+
   const [predictionData, setPredictionData] = useState<PredictionData>({
-    date: "",
+    date: today,
     product_id: 0,
     current_stock: 0,
     previous_sales: 0,
     price: 0,
     custom_product: "",
-    is_custom_product: false
+    is_custom_product: false,
+    start_date: today,
+    end_date: defaultEndDateStr
   });
   const [predictionResult, setPredictionResult] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<boolean>(false);
@@ -83,7 +93,9 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
         predictionData.custom_product.trim() !== "" &&
         predictionData.current_stock > 0 &&
         predictionData.previous_sales >= 0 &&
-        predictionData.price > 0
+        predictionData.price > 0 &&
+        predictionData.start_date !== "" &&
+        predictionData.end_date !== ""
       );
     }
     
@@ -92,7 +104,9 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       predictionData.product_id !== 0 &&
       predictionData.current_stock > 0 &&
       predictionData.previous_sales >= 0 &&
-      predictionData.price > 0
+      predictionData.price > 0 &&
+      predictionData.start_date !== "" &&
+      predictionData.end_date !== ""
     );
   };
 
@@ -103,12 +117,28 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       });
       return;
     }
+    
+    // Check if end date is after start date
+    if (new Date(predictionData.end_date!) < new Date(predictionData.start_date!)) {
+      toast.error("End date must be after start date");
+      return;
+    }
 
     // Mock prediction logic with longer loading time for smoother experience
     setLoading(true);
     setTimeout(() => {
+      // Calculate days between start and end date
+      const startDate = new Date(predictionData.start_date!);
+      const endDate = new Date(predictionData.end_date!);
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Adjust prediction based on date range
+      const dailyRate = predictionData.previous_sales / 30; // Assuming previous sales is for 30 days
+      const predictedSales = Math.ceil(dailyRate * daysDiff * 1.2);
+      const recommendedStock = Math.ceil(dailyRate * daysDiff * 1.5);
+      
       setPredictionResult(
-        `Based on historical data and current trends, we predict sales of ${Math.ceil(predictionData.previous_sales * 1.2)} units in the next 30 days. Consider stocking at least ${Math.ceil(predictionData.previous_sales * 1.5)} units to maintain optimal inventory levels.`
+        `Based on historical data and current trends, we predict sales of ${predictedSales} units from ${new Date(predictionData.start_date!).toLocaleDateString()} to ${new Date(predictionData.end_date!).toLocaleDateString()} (${daysDiff} days). Consider stocking at least ${recommendedStock} units to maintain optimal inventory levels during this period.`
       );
       setAiAnalysis(true);
       setLoading(false);

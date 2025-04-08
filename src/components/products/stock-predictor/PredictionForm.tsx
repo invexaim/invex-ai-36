@@ -28,10 +28,18 @@ export const PredictionForm: React.FC<FormSectionProps> = ({
     }
   };
 
+  // Get current date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate default end date (30 days from today)
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 30);
+  const defaultEndDateStr = defaultEndDate.toISOString().split('T')[0];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
+        <Label htmlFor="date">Analysis Date</Label>
         <Input
           id="date"
           type="date"
@@ -58,6 +66,38 @@ export const PredictionForm: React.FC<FormSectionProps> = ({
           ))}
           <option value="other">Other</option>
         </select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="start_date">Prediction Start Date</Label>
+        <Input
+          id="start_date"
+          type="date"
+          value={predictionData.start_date || today}
+          min={today}
+          onChange={(e) =>
+            setPredictionData({ 
+              ...predictionData, 
+              start_date: e.target.value 
+            })
+          }
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="end_date">Prediction End Date</Label>
+        <Input
+          id="end_date"
+          type="date"
+          value={predictionData.end_date || defaultEndDateStr}
+          min={predictionData.start_date || today}
+          onChange={(e) =>
+            setPredictionData({ 
+              ...predictionData, 
+              end_date: e.target.value 
+            })
+          }
+        />
       </div>
 
       {predictionData.is_custom_product && (

@@ -2,13 +2,22 @@
 import { cn } from "@/lib/utils";
 import { CardProps } from "@/types";
 
-export const CardStat = ({ title, value, icon, className, children }: CardProps) => {
+export const CardStat = ({ 
+  title, 
+  value, 
+  icon, 
+  className, 
+  children,
+  onClick 
+}: CardProps) => {
   return (
     <div 
       className={cn(
-        "bg-card p-5 rounded-lg border shadow-sm hover:shadow-md transition-all hover:-translate-y-1", 
+        "bg-card p-5 rounded-lg border shadow-sm hover:shadow-md transition-all", 
+        onClick && "cursor-pointer hover:-translate-y-1",
         className
       )}
+      onClick={onClick}
     >
       <div className="flex items-center justify-between">
         <div>

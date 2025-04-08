@@ -48,7 +48,7 @@ const App = () => {
             toast.success("Your data has been loaded");
           } catch (error) {
             console.error("Error syncing data after auth change:", error);
-            toast.error("Failed to load your data. Please refresh the page.");
+            toast.error("Failed to load your data. Please refresh and try again.");
           }
         } else if (event === 'SIGNED_OUT') {
           // When user logs out, clear local data
@@ -160,6 +160,14 @@ const App = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <ClientDetail />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/products/low-stock" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Products filterType="low-stock" />
                 </MainLayout>
               </ProtectedRoute>
             } />

@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { CardStat } from "@/components/ui/card-stat";
 import { BarChart } from "@/components/charts/BarChart";
 import { LineChart } from "@/components/charts/LineChart";
@@ -20,6 +21,7 @@ import { format, subDays, parseISO, isWithinInterval } from "date-fns";
 
 const Dashboard = () => {
   const { products, sales, clients, payments } = useAppStore();
+  const navigate = useNavigate();
 
   // First time welcome message
   useEffect(() => {
@@ -201,6 +203,11 @@ const Dashboard = () => {
 
   const aiInsights = generateAIInsights;
 
+  // Handle card click for navigation
+  const handleCardClick = (destination: string) => {
+    navigate(destination);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in smooth-scroll">
       <div>
@@ -216,25 +223,29 @@ const Dashboard = () => {
           title="Total Products"
           value={products.length}
           icon={<Package className="w-5 h-5 text-primary" />}
-          className="bg-blue-50 dark:bg-blue-950/30"
+          className="bg-blue-50 dark:bg-blue-950/30 cursor-pointer hover:scale-105 transition-transform"
+          onClick={() => handleCardClick('/products')}
         />
         <CardStat
           title="Total Clients"
           value={clients.length}
           icon={<Users className="w-5 h-5 text-green-500" />}
-          className="bg-green-50 dark:bg-green-950/30"
+          className="bg-green-50 dark:bg-green-950/30 cursor-pointer hover:scale-105 transition-transform"
+          onClick={() => handleCardClick('/clients')}
         />
         <CardStat
           title="Total Revenue"
           value={`₹${totalRevenue.toLocaleString()}`}
           icon={<Wallet className="w-5 h-5 text-purple-500" />}
-          className="bg-purple-50 dark:bg-purple-950/30"
+          className="bg-purple-50 dark:bg-purple-950/30 cursor-pointer hover:scale-105 transition-transform"
+          onClick={() => handleCardClick('/sales')}
         />
         <CardStat
           title="Low Stock Items"
           value={lowStockItems}
           icon={<AlertCircle className="w-5 h-5 text-destructive" />}
-          className="bg-red-50 dark:bg-red-950/30"
+          className="bg-red-50 dark:bg-red-950/30 cursor-pointer hover:scale-105 transition-transform"
+          onClick={() => handleCardClick('/products/low-stock')}
         />
       </div>
 
