@@ -40,12 +40,13 @@ const Auth = () => {
         toast.success("Logged in successfully");
         
         try {
+          console.log("Syncing data from Supabase after login...");
           // Explicitly sync data after login
           await syncDataWithSupabase();
-          console.log("Data synced successfully after explicit login");
+          console.log("Data synced successfully after login");
         } catch (syncError) {
           console.error("Error syncing data after login:", syncError);
-          // Don't block navigation even if sync fails
+          toast.error("Failed to load your data. You may need to refresh.");
         }
         
         navigate("/");

@@ -16,6 +16,7 @@ interface UserState {
   currentUser: any | null;
   setCurrentUser: (user: any | null) => void;
   syncDataWithSupabase: () => Promise<void>;
+  saveDataToSupabase: () => Promise<void>;
   clearLocalData: () => void;
 }
 
@@ -115,13 +116,14 @@ const useAppStore = create<AppState>()(
               if (insertError) {
                 console.error('Error inserting data to Supabase:', insertError);
                 toast.error("Failed to save your data");
+                throw insertError;
               } else {
                 console.log("Successfully saved initial data to Supabase");
               }
             } else {
               console.error('Error fetching data:', error);
               toast.error("Failed to load your data");
-              return;
+              throw error;
             }
           } else if (existingData) {
             // If data exists in Supabase, parse JSON data and update local state
@@ -167,6 +169,7 @@ const useAppStore = create<AppState>()(
         } catch (error) {
           console.error('Error syncing data with Supabase:', error);
           toast.error("Error synchronizing your data");
+          throw error;
         }
       };
       
@@ -196,12 +199,14 @@ const useAppStore = create<AppState>()(
           if (error) {
             console.error('Error saving data to Supabase:', error);
             toast.error("Failed to save your changes");
+            throw error;
           } else {
             console.log("Data successfully saved to Supabase");
           }
         } catch (error) {
           console.error('Error saving to Supabase:', error);
           toast.error("Error saving your changes");
+          throw error;
         }
       };
       
@@ -210,6 +215,7 @@ const useAppStore = create<AppState>()(
         currentUser: null,
         setCurrentUser: (user) => set({ currentUser: user }),
         syncDataWithSupabase,
+        saveDataToSupabase,
         clearLocalData: () => {
           set({ 
             products: [], 
@@ -226,7 +232,9 @@ const useAppStore = create<AppState>()(
         originalSet(fn);
         const state = get();
         if (state.currentUser) {
-          saveDataToSupabase();
+          saveDataToSupabase().catch(error => {
+            console.error("Error saving data after change:", error);
+          });
         }
       };
       
@@ -256,8 +264,7 @@ const useAppStore = create<AppState>()(
     {
       name: 'invex-store', // Name for the persisted storage
       partialize: (state) => {
-        // Only persist data, not the current user
-        // This ensures we always fetch fresh data from Supabase on login
+        // Don't persist currentUser, as we always want to fetch fresh auth state
         const { currentUser, ...rest } = state;
         return rest;
       },

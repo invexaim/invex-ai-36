@@ -5,6 +5,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
@@ -22,9 +26,30 @@ const MobileNavigation = ({
   onLogout
 }: MobileNavigationProps) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   const handleItemClick = () => {
     setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // First save any pending data to Supabase
+      await onLogout();
+      
+      // Clear local data
+      clearLocalData();
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      toast.success("Logged out successfully");
+      navigate("/auth");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out. Please try again.");
+    }
   };
 
   return (
@@ -68,7 +93,7 @@ const MobileNavigation = ({
               <Button 
                 onClick={() => {
                   setOpen(false);
-                  onLogout();
+                  handleLogout();
                 }} 
                 className="flex items-center justify-start w-full text-destructive" 
                 variant="ghost"
