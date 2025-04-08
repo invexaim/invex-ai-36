@@ -8,7 +8,8 @@ export const createSaleSlice = (
   set: any, 
   get: any, 
   getProducts: () => Product[], 
-  updateProduct: (updatedProduct: Product) => void
+  updateProduct: (updatedProduct: Product) => void,
+  updateClientPurchase: (clientName: string, amount: number) => void
 ) => ({
   sales: [],
   
@@ -32,10 +33,13 @@ export const createSaleSlice = (
         quantity_sold: saleData.quantity_sold,
         selling_price: saleData.selling_price,
         sale_date: new Date().toISOString(),
-        product
+        product,
+        clientId: saleData.clientId,
+        clientName: saleData.clientName
       };
       
-      toast.success(`Sale recorded successfully: ${saleData.quantity_sold} ${product.product_name}(s)`);
+      const clientInfo = saleData.clientName ? ` to ${saleData.clientName}` : '';
+      toast.success(`Sale recorded successfully: ${saleData.quantity_sold} ${product.product_name}(s)${clientInfo}`);
       
       return { 
         sales: [newSale, ...state.sales]
@@ -51,6 +55,12 @@ export const createSaleSlice = (
     };
     
     updateProduct(updatedProduct);
+    
+    // Update client purchase history if client is specified
+    if (saleData.clientName) {
+      const totalAmount = saleData.quantity_sold * saleData.selling_price;
+      updateClientPurchase(saleData.clientName, totalAmount);
+    }
   },
   
   deleteSale: (saleId) => {
@@ -91,7 +101,7 @@ export const createSaleSlice = (
 // This is just a placeholder since the standalone store needs the product store
 // The actual implementation will be in the root store
 const useStandaloneSaleStore = create<SaleState>((set, get) => 
-  createSaleSlice(set, get, () => [], () => {})
+  createSaleSlice(set, get, () => [], () => {}, () => {})
 );
 
 export default useStandaloneSaleStore;

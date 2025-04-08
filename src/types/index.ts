@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -34,6 +33,8 @@ export interface Sale {
   selling_price: number;
   sale_date: string;
   product?: Product;
+  clientId?: number;
+  clientName?: string;
 }
 
 export interface Client {

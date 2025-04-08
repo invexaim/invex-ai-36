@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChartLineIcon, Plus, Search, Trash2 } from "lucide-react";
+import { ChartLineIcon, Plus, Search, Trash2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -23,13 +23,15 @@ import { Label } from "@/components/ui/label";
 import useAppStore from "@/store/appStore";
 
 const Sales = () => {
-  const { products, sales, recordSale, deleteSale } = useAppStore();
+  const { products, sales, clients, recordSale, deleteSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [openNewSale, setOpenNewSale] = useState(false);
   const [newSaleData, setNewSaleData] = useState({
     product_id: 0,
     quantity_sold: 1,
     selling_price: 0,
+    clientId: 0,
+    clientName: "",
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,13 +60,18 @@ const Sales = () => {
       product_id: 0,
       quantity_sold: 1,
       selling_price: 0,
+      clientId: 0,
+      clientName: "",
     });
     setOpenNewSale(false);
   };
 
   const filteredSales = sales.filter((sale) => {
     const productName = sale.product?.product_name.toLowerCase() || "";
-    return productName.includes(searchTerm.toLowerCase());
+    const clientNameMatch = sale.clientName 
+      ? sale.clientName.toLowerCase().includes(searchTerm.toLowerCase())
+      : false;
+    return productName.includes(searchTerm.toLowerCase()) || clientNameMatch;
   });
 
   return (
@@ -123,6 +130,37 @@ const Sales = () => {
                   ))}
                 </select>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="client">Client</Label>
+                <select
+                  id="client"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  onChange={(e) => {
+                    const clientId = parseInt(e.target.value);
+                    const selectedClient = clients.find(
+                      (c) => c.id === clientId
+                    );
+                    setNewSaleData({
+                      ...newSaleData,
+                      clientId: clientId,
+                      clientName: selectedClient?.name || "",
+                    });
+                  }}
+                  value={newSaleData.clientId || ""}
+                >
+                  <option value="">Select a client (optional)</option>
+                  {clients.map((client) => (
+                    <option 
+                      key={client.id} 
+                      value={client.id}
+                    >
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input
@@ -208,6 +246,7 @@ const Sales = () => {
                   </div>
                 </TableHead>
                 <TableHead>Product</TableHead>
+                <TableHead>Client</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Total</TableHead>
@@ -222,6 +261,16 @@ const Sales = () => {
                       {new Date(sale.sale_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{sale.product?.product_name}</TableCell>
+                    <TableCell>
+                      {sale.clientName ? (
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          {sale.clientName}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No client</span>
+                      )}
+                    </TableCell>
                     <TableCell>{sale.quantity_sold}</TableCell>
                     <TableCell>₹{sale.selling_price.toFixed(2)}</TableCell>
                     <TableCell>
@@ -241,7 +290,7 @@ const Sales = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     {sales.length === 0 
                       ? "No sales recorded yet. Record a sale using the button above."
                       : "No sales found matching your search."}

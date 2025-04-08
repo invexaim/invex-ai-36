@@ -38,6 +38,10 @@ const useAppStore = create<AppState>()(
               p.product_id === updatedProduct.product_id ? updatedProduct : p
             )
           }));
+        },
+        // Method to update client purchase history
+        (clientName, amount) => {
+          clientSlice.updateClientPurchase(clientName, amount);
         }
       );
       
