@@ -2,14 +2,7 @@
 import { create } from 'zustand';
 import { Payment } from '@/types';
 import { toast } from 'sonner';
-
-export interface PaymentState {
-  payments: Payment[];
-  addPayment: (payment: Omit<Payment, 'id' | 'date'>) => void;
-  deletePayment: (paymentId: number) => void;
-  // For store combination
-  setPayments: (payments: Payment[]) => void;
-}
+import { PaymentState } from '../types';
 
 export const createPaymentSlice = (
   set: any, 

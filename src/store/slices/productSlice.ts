@@ -2,15 +2,7 @@
 import { create } from 'zustand';
 import { Product } from '@/types';
 import { toast } from 'sonner';
-
-export interface ProductState {
-  products: Product[];
-  addProduct: (product: Omit<Product, 'product_id' | 'created_at'>) => void;
-  deleteProduct: (productId: number) => void;
-  importProductsFromCSV: (file: File) => Promise<void>;
-  // For store combination
-  setProducts: (products: Product[]) => void;
-}
+import { ProductState } from '../types';
 
 export const createProductSlice = (set: any, get: any) => ({
   products: [],

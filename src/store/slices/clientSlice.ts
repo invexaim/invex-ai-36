@@ -2,16 +2,7 @@
 import { create } from 'zustand';
 import { Client } from '@/types';
 import { toast } from 'sonner';
-
-export interface ClientState {
-  clients: Client[];
-  addClient: (client: Omit<Client, "id" | "lastPurchase" | "totalPurchases" | "totalSpent">) => void;
-  deleteClient: (clientId: number) => void;
-  removeClient: (clientId: number) => void;
-  updateClientPurchase: (clientName: string, amount: number) => void;
-  // For store combination
-  setClients: (clients: Client[]) => void;
-}
+import { ClientState } from '../types';
 
 export const createClientSlice = (set: any, get: any) => ({
   clients: [],

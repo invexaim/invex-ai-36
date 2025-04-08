@@ -2,14 +2,7 @@
 import { create } from 'zustand';
 import { Sale, Product } from '@/types';
 import { toast } from 'sonner';
-
-export interface SaleState {
-  sales: Sale[];
-  recordSale: (sale: Omit<Sale, 'sale_id' | 'sale_date'>) => void;
-  deleteSale: (saleId: number) => void;
-  // For store combination
-  setSales: (sales: Sale[]) => void;
-}
+import { SaleState } from '../types';
 
 export const createSaleSlice = (
   set: any, 

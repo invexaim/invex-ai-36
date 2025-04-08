@@ -1,6 +1,14 @@
 
 import { Product, Sale, Client, Payment } from '@/types';
 
+export interface UserState {
+  currentUser: any | null;
+  setCurrentUser: (user: any | null) => void;
+  syncDataWithSupabase: () => Promise<void>;
+  saveDataToSupabase: () => Promise<void>;
+  clearLocalData: () => void;
+}
+
 export interface ProductState {
   products: Product[];
   addProduct: (product: Omit<Product, 'product_id' | 'created_at'>) => void;
@@ -36,4 +44,16 @@ export interface AppState extends
   ProductState,
   SaleState,
   ClientState,
-  PaymentState {}
+  PaymentState,
+  UserState {}
+
+export interface UserDataRow {
+  user_id: string;
+  products: any;
+  sales: any;
+  clients: any;
+  payments: any;
+  created_at?: string | null;
+  updated_at?: string | null;
+  id?: string;
+}
