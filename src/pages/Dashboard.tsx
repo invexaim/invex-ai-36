@@ -17,7 +17,7 @@ import {
 import { AIInsight } from "@/types";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
-import { format, subDays, parseISO, isWithinInterval } from "date-fns";
+import { format, subDays, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 const Dashboard = () => {
   const { products, sales, clients, payments } = useAppStore();
@@ -65,6 +65,20 @@ const Dashboard = () => {
     });
   }, [sales]);
 
+  // Calculate today's revenue
+  const todayRevenue = useMemo(() => {
+    const today = new Date();
+    const startOfToday = startOfDay(today);
+    const endOfToday = endOfDay(today);
+    
+    return sales
+      .filter(sale => {
+        const saleDate = parseISO(sale.sale_date);
+        return isWithinInterval(saleDate, { start: startOfToday, end: endOfToday });
+      })
+      .reduce((acc, sale) => acc + (sale.quantity_sold * sale.selling_price), 0);
+  }, [sales]);
+
   // Generate category data
   const categoryChartData = useMemo(() => {
     const categories = sales.reduce((acc, sale) => {
@@ -80,12 +94,6 @@ const Dashboard = () => {
       name,
       value
     }));
-  }, [sales]);
-
-  // Calculate total revenue from all sales
-  const totalRevenue = useMemo(() => {
-    return sales.reduce((total, sale) => 
-      total + (sale.quantity_sold * sale.selling_price), 0);
   }, [sales]);
 
   // Generate AI insights based on actual data
@@ -234,8 +242,8 @@ const Dashboard = () => {
           onClick={() => handleCardClick('/clients')}
         />
         <CardStat
-          title="Total Revenue"
-          value={`₹${totalRevenue.toLocaleString()}`}
+          title="Today's Revenue"
+          value={`₹${todayRevenue.toLocaleString()}`}
           icon={<Wallet className="w-5 h-5 text-purple-500" />}
           className="bg-purple-50 dark:bg-purple-950/30 cursor-pointer hover:scale-105 transition-transform"
           onClick={() => handleCardClick('/sales')}

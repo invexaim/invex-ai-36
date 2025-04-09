@@ -61,7 +61,7 @@ const MobileNavigation = ({
               <Menu className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 flex flex-col">
+          <SheetContent side="left" className="p-0 flex flex-col transition-transform duration-500">
             <div className="px-4 py-6 border-b flex items-center justify-between">
               <h2 className="text-xl font-semibold">Menu</h2>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>

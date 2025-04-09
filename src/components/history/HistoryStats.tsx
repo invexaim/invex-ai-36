@@ -35,7 +35,7 @@ export const HistoryStats = ({ sales }: HistoryStatsProps) => {
         className="bg-green-50 dark:bg-green-950/30"
       />
       <CardStat
-        title="Revenue"
+        title="Total Revenue"
         value={`₹${totalRevenue.toLocaleString()}`}
         icon={<TrendingUp className="w-5 h-5 text-primary" />}
         className="bg-purple-50 dark:bg-purple-950/30"

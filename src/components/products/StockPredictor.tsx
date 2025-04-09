@@ -66,6 +66,11 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       
       // Simulate CSV data parsing and set some default values
       setTimeout(() => {
+        // Save current prediction to history if there is one
+        if (predictionResult && aiAnalysis) {
+          saveCurrentPredictionToHistory();
+        }
+        
         // Set random values if uploading a file
         setPredictionData({
           ...predictionData,
@@ -111,6 +116,32 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     );
   };
 
+  // Save current prediction to history
+  const saveCurrentPredictionToHistory = () => {
+    if (predictionResult && aiAnalysis) {
+      const currentDate = new Date();
+      const restockDate = new Date(currentDate);
+      restockDate.setDate(currentDate.getDate() + 21);
+      
+      const reviewDate = new Date(currentDate);
+      reviewDate.setDate(currentDate.getDate() + 15);
+      
+      const nextAnalysisDate = new Date(currentDate);
+      nextAnalysisDate.setDate(currentDate.getDate() + 30);
+      
+      const currentPrediction: PredictionResult = {
+        text: predictionResult,
+        timestamp: new Date().toISOString(),
+        restockDate: restockDate,
+        reviewDate: reviewDate,
+        nextAnalysisDate: nextAnalysisDate,
+        predictionPeriod: `${new Date(predictionData.start_date!).toLocaleDateString()} - ${new Date(predictionData.end_date!).toLocaleDateString()}`
+      };
+      
+      setPreviousResults(prev => [currentPrediction, ...prev]);
+    }
+  };
+
   const handleGeneratePrediction = () => {
     if (!isFormComplete()) {
       toast.error("Please fill in all fields", {
@@ -123,6 +154,11 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
     if (new Date(predictionData.end_date!) < new Date(predictionData.start_date!)) {
       toast.error("End date must be after start date");
       return;
+    }
+
+    // Save current prediction to history if there is one
+    if (predictionResult && aiAnalysis) {
+      saveCurrentPredictionToHistory();
     }
 
     // Mock prediction logic with longer loading time for smoother experience
@@ -139,20 +175,6 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       const recommendedStock = Math.ceil(dailyRate * daysDiff * 1.5);
       
       const newPredictionResult = `Based on historical data and current trends, we predict sales of ${predictedSales} units from ${new Date(predictionData.start_date!).toLocaleDateString()} to ${new Date(predictionData.end_date!).toLocaleDateString()} (${daysDiff} days). Consider stocking at least ${recommendedStock} units to maintain optimal inventory levels during this period.`;
-      
-      // Save current prediction to history if there is one
-      if (predictionResult && aiAnalysis) {
-        const currentPrediction: PredictionResult = {
-          text: predictionResult,
-          timestamp: new Date().toISOString(),
-          restockDate: restockDate,
-          reviewDate: reviewDate,
-          nextAnalysisDate: nextAnalysisDate,
-          predictionPeriod: `${new Date(predictionData.start_date!).toLocaleDateString()} - ${new Date(predictionData.end_date!).toLocaleDateString()}`
-        };
-        
-        setPreviousResults([currentPrediction, ...previousResults]);
-      }
       
       setPredictionResult(newPredictionResult);
       setAiAnalysis(true);
