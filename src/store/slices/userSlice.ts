@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserState, UserDataRow } from '../types';
+import { UserState, UserDataRow, isUserDataRow } from '../types';
 
 export const createUserSlice = (
   set: any,
@@ -34,7 +34,7 @@ export const createUserSlice = (
       const userId = currentUser.id;
       
       // First, try to fetch existing data from Supabase
-      const { data: existingData, error } = await supabase
+      const { data, error } = await supabase
         .from('user_data')
         .select('*')
         .eq('user_id', userId)
@@ -107,46 +107,51 @@ export const createUserSlice = (
           toast.error("Failed to load your data");
           throw error;
         }
-      } else if (existingData) {
+      } else if (data) {
         // If data exists in Supabase, parse JSON data and update local state
-        console.log('Found existing data for user:', existingData);
+        console.log('Found existing data for user:', data);
         
-        // Safely parse and set products
-        const products = Array.isArray(existingData.products) 
-          ? existingData.products
-          : [];
-        
-        // Safely parse and set sales
-        const sales = Array.isArray(existingData.sales) 
-          ? existingData.sales
-          : [];
-        
-        // Safely parse and set clients
-        const clients = Array.isArray(existingData.clients) 
-          ? existingData.clients
-          : [];
-        
-        // Safely parse and set payments
-        const payments = Array.isArray(existingData.payments) 
-          ? existingData.payments
-          : [];
-        
-        console.log("Setting data from Supabase:", { 
-          productsCount: products.length,
-          salesCount: sales.length,
-          clientsCount: clients.length,
-          paymentsCount: payments.length
-        });
-        
-        // Update store with fetched data
-        set({
-          products,
-          sales,
-          clients,
-          payments
-        });
-        
-        console.log("Data loaded successfully from Supabase");
+        if (isUserDataRow(data)) {
+          // Safely parse and set products
+          const products = Array.isArray(data.products) 
+            ? data.products
+            : [];
+          
+          // Safely parse and set sales
+          const sales = Array.isArray(data.sales) 
+            ? data.sales
+            : [];
+          
+          // Safely parse and set clients
+          const clients = Array.isArray(data.clients) 
+            ? data.clients
+            : [];
+          
+          // Safely parse and set payments
+          const payments = Array.isArray(data.payments) 
+            ? data.payments
+            : [];
+          
+          console.log("Setting data from Supabase:", { 
+            productsCount: products.length,
+            salesCount: sales.length,
+            clientsCount: clients.length,
+            paymentsCount: payments.length
+          });
+          
+          // Update store with fetched data
+          set({
+            products,
+            sales,
+            clients,
+            payments
+          });
+          
+          console.log("Data loaded successfully from Supabase");
+        } else {
+          console.error('Data from Supabase is not in the expected format:', data);
+          toast.error("Data format error");
+        }
       }
     } catch (error) {
       console.error('Error syncing data with Supabase:', error);

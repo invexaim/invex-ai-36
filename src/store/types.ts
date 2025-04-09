@@ -48,12 +48,24 @@ export interface AppState extends
   UserState {}
 
 export interface UserDataRow {
+  id?: string;
   user_id: string;
-  products: any;
-  sales: any;
-  clients: any;
-  payments: any;
+  products: Product[];
+  sales: Sale[];
+  clients: Client[];
+  payments: Payment[];
   created_at?: string | null;
   updated_at?: string | null;
-  id?: string;
+}
+
+// Add a type guard to check if a response has the correct UserDataRow structure
+export function isUserDataRow(data: any): data is UserDataRow {
+  return (
+    data &&
+    typeof data.user_id === 'string' &&
+    Array.isArray(data.products) &&
+    Array.isArray(data.sales) &&
+    Array.isArray(data.clients) &&
+    Array.isArray(data.payments)
+  );
 }
