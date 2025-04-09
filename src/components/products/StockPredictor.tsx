@@ -10,7 +10,7 @@ import { PredictionForm } from "./stock-predictor/PredictionForm";
 import { FileUploadSection } from "./stock-predictor/FileUploadSection";
 import { ResultSection } from "./stock-predictor/ResultSection";
 import { StockPredictorHeader } from "./stock-predictor/StockPredictorHeader";
-import { PredictionData, StockPredictorProps } from "./stock-predictor/types";
+import { PredictionData, StockPredictorProps, PredictionResult } from "./stock-predictor/types";
 
 export const StockPredictor = ({ products }: StockPredictorProps) => {
   // Get current date and default end date in YYYY-MM-DD format
@@ -35,6 +35,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
   const [predictionResult, setPredictionResult] = useState<string | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [previousResults, setPreviousResults] = useState<PredictionResult[]>([]);
   
   // Reference to the results section for scrolling
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -137,9 +138,23 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
       const predictedSales = Math.ceil(dailyRate * daysDiff * 1.2);
       const recommendedStock = Math.ceil(dailyRate * daysDiff * 1.5);
       
-      setPredictionResult(
-        `Based on historical data and current trends, we predict sales of ${predictedSales} units from ${new Date(predictionData.start_date!).toLocaleDateString()} to ${new Date(predictionData.end_date!).toLocaleDateString()} (${daysDiff} days). Consider stocking at least ${recommendedStock} units to maintain optimal inventory levels during this period.`
-      );
+      const newPredictionResult = `Based on historical data and current trends, we predict sales of ${predictedSales} units from ${new Date(predictionData.start_date!).toLocaleDateString()} to ${new Date(predictionData.end_date!).toLocaleDateString()} (${daysDiff} days). Consider stocking at least ${recommendedStock} units to maintain optimal inventory levels during this period.`;
+      
+      // Save current prediction to history if there is one
+      if (predictionResult && aiAnalysis) {
+        const currentPrediction: PredictionResult = {
+          text: predictionResult,
+          timestamp: new Date().toISOString(),
+          restockDate: restockDate,
+          reviewDate: reviewDate,
+          nextAnalysisDate: nextAnalysisDate,
+          predictionPeriod: `${new Date(predictionData.start_date!).toLocaleDateString()} - ${new Date(predictionData.end_date!).toLocaleDateString()}`
+        };
+        
+        setPreviousResults([currentPrediction, ...previousResults]);
+      }
+      
+      setPredictionResult(newPredictionResult);
       setAiAnalysis(true);
       setLoading(false);
       toast.success("Prediction generated", {
@@ -193,6 +208,7 @@ export const StockPredictor = ({ products }: StockPredictorProps) => {
             reviewDate={reviewDate}
             nextAnalysisDate={nextAnalysisDate}
             predictionData={predictionData}
+            previousResults={previousResults}
           />
         </div>
       </div>

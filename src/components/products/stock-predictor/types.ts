@@ -13,6 +13,15 @@ export interface PredictionData {
   end_date?: string;
 }
 
+export interface PredictionResult {
+  text: string;
+  timestamp: string;
+  restockDate: Date;
+  reviewDate: Date;
+  nextAnalysisDate: Date;
+  predictionPeriod: string;
+}
+
 export interface StockPredictorProps {
   products: Product[];
 }
