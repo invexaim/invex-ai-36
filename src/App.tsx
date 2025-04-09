@@ -19,10 +19,11 @@ import Auth from "./pages/Auth";
 import useAppStore from "./store/appStore";
 import { toast } from "sonner";
 
+// Create a QueryClient instance outside the component
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
@@ -89,7 +90,7 @@ const App = () => {
   }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
   // Protected route component
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const ProtectedRoute = ({ children }) => {
     if (!user) {
       return <Navigate to="/auth" />;
     }
