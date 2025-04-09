@@ -18,13 +18,11 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import useAppStore from "./store/appStore";
 import { toast } from "sonner";
-import { Skeleton } from "./components/ui/skeleton";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
@@ -50,14 +48,11 @@ const App = () => {
           } catch (error) {
             console.error("Error syncing data after auth change:", error);
             toast.error("Failed to load your data. Please refresh and try again.");
-          } finally {
-            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           // When user logs out, clear local data
           console.log("User signed out, clearing local data");
           clearLocalData();
-          setLoading(false);
         }
       }
     );
@@ -85,9 +80,6 @@ const App = () => {
         }
       } catch (error) {
         console.error("Error checking session:", error);
-      } finally {
-        // Always set loading to false after checking session
-        setLoading(false);
       }
     };
 
@@ -95,25 +87,6 @@ const App = () => {
 
     return () => subscription.unsubscribe();
   }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
-
-  // Loading component
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md space-y-4">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold">Loading your data...</h1>
-            <p className="text-muted-foreground mt-2">Please wait a moment</p>
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Protected route component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

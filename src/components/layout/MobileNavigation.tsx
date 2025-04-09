@@ -54,16 +54,7 @@ const MobileNavigation = ({
 
   return (
     <div className="fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between z-10 md:hidden px-4 bg-background">
-      <h1 className="text-xl font-semibold">Invex AI</h1>
-      <div className="flex items-center gap-4">
-        <Button 
-          onClick={toggleTheme} 
-          variant="outline" 
-          size="icon"
-        >
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-        </Button>
-        
+      <div className="flex items-center">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon">
@@ -106,7 +97,15 @@ const MobileNavigation = ({
             </div>
           </SheetContent>
         </Sheet>
+        <h1 className="text-xl font-semibold ml-3">Invex AI</h1>
       </div>
+      <Button 
+        onClick={toggleTheme} 
+        variant="outline" 
+        size="icon"
+      >
+        {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      </Button>
     </div>
   );
 };

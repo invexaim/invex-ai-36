@@ -3,6 +3,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormSectionProps } from "./types";
+import { subDays, addDays, format } from "date-fns";
 
 export const PredictionForm: React.FC<FormSectionProps> = ({
   predictionData,
@@ -31,10 +32,9 @@ export const PredictionForm: React.FC<FormSectionProps> = ({
   // Get current date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
   
-  // Calculate default end date (30 days from today)
-  const defaultEndDate = new Date();
-  defaultEndDate.setDate(defaultEndDate.getDate() + 30);
-  const defaultEndDateStr = defaultEndDate.toISOString().split('T')[0];
+  // Get dates for past 30 days and future 30 days for analysis flexibility
+  const thirtyDaysAgo = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+  const thirtyDaysFromNow = format(addDays(new Date(), 30), 'yyyy-MM-dd');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -74,7 +74,8 @@ export const PredictionForm: React.FC<FormSectionProps> = ({
           id="start_date"
           type="date"
           value={predictionData.start_date || today}
-          min={today}
+          min={thirtyDaysAgo} 
+          max={thirtyDaysFromNow}
           onChange={(e) =>
             setPredictionData({ 
               ...predictionData, 
@@ -89,8 +90,9 @@ export const PredictionForm: React.FC<FormSectionProps> = ({
         <Input
           id="end_date"
           type="date"
-          value={predictionData.end_date || defaultEndDateStr}
+          value={predictionData.end_date || thirtyDaysFromNow}
           min={predictionData.start_date || today}
+          max={format(addDays(new Date(), 90), 'yyyy-MM-dd')} // Allow up to 90 days in the future
           onChange={(e) =>
             setPredictionData({ 
               ...predictionData, 
