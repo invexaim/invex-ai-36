@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import useAppStore from "./store/appStore";
 import { toast } from "sonner";
+import { Skeleton } from "./components/ui/skeleton";
 
 const queryClient = new QueryClient();
 
@@ -49,49 +50,73 @@ const App = () => {
           } catch (error) {
             console.error("Error syncing data after auth change:", error);
             toast.error("Failed to load your data. Please refresh and try again.");
+          } finally {
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           // When user logs out, clear local data
           console.log("User signed out, clearing local data");
           clearLocalData();
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
-    // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
-      
-      setUser(currentUser);
-      setCurrentUser(currentUser);
-      
-      if (currentUser) {
-        // If user is already logged in, sync their data
-        try {
-          console.log("User already authenticated, syncing data on initial load...");
-          await syncDataWithSupabase();
-          console.log("Data synced successfully on initial load");
-        } catch (error) {
-          console.error("Error syncing data on initial load:", error);
-          toast.error("Failed to load your data. Please refresh the page.");
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
+        
+        setUser(currentUser);
+        setCurrentUser(currentUser);
+        
+        if (currentUser) {
+          // If user is already logged in, sync their data
+          try {
+            console.log("User already authenticated, syncing data on initial load...");
+            await syncDataWithSupabase();
+            console.log("Data synced successfully on initial load");
+          } catch (error) {
+            console.error("Error syncing data on initial load:", error);
+            toast.error("Failed to load your data. Please refresh the page.");
+          }
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        // Always set loading to false after checking session
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+
+    checkSession();
 
     return () => subscription.unsubscribe();
   }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
+  // Loading component
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md space-y-4">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Loading your data...</h1>
+            <p className="text-muted-foreground mt-2">Please wait a moment</p>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Protected route component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    if (loading) {
-      return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
-    }
-    
     if (!user) {
       return <Navigate to="/auth" />;
     }
@@ -106,7 +131,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth" element={user ? <Navigate to="/" /> : <Auth />} />
             
             <Route path="/" element={
               <ProtectedRoute>

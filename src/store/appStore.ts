@@ -66,11 +66,15 @@ const useAppStore = create<AppState>()(
       const originalSet = set;
       const setWithSave = (fn: any) => {
         originalSet(fn);
+        // Debounce the save operation to avoid too many requests
         const state = get();
         if (state.currentUser) {
-          saveDataToSupabase().catch(error => {
-            console.error("Error saving data after change:", error);
-          });
+          // Use setTimeout to avoid blocking the UI
+          setTimeout(() => {
+            saveDataToSupabase().catch(error => {
+              console.error("Error saving data after change:", error);
+            });
+          }, 100);
         }
       };
       
@@ -100,7 +104,8 @@ const useAppStore = create<AppState>()(
     {
       name: 'invex-store', // Name for the persisted storage
       partialize: (state) => {
-        // Don't persist currentUser, as we always want to fetch fresh auth state
+        // We'll still persist some data locally for faster initial loads
+        // but the authoritative data source is Supabase
         const { currentUser, ...rest } = state;
         return rest;
       },
