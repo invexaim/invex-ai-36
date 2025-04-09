@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, UserDataTable } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserState, UserDataRow, isUserDataRow } from '../types';
 
@@ -63,7 +63,7 @@ export const createUserSlice = (
             
             const { error: insertError } = await supabase
               .from('user_data')
-              .insert(userData);
+              .insert(userData as any);
               
             if (insertError) {
               console.error('Error inserting data to Supabase:', insertError);
@@ -85,7 +85,7 @@ export const createUserSlice = (
             
             const { error: insertError } = await supabase
               .from('user_data')
-              .insert(userData);
+              .insert(userData as any);
               
             if (insertError) {
               console.error('Error inserting empty data to Supabase:', insertError);
@@ -111,47 +111,44 @@ export const createUserSlice = (
         // If data exists in Supabase, parse JSON data and update local state
         console.log('Found existing data for user:', data);
         
-        if (isUserDataRow(data)) {
-          // Safely parse and set products
-          const products = Array.isArray(data.products) 
-            ? data.products
-            : [];
-          
-          // Safely parse and set sales
-          const sales = Array.isArray(data.sales) 
-            ? data.sales
-            : [];
-          
-          // Safely parse and set clients
-          const clients = Array.isArray(data.clients) 
-            ? data.clients
-            : [];
-          
-          // Safely parse and set payments
-          const payments = Array.isArray(data.payments) 
-            ? data.payments
-            : [];
-          
-          console.log("Setting data from Supabase:", { 
-            productsCount: products.length,
-            salesCount: sales.length,
-            clientsCount: clients.length,
-            paymentsCount: payments.length
-          });
-          
-          // Update store with fetched data
-          set({
-            products,
-            sales,
-            clients,
-            payments
-          });
-          
-          console.log("Data loaded successfully from Supabase");
-        } else {
-          console.error('Data from Supabase is not in the expected format:', data);
-          toast.error("Data format error");
-        }
+        const typedData = data as unknown as UserDataTable;
+        
+        // Safely parse and set products
+        const products = Array.isArray(typedData.products) 
+          ? typedData.products
+          : [];
+        
+        // Safely parse and set sales
+        const sales = Array.isArray(typedData.sales) 
+          ? typedData.sales
+          : [];
+        
+        // Safely parse and set clients
+        const clients = Array.isArray(typedData.clients) 
+          ? typedData.clients
+          : [];
+        
+        // Safely parse and set payments
+        const payments = Array.isArray(typedData.payments) 
+          ? typedData.payments
+          : [];
+        
+        console.log("Setting data from Supabase:", { 
+          productsCount: products.length,
+          salesCount: sales.length,
+          clientsCount: clients.length,
+          paymentsCount: payments.length
+        });
+        
+        // Update store with fetched data
+        set({
+          products,
+          sales,
+          clients,
+          payments
+        });
+        
+        console.log("Data loaded successfully from Supabase");
       }
     } catch (error) {
       console.error('Error syncing data with Supabase:', error);
@@ -183,7 +180,7 @@ export const createUserSlice = (
       
       const { error } = await supabase
         .from('user_data')
-        .upsert(userData, { 
+        .upsert(userData as any, { 
           onConflict: 'user_id',
           ignoreDuplicates: false
         });
