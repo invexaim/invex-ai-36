@@ -16,11 +16,12 @@ interface ProductsProps {
 }
 
 const Products = ({ filterType = "all" }: ProductsProps) => {
-  const { products, importProductsFromCSV } = useAppStore();
+  const { products, importProductsFromCSV, addProduct } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("inventory");
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
 
   // Auto-set to Inventory tab if low-stock filter is active
   useState(() => {
@@ -68,7 +69,10 @@ const Products = ({ filterType = "all" }: ProductsProps) => {
         </div>
         
         <div className="flex gap-2">
-          <AddProductDialog />
+          <Button onClick={() => setShowAddProductDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
           <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Import CSV
@@ -97,7 +101,7 @@ const Products = ({ filterType = "all" }: ProductsProps) => {
           <StockPredictor products={products} />
         </TabsContent>
         <TabsContent value="insights">
-          <InsightsSection products={products} />
+          <InsightsSection />
         </TabsContent>
       </Tabs>
 
@@ -140,6 +144,13 @@ const Products = ({ filterType = "all" }: ProductsProps) => {
           </div>
         </div>
       )}
+
+      {/* Add product dialog */}
+      <AddProductDialog
+        open={showAddProductDialog}
+        onOpenChange={setShowAddProductDialog}
+        onAddProduct={addProduct}
+      />
     </div>
   );
 };

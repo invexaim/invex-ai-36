@@ -22,3 +22,8 @@ export interface FormSectionProps {
   setPredictionData: React.Dispatch<React.SetStateAction<PredictionData>>;
   products: Product[];
 }
+
+export interface FileUploadSectionProps {
+  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  loading: boolean;
+}
