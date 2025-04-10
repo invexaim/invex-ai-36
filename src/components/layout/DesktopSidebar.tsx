@@ -3,10 +3,8 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
@@ -24,21 +22,11 @@ const DesktopSidebar = ({
   onLogout
 }: DesktopSidebarProps) => {
   const navigate = useNavigate();
-  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   const handleLogout = async () => {
     try {
-      // First save any pending data to Supabase
+      console.log("Desktop logout triggered");
       await onLogout();
-      
-      // Clear local data
-      clearLocalData();
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      toast.success("Logged out successfully");
-      navigate("/auth");
     } catch (error) {
       console.error("Error logging out:", error);
       toast.error("Failed to log out. Please try again.");

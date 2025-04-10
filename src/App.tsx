@@ -14,6 +14,7 @@ import History from "./pages/History";
 import Payments from "./pages/Payments";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
+import Stock from "./pages/Stock";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import useAppStore from "./store/appStore";
@@ -92,6 +93,7 @@ const App = () => {
   // Protected route component
   const ProtectedRoute = ({ children }) => {
     if (!user) {
+      console.log("No authenticated user, redirecting to /auth");
       return <Navigate to="/auth" />;
     }
     
@@ -151,6 +153,14 @@ const App = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <Clients />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/stock" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Stock />
                 </MainLayout>
               </ProtectedRoute>
             } />

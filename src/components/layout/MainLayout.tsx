@@ -9,6 +9,7 @@ import {
   LayoutDashboard, 
   ShoppingCart, 
   CreditCard,
+  Warehouse,
   LogOut
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
@@ -45,8 +46,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const handleLogout = async () => {
     try {
-      // Before signing out, ensure all data is saved to Supabase
-      // (This is handled by the saveDataToSupabase in appStore)
+      console.log("Logout initiated");
+      
+      // Clear local data first
+      clearLocalData();
       
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
@@ -55,10 +58,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         throw error;
       }
       
-      // Clear local data and navigate to login
+      // Show success message and force navigate to auth page
       toast.success("Logged out successfully");
-      clearLocalData();
-      navigate("/auth");
+      console.log("Navigation to /auth");
+      
+      // Use replace instead of navigate to ensure we can't go back
+      navigate("/auth", { replace: true });
     } catch (error: any) {
       console.error("Logout error:", error);
       toast.error(error.message || "Error logging out");
@@ -95,6 +100,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       icon: <Users className="w-5 h-5" />,
       label: "Clients",
       href: "/clients",
+    },
+    {
+      icon: <Warehouse className="w-5 h-5" />,
+      label: "Stock",
+      href: "/stock",
     },
   ];
 
