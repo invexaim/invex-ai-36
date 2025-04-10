@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
-
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -17,11 +15,9 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
       if (isLogin) {
         // Login
@@ -33,12 +29,9 @@ const Auth = () => {
           email,
           password
         });
-        
         if (error) throw error;
-        
         console.log("Login successful:", data);
         toast.success("Logged in successfully");
-        
         try {
           console.log("Syncing data from Supabase after login...");
           // Explicitly sync data after login
@@ -48,7 +41,6 @@ const Auth = () => {
           console.error("Error syncing data after login:", syncError);
           toast.error("Failed to load your data. You may need to refresh.");
         }
-        
         navigate("/");
       } else {
         // Sign up
@@ -60,9 +52,7 @@ const Auth = () => {
           email,
           password
         });
-        
         if (error) throw error;
-        
         console.log("Signup successful:", data);
         toast.success("Account created successfully. Please check your email to verify your account.");
         setIsLogin(true);
@@ -74,7 +64,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
   return <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
         <h1 className="text-4xl font-bold mb-8 text-[#9b60d6]">Invex AI</h1>
@@ -103,7 +92,7 @@ const Auth = () => {
               </div>
               
               <div className="pt-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400 italic">For safety purposes, we request you to sign up or sign in with the same email ID and password. Thank you</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic">Note: For safety purposes, we request you to sign up  with the same email ID and password. Thank you</p>
               </div>
             </CardContent>
             
@@ -124,5 +113,4 @@ const Auth = () => {
       </div>
     </BackgroundBeamsWithCollision>;
 };
-
 export default Auth;
