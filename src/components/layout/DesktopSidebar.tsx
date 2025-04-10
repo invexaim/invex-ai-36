@@ -27,6 +27,8 @@ const DesktopSidebar = ({
     try {
       console.log("Desktop logout triggered");
       await onLogout();
+      // Navigate to auth page after logout
+      navigate('/auth');
     } catch (error) {
       console.error("Error logging out:", error);
       toast.error("Failed to log out. Please try again.");

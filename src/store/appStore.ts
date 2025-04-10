@@ -9,6 +9,9 @@ import { createClientSlice } from './slices/clientSlice';
 import { createPaymentSlice } from './slices/paymentSlice';
 import { createUserSlice } from './slices/userSlice';
 
+// Ensure we import React to fix the useSyncExternalStore issue
+import React from 'react';
+
 // Create a combined store with all slices
 const useAppStore = create<AppState>()(
   persist(

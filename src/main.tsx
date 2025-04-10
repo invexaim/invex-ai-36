@@ -4,6 +4,9 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
+// Explicitly set React for Zustand to use
+window.React = React;
+
 // Ensure the root element exists
 const rootElement = document.getElementById('root');
 

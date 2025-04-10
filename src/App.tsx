@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { supabase } from "./integrations/supabase/client";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
@@ -23,8 +23,13 @@ import { toast } from "sonner";
 // Create a QueryClient instance outside the component
 const queryClient = new QueryClient();
 
+// Define the ProtectedRoute props interface
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
 const App = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
@@ -91,7 +96,7 @@ const App = () => {
   }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
   // Protected route component
-  const ProtectedRoute = ({ children }) => {
+  const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     if (!user) {
       console.log("No authenticated user, redirecting to /auth");
       return <Navigate to="/auth" />;
