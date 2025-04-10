@@ -42,7 +42,11 @@ const MobileNavigation = ({
       clearLocalData();
       
       // Sign out from Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success("Logged out successfully");
       navigate("/auth");
@@ -61,7 +65,7 @@ const MobileNavigation = ({
               <Menu className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 flex flex-col transition-transform duration-500">
+          <SheetContent side="left" className="p-0 flex flex-col transition-all duration-700 ease-in-out">
             <div className="px-4 py-6 border-b flex items-center justify-between">
               <h2 className="text-xl font-semibold">Menu</h2>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
@@ -82,10 +86,7 @@ const MobileNavigation = ({
             </nav>
             <div className="p-4 border-t">
               <Button 
-                onClick={() => {
-                  setOpen(false);
-                  handleLogout();
-                }} 
+                onClick={handleLogout} 
                 className="flex items-center justify-start w-full text-destructive" 
                 variant="ghost"
               >
