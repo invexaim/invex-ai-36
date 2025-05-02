@@ -5,6 +5,7 @@ import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
@@ -26,9 +27,18 @@ const DesktopSidebar = ({
   const handleLogout = async () => {
     try {
       console.log("Desktop logout triggered");
+      // First sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Then call the onLogout function from props
       await onLogout();
+      
+      // Toast notification
+      toast.success("Logged out successfully");
+      
       // Navigate to auth page after logout
-      navigate('/auth');
+      console.log("Redirecting to auth page");
+      navigate('/auth', { replace: true });
     } catch (error) {
       console.error("Error logging out:", error);
       toast.error("Failed to log out. Please try again.");

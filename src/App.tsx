@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -30,6 +29,7 @@ interface ProtectedRouteProps {
 
 const App = () => {
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
@@ -61,6 +61,9 @@ const App = () => {
           console.log("User signed out, clearing local data");
           clearLocalData();
         }
+        
+        // Set loading to false after auth state is determined
+        setIsLoading(false);
       }
     );
 
@@ -85,8 +88,12 @@ const App = () => {
             toast.error("Failed to load your data. Please refresh the page.");
           }
         }
+        
+        // Set loading to false after session check completes
+        setIsLoading(false);
       } catch (error) {
         console.error("Error checking session:", error);
+        setIsLoading(false);
       }
     };
 
@@ -97,13 +104,29 @@ const App = () => {
 
   // Protected route component
   const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    if (!user) {
-      console.log("No authenticated user, redirecting to /auth");
-      return <Navigate to="/auth" />;
+    // If still loading, show nothing (or could show a loading spinner)
+    if (isLoading) {
+      return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
     
+    // If not loading and no user, redirect to auth page
+    if (!user) {
+      console.log("No authenticated user, redirecting to /auth");
+      return <Navigate to="/auth" replace />;
+    }
+    
+    // Otherwise render children
     return <>{children}</>;
   };
+
+  // If still loading initial auth state, show loading
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading application...</div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -112,9 +135,14 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/auth" element={user ? <Navigate to="/" /> : <Auth />} />
+            {/* Redirect root to either dashboard or auth depending on auth state */}
+            <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />} />
             
-            <Route path="/" element={
+            {/* Auth route - accessible only when not logged in */}
+            <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+            
+            {/* Dashboard route - needs authentication */}
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <MainLayout>
                   <Dashboard />

@@ -14,11 +14,10 @@ export const createUserSlice = (
   setCurrentUser: (user: any | null) => set({ currentUser: user }),
   
   clearLocalData: () => {
+    console.log("Clearing local state for UI refresh only, not affecting stored data");
+    // We're only updating the UI state, not actually removing data from Supabase
     set({ 
-      products: [], 
-      sales: [], 
-      clients: [], 
-      payments: [] 
+      currentUser: null,
     });
   },
   
