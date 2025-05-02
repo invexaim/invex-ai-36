@@ -11,12 +11,9 @@ const Index = () => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       
-      // If authenticated, go to dashboard, otherwise to auth
-      if (data.session) {
-        navigate("/dashboard");
-      } else {
-        navigate("/auth");
-      }
+      // Always direct to auth page first regardless of authentication status
+      // The Auth page will redirect to dashboard if already authenticated
+      navigate("/auth");
     };
     
     checkAuth();

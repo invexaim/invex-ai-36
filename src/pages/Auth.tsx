@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
@@ -8,13 +9,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true); 
   const navigate = useNavigate();
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
+  
+  // Check authentication status when the component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        // If already authenticated, redirect to dashboard
+        if (data.session) {
+          console.log("User already authenticated, redirecting to dashboard");
+          navigate("/dashboard", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking authentication status:", error);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -41,7 +66,7 @@ const Auth = () => {
           console.error("Error syncing data after login:", syncError);
           toast.error("Failed to load your data. You may need to refresh.");
         }
-        navigate("/");
+        navigate("/dashboard");
       } else {
         // Sign up
         console.log("Attempting to sign up with email:", email);
@@ -64,6 +89,14 @@ const Auth = () => {
       setLoading(false);
     }
   };
+  
+  // Show loading indicator while checking authentication
+  if (checkingAuth) {
+    return <div className="flex items-center justify-center h-screen">
+      <p>Checking authentication status...</p>
+    </div>;
+  }
+
   return <BackgroundBeamsWithCollision>
       <div className="relative z-10 w-full max-w-md px-4 text-center">
         <h1 className="text-4xl font-bold mb-8 text-[#9b60d6]">Invex AI</h1>
@@ -92,7 +125,7 @@ const Auth = () => {
               </div>
               
               <div className="pt-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400 italic">Note: For safety purposes, we request you to sign up  with the same email ID and password. Thank you</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic">Note: For safety purposes, we request you to sign up with the same email ID and password. Thank you</p>
               </div>
             </CardContent>
             
@@ -113,4 +146,5 @@ const Auth = () => {
       </div>
     </BackgroundBeamsWithCollision>;
 };
+
 export default Auth;

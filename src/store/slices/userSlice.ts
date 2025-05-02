@@ -15,10 +15,25 @@ export const createUserSlice = (
   
   clearLocalData: () => {
     console.log("Clearing local state for UI refresh only, not affecting stored data");
-    // We're only updating the UI state, not actually removing data from Supabase
-    set({ 
-      currentUser: null,
-    });
+    // Make sure to save data to Supabase before clearing local state
+    const { currentUser } = get();
+    if (currentUser) {
+      console.log("Saving data before logout");
+      saveDataToSupabase()
+        .then(() => {
+          console.log("Data saved successfully before logout");
+          // Only clear the user information, not the actual data
+          set({ currentUser: null });
+        })
+        .catch(error => {
+          console.error("Error saving data before logout:", error);
+          // Even if there's an error, still clear user information
+          set({ currentUser: null });
+        });
+    } else {
+      // No current user, just clear user information
+      set({ currentUser: null });
+    }
   },
   
   syncDataWithSupabase: async () => {
@@ -170,10 +185,10 @@ export const createUserSlice = (
       // Get current data to save
       const userData: UserDataRow = {
         user_id: userId,
-        products: get().products,
-        sales: get().sales,
-        clients: get().clients,
-        payments: get().payments,
+        products: get().products || [],
+        sales: get().sales || [],
+        clients: get().clients || [],
+        payments: get().payments || [],
         updated_at: new Date().toISOString()
       };
       

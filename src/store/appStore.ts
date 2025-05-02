@@ -10,7 +10,7 @@ import { createPaymentSlice } from './slices/paymentSlice';
 import { createUserSlice } from './slices/userSlice';
 
 // Ensure we import React to fix the useSyncExternalStore issue
-import React from 'react';
+import * as React from 'react';
 
 // Create a combined store with all slices
 const useAppStore = create<AppState>()(
@@ -19,10 +19,47 @@ const useAppStore = create<AppState>()(
       // Extract set and get from args
       const [set, get] = args;
       
-      // Initialize user slice first (without the save function yet)
-      let userSlice = createUserSlice(set, get, async () => {
-        // This will be replaced with the real function
-      });
+      // Create a function that will be used to save data to Supabase
+      const saveDataToSupabase = async () => {
+        const { currentUser } = get();
+        if (!currentUser) {
+          console.log("No current user, skipping data save");
+          return;
+        }
+        
+        try {
+          console.log("Saving data to Supabase from store");
+          const { supabase } = await import('@/integrations/supabase/client');
+          const userData = {
+            user_id: currentUser.id,
+            products: get().products || [],
+            sales: get().sales || [],
+            clients: get().clients || [],
+            payments: get().payments || [],
+            updated_at: new Date().toISOString()
+          };
+          
+          const { error } = await supabase
+            .from('user_data')
+            .upsert(userData as any, { 
+              onConflict: 'user_id',
+              ignoreDuplicates: false
+            });
+          
+          if (error) {
+            console.error('Error saving data to Supabase from store:', error);
+            throw error;
+          } else {
+            console.log("Data successfully saved to Supabase from store");
+          }
+        } catch (error) {
+          console.error('Error in saveDataToSupabase:', error);
+          throw error;
+        }
+      };
+      
+      // Initialize user slice with the proper save function
+      const userSlice = createUserSlice(set, get, saveDataToSupabase);
       
       // Create individual slices with cross-slice access
       const productSlice = createProductSlice(set, get);
@@ -56,14 +93,6 @@ const useAppStore = create<AppState>()(
           clientSlice.updateClientPurchase(clientName, amount);
         }
       );
-      
-      // Define the save method for syncing with Supabase
-      const saveDataToSupabase = async () => {
-        return await userSlice.saveDataToSupabase();
-      };
-      
-      // Now re-create user slice with the proper save function
-      userSlice = createUserSlice(set, get, saveDataToSupabase);
       
       // Add listeners to save data when it changes
       const originalSet = set;
@@ -107,8 +136,8 @@ const useAppStore = create<AppState>()(
     {
       name: 'invex-store', // Name for the persisted storage
       partialize: (state) => {
-        // We'll still persist some data locally for faster initial loads
-        // but the authoritative data source is Supabase
+        // Only persist the data, not the user info
+        // This ensures data is available locally but we rely on Supabase for the authoritative source
         const { currentUser, ...rest } = state;
         return rest;
       },

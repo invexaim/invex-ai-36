@@ -6,6 +6,7 @@ import { SidebarItemType } from "./types";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useAppStore from "@/store/appStore";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
@@ -23,11 +24,17 @@ const DesktopSidebar = ({
   onLogout
 }: DesktopSidebarProps) => {
   const navigate = useNavigate();
+  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
 
   const handleLogout = async () => {
     try {
       console.log("Desktop logout triggered");
-      // First sign out from Supabase
+      
+      // First save all data to Supabase to ensure it's persisted
+      await saveDataToSupabase();
+      console.log("Data saved to Supabase before logout");
+      
+      // Then sign out from Supabase
       await supabase.auth.signOut();
       
       // Then call the onLogout function from props
