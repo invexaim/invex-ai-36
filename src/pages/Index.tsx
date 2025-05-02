@@ -9,11 +9,14 @@ const Index = () => {
   useEffect(() => {
     // Check if user is authenticated
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      
-      // Always direct to auth page first regardless of authentication status
-      // The Auth page will redirect to dashboard if already authenticated
-      navigate("/auth");
+      try {
+        // Always direct to auth page first
+        // The Auth page will redirect to dashboard if already authenticated
+        navigate("/auth");
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        navigate("/auth");
+      }
     };
     
     checkAuth();

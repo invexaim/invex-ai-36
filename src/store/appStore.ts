@@ -35,9 +35,15 @@ const useAppStore = create<AppState>()(
             products: get().products || [],
             sales: get().sales || [],
             clients: get().clients || [],
-            payments: get().payments || [],
-            updated_at: new Date().toISOString()
+            payments: get().payments || []
           };
+          
+          console.log("Saving the following data to Supabase:", {
+            productsCount: userData.products.length,
+            salesCount: userData.sales.length,
+            clientsCount: userData.clients.length,
+            paymentsCount: userData.payments.length
+          });
           
           const { error } = await supabase
             .from('user_data')
@@ -94,20 +100,20 @@ const useAppStore = create<AppState>()(
         }
       );
       
-      // Add listeners to save data when it changes
-      const originalSet = set;
-      const setWithSave = (fn: any) => {
-        originalSet(fn);
-        // Debounce the save operation to avoid too many requests
-        const state = get();
-        if (state.currentUser) {
-          // Use setTimeout to avoid blocking the UI
-          setTimeout(() => {
+      // Add auto-save functionality when data changes
+      const setWithAutoSave = (fn: any) => {
+        // Apply the state update
+        set(fn);
+        
+        // Schedule a save operation if the user is logged in
+        setTimeout(() => {
+          const state = get();
+          if (state.currentUser) {
             saveDataToSupabase().catch(error => {
-              console.error("Error saving data after change:", error);
+              console.error("Error auto-saving data after state change:", error);
             });
-          }, 100);
-        }
+          }
+        }, 500); // Debounce save operations
       };
       
       // Combine all slices
@@ -120,17 +126,20 @@ const useAppStore = create<AppState>()(
         
         // Override set method for specific actions to trigger Supabase sync
         setProducts: (products) => {
-          setWithSave({ products });
+          setWithAutoSave({ products });
         },
         setSales: (sales) => {
-          setWithSave({ sales });
+          setWithAutoSave({ sales });
         },
         setClients: (clients) => {
-          setWithSave({ clients });
+          setWithAutoSave({ clients });
         },
         setPayments: (payments) => {
-          setWithSave({ payments });
+          setWithAutoSave({ payments });
         },
+        
+        // Expose the saveDataToSupabase function
+        saveDataToSupabase
       };
     },
     {

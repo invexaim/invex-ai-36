@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { supabase, UserDataTable } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { UserState, UserDataRow, isUserDataRow } from '../types';
 
@@ -67,54 +67,61 @@ export const createUserSlice = (
           if (localProducts.length > 0 || localSales.length > 0 || 
               localClients.length > 0 || localPayments.length > 0) {
             console.log('Saving local data to Supabase for new user');
-            const userData: UserDataRow = {
-              user_id: userId,
-              products: localProducts,
-              sales: localSales,
-              clients: localClients,
-              payments: localPayments
-            };
             
-            const { error: insertError } = await supabase
-              .from('user_data')
-              .insert(userData as any);
+            try {
+              const userData: UserDataRow = {
+                user_id: userId,
+                products: localProducts,
+                sales: localSales,
+                clients: localClients,
+                payments: localPayments
+              };
               
-            if (insertError) {
-              console.error('Error inserting data to Supabase:', insertError);
-              toast.error("Failed to save your data");
-              throw insertError;
-            } else {
-              console.log("Successfully saved initial data to Supabase");
-              return; // Return early as we're already using local data
+              const { error: insertError } = await supabase
+                .from('user_data')
+                .insert(userData as any);
+                
+              if (insertError) {
+                console.error('Error inserting data to Supabase:', insertError);
+                toast.error("Failed to save your data");
+                throw insertError;
+              } else {
+                console.log("Successfully saved initial data to Supabase");
+                return; // Return early as we're already using local data
+              }
+            } catch (insertErr) {
+              console.error('Error during initial data save:', insertErr);
+              toast.error("Failed to initialize your data");
+              // Continue execution to try creating empty record
             }
+          }
+          
+          // Create empty user data record
+          const userData: UserDataRow = {
+            user_id: userId,
+            products: [],
+            sales: [],
+            clients: [],
+            payments: []
+          };
+          
+          const { error: insertError } = await supabase
+            .from('user_data')
+            .insert(userData as any);
+            
+          if (insertError) {
+            console.error('Error inserting empty data to Supabase:', insertError);
+            toast.error("Failed to initialize your data");
+            throw insertError;
           } else {
-            // Create empty user data record
-            const userData: UserDataRow = {
-              user_id: userId,
+            console.log("Successfully created empty data record in Supabase");
+            set({
               products: [],
               sales: [],
               clients: [],
               payments: []
-            };
-            
-            const { error: insertError } = await supabase
-              .from('user_data')
-              .insert(userData as any);
-              
-            if (insertError) {
-              console.error('Error inserting empty data to Supabase:', insertError);
-              toast.error("Failed to initialize your data");
-              throw insertError;
-            } else {
-              console.log("Successfully created empty data record in Supabase");
-              set({
-                products: [],
-                sales: [],
-                clients: [],
-                payments: []
-              });
-              return;
-            }
+            });
+            return;
           }
         } else {
           console.error('Error fetching data:', error);
@@ -122,47 +129,43 @@ export const createUserSlice = (
           throw error;
         }
       } else if (data) {
-        // If data exists in Supabase, parse JSON data and update local state
+        // If data exists in Supabase, use it to update local state
         console.log('Found existing data for user:', data);
         
-        const typedData = data as unknown as UserDataTable;
-        
-        // Safely parse and set products
-        const products = Array.isArray(typedData.products) 
-          ? typedData.products
-          : [];
-        
-        // Safely parse and set sales
-        const sales = Array.isArray(typedData.sales) 
-          ? typedData.sales
-          : [];
-        
-        // Safely parse and set clients
-        const clients = Array.isArray(typedData.clients) 
-          ? typedData.clients
-          : [];
-        
-        // Safely parse and set payments
-        const payments = Array.isArray(typedData.payments) 
-          ? typedData.payments
-          : [];
-        
-        console.log("Setting data from Supabase:", { 
-          productsCount: products.length,
-          salesCount: sales.length,
-          clientsCount: clients.length,
-          paymentsCount: payments.length
-        });
-        
-        // Update store with fetched data
-        set({
-          products,
-          sales,
-          clients,
-          payments
-        });
-        
-        console.log("Data loaded successfully from Supabase");
+        try {
+          // Safely parse and set products
+          const products = Array.isArray(data.products) ? data.products : [];
+          
+          // Safely parse and set sales
+          const sales = Array.isArray(data.sales) ? data.sales : [];
+          
+          // Safely parse and set clients
+          const clients = Array.isArray(data.clients) ? data.clients : [];
+          
+          // Safely parse and set payments
+          const payments = Array.isArray(data.payments) ? data.payments : [];
+          
+          console.log("Setting data from Supabase:", { 
+            productsCount: products.length,
+            salesCount: sales.length,
+            clientsCount: clients.length,
+            paymentsCount: payments.length
+          });
+          
+          // Update store with fetched data
+          set({
+            products,
+            sales,
+            clients,
+            payments
+          });
+          
+          console.log("Data loaded successfully from Supabase");
+        } catch (parseError) {
+          console.error('Error parsing data from Supabase:', parseError);
+          toast.error("Error parsing your data");
+          throw parseError;
+        }
       }
     } catch (error) {
       console.error('Error syncing data with Supabase:', error);

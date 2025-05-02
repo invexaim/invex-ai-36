@@ -1,5 +1,5 @@
 
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
@@ -25,12 +25,13 @@ const DesktopSidebar = ({
 }: DesktopSidebarProps) => {
   const navigate = useNavigate();
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
+  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   const handleLogout = async () => {
     try {
       console.log("Desktop logout triggered");
       
-      // First save all data to Supabase to ensure it's persisted
+      // First save all data to Supabase to ensure it's persisted before logout
       await saveDataToSupabase();
       console.log("Data saved to Supabase before logout");
       
@@ -75,6 +76,7 @@ const DesktopSidebar = ({
           variant="ghost"
         >
           <span className="flex items-center gap-3">
+            <LogOut className="w-5 h-5" />
             <span>Logout</span>
           </span>
         </Button>

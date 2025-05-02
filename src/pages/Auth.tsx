@@ -33,11 +33,20 @@ const Auth = () => {
       } catch (error) {
         console.error("Error checking authentication status:", error);
       } finally {
+        // Always set to false when check is complete, regardless of result
         setCheckingAuth(false);
       }
     };
     
+    // Set a timeout to prevent infinite loading if the check fails
+    const timeoutId = setTimeout(() => {
+      setCheckingAuth(false);
+    }, 5000);
+    
     checkAuth();
+    
+    // Clear timeout if checkAuth completes normally
+    return () => clearTimeout(timeoutId);
   }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {

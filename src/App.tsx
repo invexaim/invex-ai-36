@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,11 +34,45 @@ const App = () => {
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     console.log("Setting up auth state listeners...");
     
-    // Set up auth state listener first
+    // First check for existing session to avoid race conditions
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user ?? null;
+        console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
+        
+        setUser(currentUser);
+        setCurrentUser(currentUser);
+        
+        if (currentUser) {
+          // If user is already logged in, sync their data
+          try {
+            console.log("User already authenticated, syncing data on initial load...");
+            await syncDataWithSupabase();
+            console.log("Data synced successfully on initial load");
+          } catch (error) {
+            console.error("Error syncing data on initial load:", error);
+            toast.error("Failed to load your data. Please refresh the page.");
+          }
+        }
+        
+        setAuthChecked(true);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error checking session:", error);
+        setAuthChecked(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+
+    // Set up auth state listener after checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event);
@@ -61,51 +96,18 @@ const App = () => {
           console.log("User signed out, clearing local data");
           clearLocalData();
         }
-        
-        // Set loading to false after auth state is determined
-        setIsLoading(false);
       }
     );
 
-    // Check for existing session
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user ?? null;
-        console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
-        
-        setUser(currentUser);
-        setCurrentUser(currentUser);
-        
-        if (currentUser) {
-          // If user is already logged in, sync their data
-          try {
-            console.log("User already authenticated, syncing data on initial load...");
-            await syncDataWithSupabase();
-            console.log("Data synced successfully on initial load");
-          } catch (error) {
-            console.error("Error syncing data on initial load:", error);
-            toast.error("Failed to load your data. Please refresh the page.");
-          }
-        }
-        
-        // Set loading to false after session check completes
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error checking session:", error);
-        setIsLoading(false);
-      }
+    return () => {
+      subscription.unsubscribe();
     };
-
-    checkSession();
-
-    return () => subscription.unsubscribe();
   }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
   // Protected route component
   const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    // If still loading, show nothing (or could show a loading spinner)
-    if (isLoading) {
+    // Add check for authChecked to ensure we've at least attempted to check auth status
+    if (isLoading || !authChecked) {
       return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
     
@@ -120,7 +122,7 @@ const App = () => {
   };
 
   // If still loading initial auth state, show loading
-  if (isLoading) {
+  if (isLoading && !authChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl">Loading application...</div>
@@ -141,7 +143,7 @@ const App = () => {
             {/* Auth route - accessible only when not logged in */}
             <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
             
-            {/* Dashboard route - needs authentication */}
+            {/* Protected routes - need authentication */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <MainLayout>
