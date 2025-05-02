@@ -1,0 +1,110 @@
+
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { isUserDataRow } from "../../types";
+
+export async function saveUserDataToSupabase(userId: string, state: any) {
+  console.log("Saving data to Supabase for user:", userId);
+  
+  try {
+    // Get current data to save
+    const userData = {
+      user_id: userId,
+      products: state.products || [],
+      sales: state.sales || [],
+      clients: state.clients || [],
+      payments: state.payments || [],
+      updated_at: new Date().toISOString()
+    };
+    
+    const { error } = await supabase
+      .from('user_data')
+      .upsert(userData as any, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false
+      });
+    
+    if (error) {
+      console.error('Error saving data to Supabase:', error);
+      toast.error("Failed to save your changes");
+      throw error;
+    } else {
+      console.log("Data successfully saved to Supabase");
+    }
+  } catch (error) {
+    console.error('Error saving to Supabase:', error);
+    toast.error("Error saving your changes");
+    throw error;
+  }
+}
+
+export async function fetchUserDataFromSupabase(userId: string) {
+  console.log("Starting data sync for user:", userId);
+  
+  try {
+    // Try to fetch existing data from Supabase
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        console.log("No existing data found for user");
+        return null;
+      } else {
+        console.error('Error fetching data:', error);
+        toast.error("Failed to load your data");
+        throw error;
+      }
+    } 
+    
+    if (data) {
+      console.log('Found existing data for user:', data);
+      return data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching data from Supabase:', error);
+    toast.error("Error loading your data");
+    throw error;
+  }
+}
+
+export async function createEmptyUserData(userId: string) {
+  console.log("Creating empty user data record for user:", userId);
+  
+  try {
+    const userData = {
+      user_id: userId,
+      products: [],
+      sales: [],
+      clients: [],
+      payments: []
+    };
+    
+    const { error } = await supabase
+      .from('user_data')
+      .insert(userData as any);
+      
+    if (error) {
+      console.error('Error inserting empty data to Supabase:', error);
+      toast.error("Failed to initialize your data");
+      throw error;
+    } else {
+      console.log("Successfully created empty data record in Supabase");
+      return {
+        products: [],
+        sales: [],
+        clients: [],
+        payments: []
+      };
+    }
+  } catch (error) {
+    console.error('Error creating empty user data:', error);
+    toast.error("Failed to initialize your data");
+    throw error;
+  }
+}
