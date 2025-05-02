@@ -1,12 +1,11 @@
-
 import { Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import useAppStore from "@/store/appStore";
+import AuthService from "@/services/authService";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
@@ -25,7 +24,6 @@ const DesktopSidebar = ({
 }: DesktopSidebarProps) => {
   const navigate = useNavigate();
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
-  const clearLocalData = useAppStore(state => state.clearLocalData);
 
   const handleLogout = async () => {
     try {
@@ -35,18 +33,17 @@ const DesktopSidebar = ({
       await saveDataToSupabase();
       console.log("Data saved to Supabase before logout");
       
-      // Then sign out from Supabase
-      await supabase.auth.signOut();
+      // Then sign out using AuthService
+      const { error } = await AuthService.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
+      }
       
       // Then call the onLogout function from props
       await onLogout();
       
-      // Toast notification
-      toast.success("Logged out successfully");
-      
-      // Navigate to auth page after logout
-      console.log("Redirecting to auth page");
-      navigate('/auth', { replace: true });
     } catch (error) {
       console.error("Error logging out:", error);
       toast.error("Failed to log out. Please try again.");

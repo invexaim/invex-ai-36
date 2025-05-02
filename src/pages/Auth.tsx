@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
+import AuthService from "@/services/authService";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,16 +16,15 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true); 
   const navigate = useNavigate();
-  const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   
   // Check authentication status when the component mounts
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { session } = await AuthService.getSession();
         
         // If already authenticated, redirect to dashboard
-        if (data.session) {
+        if (session) {
           console.log("User already authenticated, redirecting to dashboard");
           navigate("/dashboard", { replace: true });
         }
@@ -56,38 +54,19 @@ const Auth = () => {
       if (isLogin) {
         // Login
         console.log("Attempting to log in with email:", email);
-        const {
-          data,
-          error
-        } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+        const { user, error } = await AuthService.signIn(email, password);
         if (error) throw error;
-        console.log("Login successful:", data);
+        
+        console.log("Login successful:", user);
         toast.success("Logged in successfully");
-        try {
-          console.log("Syncing data from Supabase after login...");
-          // Explicitly sync data after login
-          await syncDataWithSupabase();
-          console.log("Data synced successfully after login");
-        } catch (syncError) {
-          console.error("Error syncing data after login:", syncError);
-          toast.error("Failed to load your data. You may need to refresh.");
-        }
         navigate("/dashboard");
       } else {
         // Sign up
         console.log("Attempting to sign up with email:", email);
-        const {
-          data,
-          error
-        } = await supabase.auth.signUp({
-          email,
-          password
-        });
+        const { user, error } = await AuthService.signUp(email, password);
         if (error) throw error;
-        console.log("Signup successful:", data);
+        
+        console.log("Signup successful:", user);
         toast.success("Account created successfully. Please check your email to verify your account.");
         setIsLogin(true);
       }

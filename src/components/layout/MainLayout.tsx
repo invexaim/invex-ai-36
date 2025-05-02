@@ -15,9 +15,9 @@ import {
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
 import { SidebarItemType } from "./types";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
+import AuthService from "@/services/authService";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -51,8 +51,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       // Clear local data first
       clearLocalData();
       
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
+      // Sign out using AuthService
+      const { error } = await AuthService.signOut();
       
       if (error) {
         throw error;

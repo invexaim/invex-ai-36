@@ -1,4 +1,3 @@
-
 import { Moon, Sun, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -7,8 +6,8 @@ import { SidebarItemType } from "./types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import useAppStore from "@/store/appStore";
+import AuthService from "@/services/authService";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
@@ -42,18 +41,17 @@ const MobileNavigation = ({
       await saveDataToSupabase();
       console.log("Data saved to Supabase before logout");
       
-      // Then sign out from Supabase
-      await supabase.auth.signOut();
+      // Then sign out using AuthService
+      const { error } = await AuthService.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
+      }
       
       // Then call the onLogout function from props
       await onLogout();
       
-      // Toast notification
-      toast.success("Logged out successfully");
-      
-      // Navigate to auth page after logout
-      console.log("Redirecting to auth page");
-      navigate('/auth', { replace: true });
     } catch (error) {
       console.error("Error logging out:", error);
       toast.error("Failed to log out. Please try again.");
