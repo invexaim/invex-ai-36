@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Product } from '@/types';
 import { toast } from 'sonner';
@@ -6,8 +5,11 @@ import { ProductState } from '../types';
 
 export const createProductSlice = (set: any, get: any) => ({
   products: [],
+  categories: ["Electronics", "Clothing", "Food", "Books", "Furniture", "Uncategorized"],
   
   setProducts: (products: Product[]) => set({ products }),
+  
+  setCategories: (categories: string[]) => set({ categories }),
   
   addProduct: (productData) => set((state: ProductState) => {
     const newProduct: Product = {
@@ -27,6 +29,75 @@ export const createProductSlice = (set: any, get: any) => ({
   deleteProduct: (productId) => set((state: ProductState) => {
     toast.success("Product deleted successfully");
     return { products: state.products.filter(product => product.product_id !== productId) };
+  }),
+  
+  transferProduct: (productId, quantity, destinationType) => set((state: ProductState) => {
+    const productIndex = state.products.findIndex(p => p.product_id === productId);
+    
+    if (productIndex === -1) {
+      toast.error("Product not found");
+      return state;
+    }
+    
+    const product = state.products[productIndex];
+    const isWarehouse = product.product_name.includes("(Warehouse)");
+    
+    // If product is already in the destination location
+    if ((isWarehouse && destinationType === 'warehouse') || (!isWarehouse && destinationType === 'local')) {
+      toast.error(`Product is already in ${destinationType} stock`);
+      return state;
+    }
+    
+    // Check if we have enough quantity to transfer
+    const currentUnits = parseInt(product.units as string, 10);
+    if (currentUnits < quantity) {
+      toast.error("Not enough units available to transfer");
+      return state;
+    }
+    
+    // Create new product in the destination or update existing one
+    const productNameWithoutLocation = product.product_name.replace(" (Warehouse)", "");
+    const destinationProductName = destinationType === 'warehouse' ? 
+      `${productNameWithoutLocation} (Warehouse)` : 
+      productNameWithoutLocation;
+    
+    // Find if destination product already exists
+    const destProductIndex = state.products.findIndex(p => 
+      p.product_name === destinationProductName && 
+      p.category === product.category
+    );
+    
+    const updatedProducts = [...state.products];
+    
+    // Update source product quantity
+    updatedProducts[productIndex] = {
+      ...product,
+      units: (currentUnits - quantity).toString()
+    };
+    
+    // If destination product exists, update its quantity
+    if (destProductIndex !== -1) {
+      const destProduct = updatedProducts[destProductIndex];
+      const destUnits = parseInt(destProduct.units as string, 10);
+      updatedProducts[destProductIndex] = {
+        ...destProduct,
+        units: (destUnits + quantity).toString()
+      };
+    } else {
+      // Otherwise create a new product at destination
+      updatedProducts.push({
+        product_id: Math.max(...state.products.map(p => p.product_id)) + 1,
+        product_name: destinationProductName,
+        category: product.category,
+        price: product.price,
+        units: quantity.toString(),
+        reorder_level: product.reorder_level,
+        created_at: new Date().toISOString(),
+      });
+    }
+    
+    toast.success(`${quantity} units transferred to ${destinationType} stock`);
+    return { products: updatedProducts };
   }),
   
   importProductsFromCSV: async (file: File): Promise<void> => {
@@ -71,6 +142,10 @@ export const createProductSlice = (set: any, get: any) => ({
               ? Math.max(...state.products.map(p => p.product_id)) + 1 
               : 1;
             
+            // Track new categories to add
+            const currentCategories = new Set(state.categories);
+            const newCategories: string[] = [];
+            
             for (let i = 1; i < lines.length; i++) {
               if (!lines[i].trim()) continue; // Skip empty lines
               
@@ -93,6 +168,12 @@ export const createProductSlice = (set: any, get: any) => ({
                   reorder_level: reorderLevel,
                   created_at: new Date().toISOString()
                 });
+                
+                // Add new categories
+                if (category && !currentCategories.has(category)) {
+                  currentCategories.add(category);
+                  newCategories.push(category);
+                }
               }
             }
             
@@ -103,6 +184,15 @@ export const createProductSlice = (set: any, get: any) => ({
             }
             
             toast.success(`Successfully imported ${importedProducts.length} products`);
+            
+            // Update with new categories if any
+            if (newCategories.length > 0) {
+              return { 
+                products: [...state.products, ...importedProducts],
+                categories: [...state.categories, ...newCategories]
+              };
+            }
+            
             return { products: [...state.products, ...importedProducts] };
           });
           

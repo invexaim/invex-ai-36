@@ -1,8 +1,8 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Warehouse, Plus, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Package, Warehouse, Plus, Trash2, MoveHorizontal } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,13 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useAppStore from "@/store/appStore";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TransferProductDialog } from "@/components/products/TransferProductDialog";
+import { AddCategoryDialog } from "@/components/products/AddCategoryDialog";
 
 const formSchema = z.object({
   product_name: z.string().min(2, "Product name must be at least 2 characters"),
-  category: z.string().min(2, "Category must be at least 2 characters"),
+  category: z.string().min(1, "Category is required"),
   price: z.string().min(1, "Price is required"),
   units: z.string().min(1, "Units is required"),
   reorder_level: z.string().optional(),
@@ -28,7 +31,11 @@ const Stock = () => {
   const [activeTab, setActiveTab] = useState("local");
   const [searchQuery, setSearchQuery] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
+  const [openTransferDialog, setOpenTransferDialog] = useState(false);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  
   const products = useAppStore((state) => state.products);
+  const categories = useAppStore((state) => state.categories || []);
   const addProduct = useAppStore((state) => state.addProduct);
   const deleteProduct = useAppStore((state) => state.deleteProduct);
 
@@ -182,150 +189,16 @@ const Stock = () => {
           className="max-w-xs"
         />
         
-        {/* Add Product Dialog */}
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Add Product
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
-              <DialogDescription>
-                Fill in the details to add a new product to your inventory.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="product_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter product name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter category" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price (₹)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="units"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Units</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="reorder_level"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reorder Level</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="5" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock Location</FormLabel>
-                      <div className="flex gap-4">
-                        <Label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="local"
-                            checked={field.value === "local"}
-                            onChange={() => field.onChange("local")}
-                            className="h-4 w-4"
-                          />
-                          <span>Local Shop</span>
-                        </Label>
-                        <Label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="warehouse"
-                            checked={field.value === "warehouse"}
-                            onChange={() => field.onChange("warehouse")}
-                            className="h-4 w-4"
-                          />
-                          <span>Warehouse</span>
-                        </Label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Add Product</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button onClick={() => setOpenTransferDialog(true)} className="flex items-center gap-2">
+            <MoveHorizontal className="h-4 w-4" /> Transfer Products
+          </Button>
+          
+          {/* Add Product Dialog Trigger */}
+          <Button onClick={() => setOpenDialog(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" /> Add Product
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="local" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -337,6 +210,10 @@ const Stock = () => {
           <TabsTrigger value="warehouse" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" />
             <span>Warehouse Stock</span>
+          </TabsTrigger>
+          <TabsTrigger value="transfer" className="flex items-center gap-2">
+            <MoveHorizontal className="h-4 w-4" />
+            <span>Transfer</span>
           </TabsTrigger>
         </TabsList>
 
@@ -373,7 +250,231 @@ const Stock = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="transfer" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transfer Stock</CardTitle>
+              <CardDescription>
+                Move products between your local shop and warehouse
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-muted/50 p-6 rounded-lg border">
+                  <h3 className="font-medium text-lg mb-4">Transfer from Local to Warehouse</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Move excess inventory from your shop to the warehouse for storage
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      setActiveTab("transfer");
+                      setOpenTransferDialog(true);
+                    }} 
+                    className="w-full"
+                  >
+                    <Package className="h-4 w-4 mr-2" /> 
+                    Local to Warehouse
+                  </Button>
+                </div>
+                <div className="bg-muted/50 p-6 rounded-lg border">
+                  <h3 className="font-medium text-lg mb-4">Transfer from Warehouse to Local</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Restock your local shop with products from the warehouse
+                  </p>
+                  <Button 
+                    onClick={() => {
+                      setActiveTab("transfer");
+                      setOpenTransferDialog(true);
+                    }} 
+                    className="w-full"
+                  >
+                    <Warehouse className="h-4 w-4 mr-2" /> 
+                    Warehouse to Local
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Add Product Dialog */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new product to your inventory.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="product_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter product name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <div className="flex gap-2">
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map(category => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => setShowAddCategoryDialog(true)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price (₹)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="units"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Units</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="reorder_level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reorder Level</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="5" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Stock Location</FormLabel>
+                    <div className="flex gap-4">
+                      <Label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          value="local"
+                          checked={field.value === "local"}
+                          onChange={() => field.onChange("local")}
+                          className="h-4 w-4"
+                        />
+                        <span>Local Shop</span>
+                      </Label>
+                      <Label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          value="warehouse"
+                          checked={field.value === "warehouse"}
+                          onChange={() => field.onChange("warehouse")}
+                          className="h-4 w-4"
+                        />
+                        <span>Warehouse</span>
+                      </Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Add Product</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Product Dialog */}
+      <TransferProductDialog 
+        open={openTransferDialog} 
+        onOpenChange={setOpenTransferDialog}
+        sourceType={activeTab === "warehouse" ? "warehouse" : "local"}
+      />
+
+      {/* Add Category Dialog */}
+      <AddCategoryDialog 
+        open={showAddCategoryDialog}
+        onOpenChange={setShowAddCategoryDialog}
+      />
     </div>
   );
 };
