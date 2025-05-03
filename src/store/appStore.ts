@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState } from './types';
@@ -7,6 +8,7 @@ import { createSaleSlice } from './slices/saleSlice';
 import { createClientSlice } from './slices/clientSlice';
 import { createPaymentSlice } from './slices/paymentSlice';
 import { createUserSlice } from './slices/userSlice';
+import { saveUserDataToSupabase } from './slices/userSlice/dataSync';
 
 // Ensure we import React to fix the useSyncExternalStore issue
 import * as React from 'react';
@@ -25,35 +27,7 @@ const useAppStore = create<AppState>()(
         
         try {
           console.log("Saving data to Supabase from store");
-          const { supabase } = await import('@/integrations/supabase/client');
-          const userData = {
-            user_id: currentUser.id,
-            products: get().products || [],
-            sales: get().sales || [],
-            clients: get().clients || [],
-            payments: get().payments || []
-          };
-          
-          console.log("Saving the following data to Supabase:", {
-            productsCount: userData.products.length,
-            salesCount: userData.sales.length,
-            clientsCount: userData.clients.length,
-            paymentsCount: userData.payments.length
-          });
-          
-          const { error } = await supabase
-            .from('user_data')
-            .upsert(userData as any, { 
-              onConflict: 'user_id',
-              ignoreDuplicates: false
-            });
-          
-          if (error) {
-            console.error('Error saving data to Supabase from store:', error);
-            throw error;
-          } else {
-            console.log("Data successfully saved to Supabase from store");
-          }
+          await saveUserDataToSupabase(currentUser.id, get());
         } catch (error) {
           console.error('Error in saveDataToSupabase:', error);
           throw error;

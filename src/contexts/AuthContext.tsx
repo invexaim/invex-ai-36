@@ -51,6 +51,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("User already authenticated, syncing data on initial load...");
             await syncDataWithSupabase();
             console.log("Data synced successfully on initial load");
+            
+            // Remove welcome shown flag from previous sessions when loading app
+            sessionStorage.removeItem("welcomeShown");
           } catch (error) {
             console.error("Error syncing data on initial load:", error);
             toast.error("Failed to load your data. Please refresh the page.");
@@ -80,6 +83,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           await syncDataWithSupabase();
           console.log("Data synced successfully after auth change");
           toast.success("Your data has been loaded");
+          
+          // Remove welcome shown flag to show welcome message on new login
+          sessionStorage.removeItem("welcomeShown");
         } catch (error) {
           console.error("Error syncing data after auth change:", error);
           toast.error("Failed to load your data. Please refresh and try again.");

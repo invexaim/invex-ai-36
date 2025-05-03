@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CardStat } from "@/components/ui/card-stat";
 import { BarChart } from "@/components/charts/BarChart";
@@ -18,19 +18,31 @@ import { AIInsight } from "@/types";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import { format, subDays, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const { products, sales, clients, payments } = useAppStore();
   const navigate = useNavigate();
+  const { authChecked } = useAuthContext();
+  const [welcomeShown, setWelcomeShown] = useState(false);
 
-  // First time welcome message
+  // Only show welcome message on first load after authentication
   useEffect(() => {
-    // Welcome toast on first load
-    toast.success("Welcome to Invex AI", {
-      description: "Your intelligent inventory management system",
-      duration: 5000,
-    });
-  }, []);
+    // Check if we've shown the welcome message this session
+    const hasShownWelcome = sessionStorage.getItem("welcomeShown");
+    
+    if (authChecked && !welcomeShown && !hasShownWelcome) {
+      // Welcome toast on first load after authentication
+      toast.success("Welcome to Invex AI", {
+        description: "Your intelligent inventory management system",
+        duration: 5000,
+      });
+      
+      // Mark that we've shown the welcome message
+      setWelcomeShown(true);
+      sessionStorage.setItem("welcomeShown", "true");
+    }
+  }, [authChecked, welcomeShown]);
 
   // Calculate low stock items
   const lowStockItems = useMemo(() => {
