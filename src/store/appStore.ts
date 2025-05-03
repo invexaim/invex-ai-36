@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState } from './types';
@@ -113,12 +112,18 @@ const useAppStore = create<AppState>()(
         }, 500); // Debounce save operations
       };
       
-      // Combine all slices
+      // Combine all slices and expose them
       return {
+        // Product slice
         ...productSlice,
+        // Sale slice
         ...saleSlice,
+        // Client slice
         ...clientSlice,
+        // Payment slice with deletePayment explicitly included
         ...paymentSlice,
+        deletePayment: paymentSlice.deletePayment,
+        // User slice
         ...userSlice,
         
         // Override set method for specific actions to trigger Supabase sync

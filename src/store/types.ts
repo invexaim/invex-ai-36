@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -133,6 +134,7 @@ export interface PaymentState {
   payments: Payment[];
   setPayments: (payments: Payment[]) => void;
   addPayment: (payment: Omit<Payment, 'id' | 'date'>) => void;
+  deletePayment: (paymentId: number) => void;
 }
 
 export interface UserState {
