@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import AuthService from "@/services/authService";
+import { ArrowLeft } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true); 
+  const [isHovering, setIsHovering] = useState(false);
   const navigate = useNavigate();
   
   // Check authentication status when the component mounts
@@ -86,6 +89,32 @@ const Auth = () => {
   }
 
   return <BackgroundBeamsWithCollision>
+      {/* Back to home button with animated hover effect */}
+      <div className="absolute top-6 left-6 z-20">
+        <HoverCard openDelay={0} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <a 
+              href="https://invexai.netlify.app" 
+              className="flex items-center px-4 py-2 rounded-lg bg-white/20 dark:bg-black/30 backdrop-blur-sm transition-all border border-transparent hover:border-purple-400"
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
+            >
+              <ArrowLeft className="h-5 w-5 mr-2 text-purple-600" />
+              <span className="text-purple-600 font-medium">
+                {isHovering ? (
+                  <span className="inline-block animate-fade-in">Back to Home Page</span>
+                ) : (
+                  "Back"
+                )}
+              </span>
+            </a>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-auto p-2 text-sm text-center">
+            Return to the main Invex AI website
+          </HoverCardContent>
+        </HoverCard>
+      </div>
+
       <div className="relative z-10 w-full max-w-md px-4 text-center">
         <h1 className="text-4xl font-bold mb-8 text-[#9b60d6]">Invex AI</h1>
         <p className="text-gray-800 mb-8 text-lg">Your AI-powered investment assistant</p>
