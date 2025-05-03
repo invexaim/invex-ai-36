@@ -12,8 +12,14 @@ export const createUserSlice = (
   saveDataToSupabase: () => Promise<void>
 ) => ({
   currentUser: null,
+  isSignedIn: false,
+  isLoading: false,
   
-  setCurrentUser: (user: User | null) => set({ currentUser: user }),
+  setCurrentUser: (user: User | null) => set({ currentUser: user, isSignedIn: !!user }),
+  
+  setIsSignedIn: (isSignedIn: boolean) => set({ isSignedIn }),
+  
+  setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
   clearLocalData: () => {
     console.log("Clearing local state for UI refresh only, not affecting stored data");
@@ -25,16 +31,16 @@ export const createUserSlice = (
         .then(() => {
           console.log("Data saved successfully before logout");
           // Only clear the user information, not the actual data
-          set({ currentUser: null });
+          set({ currentUser: null, isSignedIn: false });
         })
         .catch(error => {
           console.error("Error saving data before logout:", error);
           // Even if there's an error, still clear user information
-          set({ currentUser: null });
+          set({ currentUser: null, isSignedIn: false });
         });
     } else {
       // No current user, just clear user information
-      set({ currentUser: null });
+      set({ currentUser: null, isSignedIn: false });
     }
   },
   

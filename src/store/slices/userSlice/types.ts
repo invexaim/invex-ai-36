@@ -7,4 +7,8 @@ export interface UserState {
   syncDataWithSupabase: () => Promise<void>;
   saveDataToSupabase: () => Promise<void>;
   clearLocalData: () => void;
+  isSignedIn: boolean;
+  setIsSignedIn: (isSignedIn: boolean) => void;
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
 }

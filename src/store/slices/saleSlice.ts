@@ -15,6 +15,11 @@ export const createSaleSlice = (
   
   setSales: (sales: Sale[]) => set({ sales }),
   
+  // Renamed function for backward compatibility
+  addSale: (saleData) => {
+    return get().recordSale(saleData);
+  },
+  
   recordSale: (saleData) => {
     const products = getProducts();
     // Find the product

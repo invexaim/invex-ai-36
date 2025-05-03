@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -116,6 +115,8 @@ export interface ProductState {
 export interface SaleState {
   sales: Sale[];
   setSales: (sales: Sale[]) => void;
+  recordSale: (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => void;
+  deleteSale: (saleId: number) => void;
   addSale: (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => void;
 }
 
@@ -124,6 +125,8 @@ export interface ClientState {
   setClients: (clients: Client[]) => void;
   addClient: (client: Omit<Client, 'id' | 'totalPurchases' | 'totalSpent' | 'lastPurchase' | 'joinDate' | 'openInvoices'>) => void;
   updateClientPurchase: (clientName: string, amount: number) => void;
+  deleteClient: (clientId: number) => void;
+  removeClient: (clientId: number) => void;
 }
 
 export interface PaymentState {
@@ -140,6 +143,21 @@ export interface UserState {
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
   saveDataToSupabase: () => Promise<void>;
+  syncDataWithSupabase: () => Promise<void>;
+  clearLocalData: () => void;
 }
 
 export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState {}
+
+// Add this helper function to check if a value is a valid user data row
+export function isUserDataRow(value: any): boolean {
+  if (!value || typeof value !== 'object') return false;
+  
+  // Check if it has the expected structure
+  return (
+    'products' in value && 
+    'sales' in value && 
+    'clients' in value && 
+    'payments' in value
+  );
+}

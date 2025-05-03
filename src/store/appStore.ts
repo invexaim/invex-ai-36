@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState } from './types';
@@ -14,10 +15,7 @@ import * as React from 'react';
 // Create a combined store with all slices
 const useAppStore = create<AppState>()(
   persist(
-    (...args) => {
-      // Extract set and get from args
-      const [set, get] = args;
-      
+    (set, get, store) => {
       // Create a function that will be used to save data to Supabase
       const saveDataToSupabase = async () => {
         const { currentUser } = get();
@@ -137,8 +135,19 @@ const useAppStore = create<AppState>()(
           setWithAutoSave({ payments });
         },
         
+        // Initialize required state properties
+        isSignedIn: false,
+        setIsSignedIn: (isSignedIn) => set({ isSignedIn }),
+        isLoading: false,
+        setIsLoading: (isLoading) => set({ isLoading }),
+        
         // Expose the saveDataToSupabase function
-        saveDataToSupabase
+        saveDataToSupabase,
+        
+        // Add the addSale alias for recordSale for backward compatibility
+        addSale: (saleData) => {
+          saleSlice.recordSale(saleData);
+        }
       };
     },
     {
