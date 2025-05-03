@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { Product } from '@/types';
 import { toast } from 'sonner';
@@ -29,6 +30,32 @@ export const createProductSlice = (set: any, get: any) => ({
   deleteProduct: (productId) => set((state: ProductState) => {
     toast.success("Product deleted successfully");
     return { products: state.products.filter(product => product.product_id !== productId) };
+  }),
+  
+  restockProduct: (productId, quantity) => set((state: ProductState) => {
+    const productIndex = state.products.findIndex(p => p.product_id === productId);
+    
+    if (productIndex === -1) {
+      toast.error("Product not found");
+      return state;
+    }
+    
+    const product = state.products[productIndex];
+    const currentUnits = parseInt(product.units as string, 10);
+    
+    if (isNaN(quantity) || quantity <= 0) {
+      toast.error("Please enter a valid quantity");
+      return state;
+    }
+    
+    const updatedProducts = [...state.products];
+    updatedProducts[productIndex] = {
+      ...product,
+      units: (currentUnits + quantity).toString()
+    };
+    
+    toast.success(`Successfully added ${quantity} units to ${product.product_name}`);
+    return { products: updatedProducts };
   }),
   
   transferProduct: (productId, quantity, destinationType) => set((state: ProductState) => {

@@ -1,12 +1,11 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Warehouse, Plus, Trash2, MoveHorizontal } from "lucide-react";
+import { Package, Warehouse, Plus, Trash2, MoveHorizontal, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -17,6 +16,8 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransferProductDialog } from "@/components/products/TransferProductDialog";
 import { AddCategoryDialog } from "@/components/products/AddCategoryDialog";
+import { RestockProductDialog } from "@/components/products/RestockProductDialog";
+import { Product } from "@/types";
 
 const formSchema = z.object({
   product_name: z.string().min(2, "Product name must be at least 2 characters"),
@@ -33,6 +34,8 @@ const Stock = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openTransferDialog, setOpenTransferDialog] = useState(false);
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showRestockDialog, setShowRestockDialog] = useState(false);
   
   const products = useAppStore((state) => state.products);
   const categories = useAppStore((state) => state.categories || []);
@@ -90,6 +93,12 @@ const Stock = () => {
     }
   };
 
+  // Function to handle product restock
+  const handleRestock = (product: Product) => {
+    setSelectedProduct(product);
+    setShowRestockDialog(true);
+  };
+
   // Columns for the data table
   const columns = [
     {
@@ -120,6 +129,15 @@ const Stock = () => {
         const product = row.original;
         return (
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleRestock(product)}
+              className="text-blue-500"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Restock
+            </Button>
             <Button 
               variant="destructive" 
               size="sm"
@@ -474,6 +492,13 @@ const Stock = () => {
       <AddCategoryDialog 
         open={showAddCategoryDialog}
         onOpenChange={setShowAddCategoryDialog}
+      />
+
+      {/* Restock Product Dialog */}
+      <RestockProductDialog
+        open={showRestockDialog}
+        onOpenChange={setShowRestockDialog}
+        product={selectedProduct}
       />
     </div>
   );

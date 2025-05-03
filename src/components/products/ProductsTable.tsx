@@ -1,5 +1,5 @@
 
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Product } from "@/types";
 import useAppStore from "@/store/appStore";
+import { useState } from "react";
+import { RestockProductDialog } from "./RestockProductDialog";
 
 interface ProductsTableProps {
   products: Product[];
@@ -25,12 +27,19 @@ export const ProductsTable = ({
   onSearchChange,
 }: ProductsTableProps) => {
   const { deleteProduct } = useAppStore();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showRestockDialog, setShowRestockDialog] = useState(false);
 
   const filteredProducts = products.filter((product) => {
     return product.product_name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
   });
+
+  const handleRestock = (product: Product) => {
+    setSelectedProduct(product);
+    setShowRestockDialog(true);
+  };
 
   return (
     <div className="bg-card rounded-lg border shadow-sm">
@@ -88,7 +97,16 @@ export const ProductsTable = ({
                         : "Out of Stock"}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestock(product)}
+                      className="text-blue-500"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Restock
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -112,6 +130,12 @@ export const ProductsTable = ({
           </TableBody>
         </Table>
       </div>
+      
+      <RestockProductDialog
+        open={showRestockDialog}
+        onOpenChange={setShowRestockDialog}
+        product={selectedProduct}
+      />
     </div>
   );
 };

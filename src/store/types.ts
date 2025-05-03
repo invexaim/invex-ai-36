@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -111,6 +110,7 @@ export interface ProductState {
   categories: string[];
   setCategories: (categories: string[]) => void;
   transferProduct: (productId: number, quantity: number, destinationType: 'local' | 'warehouse') => void;
+  restockProduct: (productId: number, quantity: number) => void;
 }
 
 export interface SaleState {
