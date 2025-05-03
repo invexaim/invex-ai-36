@@ -17,7 +17,9 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true); 
-  const [isHovering, setIsHovering] = useState(false);
+  const [displayText, setDisplayText] = useState("Back");
+  const [isAnimating, setIsAnimating] = useState(false);
+  const fullText = "Back to Home Page";
   const navigate = useNavigate();
   
   // Check authentication status when the component mounts
@@ -49,6 +51,25 @@ const Auth = () => {
     // Clear timeout if checkAuth completes normally
     return () => clearTimeout(timeoutId);
   }, [navigate]);
+
+  // Handle typing animation
+  useEffect(() => {
+    if (isAnimating) {
+      let charIndex = 0;
+      const typingInterval = setInterval(() => {
+        if (charIndex <= fullText.length) {
+          setDisplayText(fullText.substring(0, charIndex));
+          charIndex++;
+        } else {
+          clearInterval(typingInterval);
+        }
+      }, 50);
+      
+      return () => clearInterval(typingInterval);
+    } else {
+      setDisplayText("Back");
+    }
+  }, [isAnimating]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,15 +117,14 @@ const Auth = () => {
             <a 
               href="https://invexai.netlify.app" 
               className="flex items-center px-4 py-2 rounded-lg bg-white/20 dark:bg-black/30 backdrop-blur-sm transition-all border border-transparent hover:border-purple-400"
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
+              onMouseEnter={() => setIsAnimating(true)}
+              onMouseLeave={() => setIsAnimating(false)}
             >
               <ArrowLeft className="h-5 w-5 mr-2 text-purple-600" />
-              <span className="text-purple-600 font-medium">
-                {isHovering ? (
-                  <span className="inline-block animate-fade-in">Back to Home Page</span>
-                ) : (
-                  "Back"
+              <span className="text-purple-600 font-medium min-w-24">
+                {displayText}
+                {isAnimating && displayText !== fullText && (
+                  <span className="inline-block w-1 h-4 bg-purple-600 ml-0.5 animate-pulse"></span>
                 )}
               </span>
             </a>

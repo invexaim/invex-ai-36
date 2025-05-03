@@ -17,19 +17,32 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       updated_at: new Date().toISOString()
     };
     
-    const { error } = await supabase
-      .from('user_data')
-      .upsert(userData as any, { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false
-      });
+    // Create a retry mechanism for important data saves
+    const maxRetries = 3;
+    let retries = 0;
+    let saveSuccessful = false;
     
-    if (error) {
-      console.error('Error saving data to Supabase:', error);
-      toast.error("Failed to save your changes");
-      throw error;
-    } else {
-      console.log("Data successfully saved to Supabase");
+    while (!saveSuccessful && retries < maxRetries) {
+      const { error } = await supabase
+        .from('user_data')
+        .upsert(userData as any, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        });
+      
+      if (error) {
+        console.error(`Error saving data to Supabase (attempt ${retries + 1}):`, error);
+        retries++;
+        if (retries >= maxRetries) {
+          toast.error("Failed to save your changes after multiple attempts");
+          throw error;
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        console.log("Data successfully saved to Supabase");
+        saveSuccessful = true;
+      }
     }
   } catch (error) {
     console.error('Error saving to Supabase:', error);
