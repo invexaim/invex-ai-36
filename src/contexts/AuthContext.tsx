@@ -73,10 +73,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Set up auth state listener after checking session
     const subscription = AuthService.onAuthStateChange(async (currentUser) => {
-      const wasLoggedIn = user !== null;
-      const isLoggedIn = currentUser !== null;
-      const isNewLogin = !wasLoggedIn && isLoggedIn;
-      
       setUser(currentUser);
       setCurrentUser(currentUser);
       
@@ -86,12 +82,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.log("User authenticated, syncing data...");
           await syncDataWithSupabase();
           console.log("Data synced successfully after auth change");
+          toast.success("Your data has been loaded");
           
-          // Set a flag to show welcome message only on new login
-          if (isNewLogin) {
-            toast.success("Your data has been loaded");
-            sessionStorage.setItem("isNewLogin", "true");
-          }
+          // Remove welcome shown flag to show welcome message on new login
+          sessionStorage.removeItem("welcomeShown");
         } catch (error) {
           console.error("Error syncing data after auth change:", error);
           toast.error("Failed to load your data. Please refresh and try again.");
@@ -100,15 +94,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // When user logs out, clear local data
         console.log("User signed out, clearing local data");
         clearLocalData();
-        sessionStorage.removeItem("isNewLogin");
-        sessionStorage.removeItem("welcomeShown");
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, user]);
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, authChecked }}>

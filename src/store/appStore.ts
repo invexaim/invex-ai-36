@@ -54,22 +54,10 @@ const useAppStore = create<AppState>()(
               p.product_id === updatedProduct.product_id ? updatedProduct : p
             )
           }));
-          
-          // Trigger save to Supabase whenever products are updated through sales
-          const { currentUser } = get();
-          if (currentUser) {
-            setTimeout(() => saveDataToSupabase().catch(e => console.error(e)), 300);
-          }
         },
         // Method to update client purchase history
         (clientName, amount) => {
           clientSlice.updateClientPurchase(clientName, amount);
-          
-          // Trigger save to Supabase whenever clients are updated through sales
-          const { currentUser } = get();
-          if (currentUser) {
-            setTimeout(() => saveDataToSupabase().catch(e => console.error(e)), 300);
-          }
         }
       );
       
@@ -79,12 +67,6 @@ const useAppStore = create<AppState>()(
         // Give payment slice access to update client
         (clientName: string, amount: number) => {
           clientSlice.updateClientPurchase(clientName, amount);
-          
-          // Trigger save to Supabase whenever clients are updated through payments
-          const { currentUser } = get();
-          if (currentUser) {
-            setTimeout(() => saveDataToSupabase().catch(e => console.error(e)), 300);
-          }
         }
       );
       
@@ -144,11 +126,6 @@ const useAppStore = create<AppState>()(
         // Add the addSale alias for recordSale for backward compatibility
         addSale: (saleData) => {
           saleSlice.recordSale(saleData);
-          // Ensure data is saved after recording a sale
-          const { currentUser } = get();
-          if (currentUser) {
-            setTimeout(() => saveDataToSupabase().catch(e => console.error(e)), 300);
-          }
         }
       };
     },
