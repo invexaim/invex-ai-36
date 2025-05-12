@@ -32,9 +32,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
   const setupRealtimeUpdates = useAppStore(state => state.setupRealtimeUpdates);
+  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
 
   useEffect(() => {
     console.log("Setting up auth state listeners...");
+    let realtimeCleanup: (() => void) | null = null;
     
     // First check for existing session to avoid race conditions
     const checkSession = async () => {
@@ -54,7 +56,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("Data synced successfully on initial load");
             
             // Set up realtime updates
-            setupRealtimeUpdates(currentUser.id);
+            realtimeCleanup = setupRealtimeUpdates(currentUser.id);
+            
+            // Force an initial save to ensure all latest data is on the server
+            setTimeout(() => {
+              saveDataToSupabase().catch(error => {
+                console.error("Error in initial data save:", error);
+              });
+            }, 1000);
             
             // Remove welcome shown flag from previous sessions when loading app
             sessionStorage.removeItem("welcomeShown");
@@ -89,7 +98,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           toast.success("Your data has been loaded");
           
           // Set up realtime updates after login
-          setupRealtimeUpdates(currentUser.id);
+          if (realtimeCleanup) {
+            realtimeCleanup();
+          }
+          realtimeCleanup = setupRealtimeUpdates(currentUser.id);
+          
+          // Force an initial save to ensure all latest data is on the server
+          setTimeout(() => {
+            saveDataToSupabase().catch(error => {
+              console.error("Error in initial data save after auth:", error);
+            });
+          }, 1000);
           
           // Remove welcome shown flag to show welcome message on new login
           sessionStorage.removeItem("welcomeShown");
@@ -100,14 +119,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else {
         // When user logs out, clear local data
         console.log("User signed out, clearing local data");
+        if (realtimeCleanup) {
+          realtimeCleanup();
+          realtimeCleanup = null;
+        }
         clearLocalData();
       }
     });
 
     return () => {
       subscription.unsubscribe();
+      if (realtimeCleanup) {
+        realtimeCleanup();
+      }
     };
-  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates]);
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates, saveDataToSupabase]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, authChecked }}>

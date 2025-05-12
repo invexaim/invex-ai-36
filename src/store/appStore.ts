@@ -84,7 +84,7 @@ const useAppStore = create<AppState>()(
               console.error("Error auto-saving data after state change:", error);
             });
           }
-        }, 500); // Debounce save operations
+        }, 300); // Reduce debounce time for faster sync
       };
       
       // Variable to store unsubscribe function for realtime updates
@@ -134,6 +134,8 @@ const useAppStore = create<AppState>()(
         
         // Set up realtime updates for the current user
         setupRealtimeUpdates: (userId: string) => {
+          console.log("Setting up realtime updates in store for user:", userId);
+          
           // Clean up any existing subscription
           if (realtimeUnsubscribe) {
             realtimeUnsubscribe();
@@ -145,11 +147,16 @@ const useAppStore = create<AppState>()(
             console.log("Updating store with realtime data:", userData);
             
             // Update store with the received data
+            const products = Array.isArray(userData.products) ? userData.products : [];
+            const sales = Array.isArray(userData.sales) ? userData.sales : [];
+            const clients = Array.isArray(userData.clients) ? userData.clients : [];
+            const payments = Array.isArray(userData.payments) ? userData.payments : [];
+            
             set({
-              products: Array.isArray(userData.products) ? userData.products : [],
-              sales: Array.isArray(userData.sales) ? userData.sales : [],
-              clients: Array.isArray(userData.clients) ? userData.clients : [],
-              payments: Array.isArray(userData.payments) ? userData.payments : []
+              products,
+              sales,
+              clients,
+              payments
             });
             
             toast.success("Data synchronized from another device", {
@@ -157,6 +164,14 @@ const useAppStore = create<AppState>()(
               duration: 2000
             });
           });
+          
+          // Force a data sync on setup
+          const { syncDataWithSupabase } = get();
+          syncDataWithSupabase().catch(error => {
+            console.error("Error syncing data during realtime setup:", error);
+          });
+          
+          return realtimeUnsubscribe;
         }
       };
     },

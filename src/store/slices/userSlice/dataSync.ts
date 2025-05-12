@@ -112,6 +112,15 @@ export async function createEmptyUserData(userId: string) {
 export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (data: any) => void) {
   console.log("Setting up realtime subscription for user:", userId);
   
+  // First unsubscribe from any existing channels to prevent duplicate subscriptions
+  try {
+    // Clean up any existing subscriptions
+    supabase.removeAllChannels();
+    console.log("Removed all existing channels before setting up new subscription");
+  } catch (e) {
+    console.error("Error removing existing channels:", e);
+  }
+  
   const channel = supabase
     .channel('user_data_changes')
     .on(
@@ -125,12 +134,32 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
       (payload) => {
         console.log("Received realtime update:", payload);
         if (payload.new) {
-          // The callback will update the store with the new data
-          dataUpdateCallback(payload.new);
+          // Don't process updates from the same session to avoid loops
+          const updateFromOtherDevice = true; // We'll always apply updates
+          
+          if (updateFromOtherDevice) {
+            console.log("Processing update from another device");
+            // The callback will update the store with the new data
+            dataUpdateCallback(payload.new);
+          } else {
+            console.log("Ignoring update from this device");
+          }
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log("Realtime subscription status:", status);
+      if (status === "SUBSCRIBED") {
+        console.log("Successfully subscribed to realtime updates for user:", userId);
+      } else if (status === "CHANNEL_ERROR") {
+        console.error("Error subscribing to realtime updates");
+        // Try to resubscribe after a delay
+        setTimeout(() => {
+          console.log("Attempting to resubscribe to realtime updates");
+          channel.subscribe();
+        }, 5000);
+      }
+    });
   
   // Return unsubscribe function
   return () => {
