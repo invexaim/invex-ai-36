@@ -125,6 +125,7 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
       (payload) => {
         console.log("Received realtime update:", payload);
         if (payload.new) {
+          // The callback will update the store with the new data
           dataUpdateCallback(payload.new);
         }
       }
