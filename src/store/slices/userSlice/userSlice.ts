@@ -128,6 +128,10 @@ export const createUserSlice = (
       console.error('Error in saveDataToSupabase:', error);
       throw error;
     }
+  },
+  
+  setupRealtimeUpdates: (userId: string) => {
+    // Implementation is in the main store to handle unsubscribe logic
   }
 });
 

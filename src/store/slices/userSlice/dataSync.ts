@@ -108,3 +108,32 @@ export async function createEmptyUserData(userId: string) {
     throw error;
   }
 }
+
+export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (data: any) => void) {
+  console.log("Setting up realtime subscription for user:", userId);
+  
+  const channel = supabase
+    .channel('user_data_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'user_data',
+        filter: `user_id=eq.${userId}`
+      },
+      (payload) => {
+        console.log("Received realtime update:", payload);
+        if (payload.new) {
+          dataUpdateCallback(payload.new);
+        }
+      }
+    )
+    .subscribe();
+  
+  // Return unsubscribe function
+  return () => {
+    console.log("Removing realtime subscription");
+    supabase.removeChannel(channel);
+  };
+}

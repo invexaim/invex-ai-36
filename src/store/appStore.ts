@@ -8,7 +8,7 @@ import { createSaleSlice } from './slices/saleSlice';
 import { createClientSlice } from './slices/clientSlice';
 import { createPaymentSlice } from './slices/paymentSlice';
 import { createUserSlice } from './slices/userSlice';
-import { saveUserDataToSupabase } from './slices/userSlice/dataSync';
+import { saveUserDataToSupabase, setupRealtimeSubscription } from './slices/userSlice/dataSync';
 
 // Ensure we import React to fix the useSyncExternalStore issue
 import * as React from 'react';
@@ -86,6 +86,9 @@ const useAppStore = create<AppState>()(
         }, 500); // Debounce save operations
       };
       
+      // Variable to store unsubscribe function for realtime updates
+      let realtimeUnsubscribe: (() => void) | null = null;
+      
       // Combine all slices and expose them
       return {
         // Product slice
@@ -126,6 +129,33 @@ const useAppStore = create<AppState>()(
         // Add the addSale alias for recordSale for backward compatibility
         addSale: (saleData) => {
           saleSlice.recordSale(saleData);
+        },
+        
+        // Set up realtime updates for the current user
+        setupRealtimeUpdates: (userId: string) => {
+          // Clean up any existing subscription
+          if (realtimeUnsubscribe) {
+            realtimeUnsubscribe();
+            realtimeUnsubscribe = null;
+          }
+          
+          // Set up new subscription
+          realtimeUnsubscribe = setupRealtimeSubscription(userId, (userData) => {
+            console.log("Updating store with realtime data:", userData);
+            
+            // Update store with the received data
+            set({
+              products: Array.isArray(userData.products) ? userData.products : [],
+              sales: Array.isArray(userData.sales) ? userData.sales : [],
+              clients: Array.isArray(userData.clients) ? userData.clients : [],
+              payments: Array.isArray(userData.payments) ? userData.payments : []
+            });
+            
+            toast.success("Data synchronized from another device", {
+              id: "realtime-sync",
+              duration: 2000
+            });
+          });
         }
       };
     },

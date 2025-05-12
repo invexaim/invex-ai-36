@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
   const clearLocalData = useAppStore(state => state.clearLocalData);
+  const setupRealtimeUpdates = useAppStore(state => state.setupRealtimeUpdates);
 
   useEffect(() => {
     console.log("Setting up auth state listeners...");
@@ -51,6 +52,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("User already authenticated, syncing data on initial load...");
             await syncDataWithSupabase();
             console.log("Data synced successfully on initial load");
+            
+            // Set up realtime updates
+            setupRealtimeUpdates(currentUser.id);
             
             // Remove welcome shown flag from previous sessions when loading app
             sessionStorage.removeItem("welcomeShown");
@@ -84,6 +88,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.log("Data synced successfully after auth change");
           toast.success("Your data has been loaded");
           
+          // Set up realtime updates after login
+          setupRealtimeUpdates(currentUser.id);
+          
           // Remove welcome shown flag to show welcome message on new login
           sessionStorage.removeItem("welcomeShown");
         } catch (error) {
@@ -100,7 +107,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setCurrentUser, syncDataWithSupabase, clearLocalData]);
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, authChecked }}>

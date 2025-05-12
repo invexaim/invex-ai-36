@@ -147,6 +147,7 @@ export interface UserState {
   saveDataToSupabase: () => Promise<void>;
   syncDataWithSupabase: () => Promise<void>;
   clearLocalData: () => void;
+  setupRealtimeUpdates: (userId: string) => void;
 }
 
 export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState {}
