@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState } from './types';
+import { toast } from "sonner";
 
 import { createProductSlice } from './slices/productSlice';
 import { createSaleSlice } from './slices/saleSlice';
