@@ -133,7 +133,7 @@ const useAppStore = create<AppState>()(
         },
         
         // Set up realtime updates for the current user
-        setupRealtimeUpdates: (userId: string) => {
+        setupRealtimeUpdates: (userId: string): (() => void) => {
           console.log("Setting up realtime updates in store for user:", userId);
           
           // Clean up any existing subscription
@@ -171,7 +171,13 @@ const useAppStore = create<AppState>()(
             console.error("Error syncing data during realtime setup:", error);
           });
           
-          return realtimeUnsubscribe;
+          // Always return a cleanup function, even if realtimeUnsubscribe is null
+          return () => {
+            if (realtimeUnsubscribe) {
+              realtimeUnsubscribe();
+              realtimeUnsubscribe = null;
+            }
+          };
         }
       };
     },

@@ -56,7 +56,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("Data synced successfully on initial load");
             
             // Set up realtime updates
-            realtimeCleanup = setupRealtimeUpdates(currentUser.id);
+            const cleanup = setupRealtimeUpdates(currentUser.id);
+            if (typeof cleanup === 'function') {
+              realtimeCleanup = cleanup;
+            }
             
             // Force an initial save to ensure all latest data is on the server
             setTimeout(() => {
@@ -101,7 +104,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (realtimeCleanup) {
             realtimeCleanup();
           }
-          realtimeCleanup = setupRealtimeUpdates(currentUser.id);
+          const cleanup = setupRealtimeUpdates(currentUser.id);
+          if (typeof cleanup === 'function') {
+            realtimeCleanup = cleanup;
+          }
           
           // Force an initial save to ensure all latest data is on the server
           setTimeout(() => {

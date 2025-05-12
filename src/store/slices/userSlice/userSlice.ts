@@ -130,8 +130,9 @@ export const createUserSlice = (
     }
   },
   
-  setupRealtimeUpdates: (userId: string) => {
+  setupRealtimeUpdates: (userId: string): (() => void) => {
     // Implementation is in the main store to handle unsubscribe logic
+    return () => {}; // Return empty function as fallback
   }
 });
 
