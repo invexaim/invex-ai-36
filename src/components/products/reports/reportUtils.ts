@@ -6,6 +6,14 @@ import { Product, Sale, Payment } from "@/types";
 import { TimeRange } from "./TimeRangeSelection";
 import { ReportType } from "./ReportTypeSelection";
 
+// Define the extended jsPDF type with autoTable
+interface jsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: {
+    finalY: number;
+  };
+  autoTable: (options: any) => void;
+}
+
 // Get report type title
 export const getReportTypeTitle = (type: ReportType): string => {
   switch (type) {
@@ -114,8 +122,10 @@ export const filterByDateRange = <T extends { [key: string]: any }>(
 
 // Generate products report
 export const generateProductsReport = (doc: jsPDF, items: Product[]): void => {
-  // @ts-ignore - jspdf-autotable adds this method
-  doc.autoTable({
+  // Cast to our custom type that includes the autoTable method
+  const pdfDoc = doc as jsPDFWithAutoTable;
+  
+  pdfDoc.autoTable({
     startY: 40,
     head: [['ID', 'Product Name', 'Category', 'Price (₹)', 'Available Units', 'Status']],
     body: items.map(product => [
@@ -134,12 +144,12 @@ export const generateProductsReport = (doc: jsPDF, items: Product[]): void => {
   const outOfStock = items.filter(product => parseInt(product.units) === 0).length;
   const lowStock = items.filter(product => parseInt(product.units) > 0 && parseInt(product.units) <= 10).length;
   
-  doc.setFontSize(12);
-  doc.text(`Summary:`, 15, doc.lastAutoTable.finalY + 10);
-  doc.text(`Total Products: ${totalItems}`, 15, doc.lastAutoTable.finalY + 20);
-  doc.text(`Out of Stock: ${outOfStock}`, 15, doc.lastAutoTable.finalY + 30);
-  doc.text(`Low Stock: ${lowStock}`, 15, doc.lastAutoTable.finalY + 40);
-  doc.text(`Total Inventory Value: ₹${totalValue.toFixed(2)}`, 15, doc.lastAutoTable.finalY + 50);
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Summary:`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  pdfDoc.text(`Total Products: ${totalItems}`, 15, pdfDoc.lastAutoTable.finalY + 20);
+  pdfDoc.text(`Out of Stock: ${outOfStock}`, 15, pdfDoc.lastAutoTable.finalY + 30);
+  pdfDoc.text(`Low Stock: ${lowStock}`, 15, pdfDoc.lastAutoTable.finalY + 40);
+  pdfDoc.text(`Total Inventory Value: ₹${totalValue.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 50);
 };
 
 // Generate sales report
@@ -150,11 +160,13 @@ export const generateSalesReport = (
   customDateFrom?: Date,
   customDateTo?: Date
 ): void => {
+  // Cast to our custom type that includes the autoTable method
+  const pdfDoc = doc as jsPDFWithAutoTable;
+  
   // Filter sales based on time range
   const filteredSales = filterByDateRange(items, 'sale_date', timeRange, customDateFrom, customDateTo);
   
-  // @ts-ignore - jspdf-autotable adds this method
-  doc.autoTable({
+  pdfDoc.autoTable({
     startY: 40,
     head: [['ID', 'Product', 'Client', 'Quantity', 'Price (₹)', 'Total (₹)', 'Date']],
     body: filteredSales.map(sale => [
@@ -173,11 +185,11 @@ export const generateSalesReport = (
   const totalRevenue = filteredSales.reduce((sum, sale) => sum + (sale.quantity_sold * sale.selling_price), 0);
   const totalQuantity = filteredSales.reduce((sum, sale) => sum + sale.quantity_sold, 0);
   
-  doc.setFontSize(12);
-  doc.text(`Summary:`, 15, doc.lastAutoTable.finalY + 10);
-  doc.text(`Total Sales: ${totalSales}`, 15, doc.lastAutoTable.finalY + 20);
-  doc.text(`Total Quantity Sold: ${totalQuantity}`, 15, doc.lastAutoTable.finalY + 30);
-  doc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`, 15, doc.lastAutoTable.finalY + 40);
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Summary:`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  pdfDoc.text(`Total Sales: ${totalSales}`, 15, pdfDoc.lastAutoTable.finalY + 20);
+  pdfDoc.text(`Total Quantity Sold: ${totalQuantity}`, 15, pdfDoc.lastAutoTable.finalY + 30);
+  pdfDoc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 40);
 };
 
 // Generate payments report
@@ -188,11 +200,13 @@ export const generatePaymentsReport = (
   customDateFrom?: Date,
   customDateTo?: Date
 ): void => {
+  // Cast to our custom type that includes the autoTable method
+  const pdfDoc = doc as jsPDFWithAutoTable;
+  
   // Filter payments based on time range
   const filteredPayments = filterByDateRange(items, 'date', timeRange, customDateFrom, customDateTo);
   
-  // @ts-ignore - jspdf-autotable adds this method
-  doc.autoTable({
+  pdfDoc.autoTable({
     startY: 40,
     head: [['ID', 'Client', 'Amount (₹)', 'Method', 'Description', 'Status', 'Date']],
     body: filteredPayments.map(payment => [
@@ -212,12 +226,12 @@ export const generatePaymentsReport = (
   const paidAmount = filteredPayments.filter(p => p.status === 'paid').reduce((sum, payment) => sum + payment.amount, 0);
   const pendingAmount = filteredPayments.filter(p => p.status === 'pending').reduce((sum, payment) => sum + payment.amount, 0);
   
-  doc.setFontSize(12);
-  doc.text(`Summary:`, 15, doc.lastAutoTable.finalY + 10);
-  doc.text(`Total Payments: ${totalPayments}`, 15, doc.lastAutoTable.finalY + 20);
-  doc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 15, doc.lastAutoTable.finalY + 30);
-  doc.text(`Paid Amount: ₹${paidAmount.toFixed(2)}`, 15, doc.lastAutoTable.finalY + 40);
-  doc.text(`Pending Amount: ₹${pendingAmount.toFixed(2)}`, 15, doc.lastAutoTable.finalY + 50);
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Summary:`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  pdfDoc.text(`Total Payments: ${totalPayments}`, 15, pdfDoc.lastAutoTable.finalY + 20);
+  pdfDoc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 30);
+  pdfDoc.text(`Paid Amount: ₹${paidAmount.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 40);
+  pdfDoc.text(`Pending Amount: ₹${pendingAmount.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 50);
 };
 
 // Generate report based on type
