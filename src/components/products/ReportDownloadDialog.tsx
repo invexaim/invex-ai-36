@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +19,7 @@ import {
 import { format } from "date-fns";
 import { CalendarIcon, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import useAppStore from "@/store/appStore";
 
