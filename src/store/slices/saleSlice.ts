@@ -27,12 +27,14 @@ export const createSaleSlice = (
     
     if (!product) {
       toast.error("Product not found");
-      return;
+      return null;
     }
     
     // Create new sale
+    let newSale: Sale;
+    
     set((state: SaleState) => {
-      const newSale: Sale = {
+      newSale = {
         sale_id: state.sales.length > 0 ? Math.max(...state.sales.map(s => s.sale_id)) + 1 : 1,
         product_id: saleData.product_id,
         quantity_sold: saleData.quantity_sold,
@@ -66,6 +68,8 @@ export const createSaleSlice = (
       const totalAmount = saleData.quantity_sold * saleData.selling_price;
       updateClientPurchase(saleData.clientName, totalAmount);
     }
+    
+    return newSale;
   },
   
   deleteSale: (saleId) => {

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,8 @@ interface RecordSaleFormProps {
 }
 
 const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
-  const { products, clients, recordSale } = useAppStore();
+  const navigate = useNavigate();
+  const { products, clients, recordSale, setPendingSalePayment } = useAppStore();
   const [newSaleData, setNewSaleData] = useState({
     product_id: 0,
     quantity_sold: 1,
@@ -34,7 +36,15 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     }
 
     // Record the sale using our store function
-    recordSale(newSaleData);
+    const recordedSale = recordSale(newSaleData);
+    
+    if (recordedSale) {
+      // Store the sale details for the payment page
+      setPendingSalePayment(recordedSale);
+      
+      // Navigate to payments page
+      navigate("/payments");
+    }
     
     // Reset form and close dialog
     setNewSaleData({

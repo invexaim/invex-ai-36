@@ -35,6 +35,7 @@ export interface Sale {
   product?: Product;
   clientId?: number;
   clientName?: string;
+  relatedSaleId?: number; // Add reference to related sale
 }
 
 export interface Client {
@@ -57,6 +58,7 @@ export interface Payment {
   status: "paid" | "pending" | "failed";
   method: string;
   description?: string;
+  relatedSaleId?: number; // Add reference to related sale
 }
 
 export interface InventoryAnalysis {
@@ -116,7 +118,7 @@ export interface ProductState {
 export interface SaleState {
   sales: Sale[];
   setSales: (sales: Sale[]) => void;
-  recordSale: (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => void;
+  recordSale: (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => Sale;
   deleteSale: (saleId: number) => void;
   addSale: (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => void;
 }
@@ -135,6 +137,8 @@ export interface PaymentState {
   setPayments: (payments: Payment[]) => void;
   addPayment: (payment: Omit<Payment, 'id' | 'date'>) => void;
   deletePayment: (paymentId: number) => void;
+  pendingSalePayment: Sale | null;
+  setPendingSalePayment: (sale: Sale | null) => void;
 }
 
 export interface UserState {

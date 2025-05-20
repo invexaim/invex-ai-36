@@ -117,12 +117,16 @@ const useAppStore = create<AppState>()(
         setPayments: (payments) => {
           setWithAutoSave({ payments });
         },
+        setPendingSalePayment: (sale) => {
+          set({ pendingSalePayment: sale });
+        },
         
         // Initialize required state properties
         isSignedIn: false,
         setIsSignedIn: (isSignedIn) => set({ isSignedIn }),
         isLoading: false,
         setIsLoading: (isLoading) => set({ isLoading }),
+        pendingSalePayment: null,
         
         // Expose the saveDataToSupabase function
         saveDataToSupabase,
@@ -186,7 +190,7 @@ const useAppStore = create<AppState>()(
       partialize: (state) => {
         // Only persist the data, not the user info
         // This ensures data is available locally but we rely on Supabase for the authoritative source
-        const { currentUser, ...rest } = state;
+        const { currentUser, pendingSalePayment, ...rest } = state;
         return rest;
       },
     }

@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { Payment } from '@/types';
+import { Payment, Sale } from '@/types';
 import { toast } from 'sonner';
 import { PaymentState } from '../types';
 
@@ -10,8 +10,11 @@ export const createPaymentSlice = (
   updateClientPurchase: (clientName: string, amount: number) => void
 ) => ({
   payments: [],
+  pendingSalePayment: null,
   
   setPayments: (payments: Payment[]) => set({ payments }),
+  
+  setPendingSalePayment: (sale: Sale | null) => set({ pendingSalePayment: sale }),
   
   addPayment: (paymentData) => set((state: PaymentState) => {
     const newPayment: Payment = {
@@ -22,6 +25,7 @@ export const createPaymentSlice = (
       status: paymentData.status,
       method: paymentData.method,
       description: paymentData.description,
+      relatedSaleId: paymentData.relatedSaleId,
     };
     
     // Update client in the client store

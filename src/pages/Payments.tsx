@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, Plus, Search, Trash2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import useAppStore from "@/store/appStore";
 const paymentMethods = ["Credit Card", "UPI", "Bank Transfer", "Cash", "Cheque"];
 
 const Payments = () => {
-  const { payments, addPayment, deletePayment, clients } = useAppStore();
+  const { payments, addPayment, deletePayment, clients, pendingSalePayment, setPendingSalePayment } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,7 +33,28 @@ const Payments = () => {
     status: "paid" as "paid" | "pending" | "failed",
     method: "",
     description: "",
+    relatedSaleId: undefined as number | undefined,
   });
+
+  // Initialize payment form with pending sale data if available
+  useEffect(() => {
+    if (pendingSalePayment) {
+      setFormData({
+        clientName: pendingSalePayment.clientName || "",
+        amount: pendingSalePayment.quantity_sold * pendingSalePayment.selling_price,
+        status: "paid" as "paid" | "pending" | "failed",
+        method: "",
+        description: `Payment for ${pendingSalePayment.quantity_sold} ${pendingSalePayment.product?.product_name || "items"}`,
+        relatedSaleId: pendingSalePayment.sale_id,
+      });
+      
+      // Open the payment dialog automatically
+      setIsAddPaymentOpen(true);
+      
+      // Clear the pending sale data to prevent it from reappearing if user navigates away
+      // We'll do this after the user completes the payment or cancels
+    }
+  }, [pendingSalePayment]);
 
   const totalPaid = payments
     .filter((payment) => payment.status === "paid")
@@ -81,9 +102,23 @@ const Payments = () => {
       status: "paid",
       method: "",
       description: "",
+      relatedSaleId: undefined,
     });
     
+    // Clear pending sale payment
+    if (pendingSalePayment) {
+      setPendingSalePayment(null);
+    }
+    
     // Close dialog
+    setIsAddPaymentOpen(false);
+  };
+  
+  const handleCancel = () => {
+    // Clear pending sale reference when canceling
+    if (pendingSalePayment) {
+      setPendingSalePayment(null);
+    }
     setIsAddPaymentOpen(false);
   };
 
@@ -244,12 +279,24 @@ const Payments = () => {
       </div>
 
       {/* Add Payment Dialog */}
-      <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
+      <Dialog 
+        open={isAddPaymentOpen} 
+        onOpenChange={(open) => {
+          if (!open && pendingSalePayment) {
+            setPendingSalePayment(null);
+          }
+          setIsAddPaymentOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-xl">New Payment</DialogTitle>
+            <DialogTitle className="text-xl">
+              {pendingSalePayment ? "Complete Sale Payment" : "New Payment"}
+            </DialogTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              Add a new payment record. Fill in the payment details below.
+              {pendingSalePayment 
+                ? "Complete the payment for your recently recorded sale." 
+                : "Add a new payment record. Fill in the payment details below."}
             </p>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -312,15 +359,16 @@ const Payments = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="clientName">Client (Optional)</Label>
+              <Label htmlFor="clientName">Client {pendingSalePayment ? "" : "(Optional)"}</Label>
               <select
                 id="clientName"
                 name="clientName"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.clientName}
                 onChange={handleChange}
+                disabled={pendingSalePayment && !!pendingSalePayment.clientName}
               >
-                <option value="">Select a client (optional)</option>
+                <option value="">Select a client {pendingSalePayment ? "" : "(optional)"}</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.name}>
                     {client.name}
@@ -332,7 +380,7 @@ const Payments = () => {
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setIsAddPaymentOpen(false)}
+              onClick={handleCancel}
               className="w-full sm:w-auto"
             >
               Cancel
@@ -342,7 +390,8 @@ const Payments = () => {
               disabled={!formData.description || formData.amount <= 0 || !formData.method}
               className="w-full sm:w-auto"
             >
-              <CreditCard className="mr-2 h-4 w-4" /> Add Payment
+              <CreditCard className="mr-2 h-4 w-4" /> 
+              {pendingSalePayment ? "Complete Payment" : "Add Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
