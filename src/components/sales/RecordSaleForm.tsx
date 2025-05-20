@@ -4,7 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { PlusCircle, ChevronDown } from "lucide-react";
 import useAppStore from "@/store/appStore";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface RecordSaleFormProps {
   onClose: () => void;
@@ -12,13 +19,21 @@ interface RecordSaleFormProps {
 
 const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   const navigate = useNavigate();
-  const { products, clients, recordSale, setPendingSalePayment } = useAppStore();
+  const { products, clients, recordSale, setPendingSalePayment, addClient } = useAppStore();
   const [newSaleData, setNewSaleData] = useState({
     product_id: 0,
     quantity_sold: 1,
     selling_price: 0,
     clientId: 0,
     clientName: "",
+  });
+
+  // New client form state
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    name: "",
+    email: "",
+    phone: "",
   });
 
   const handleAddSale = () => {
@@ -57,6 +72,38 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     onClose();
   };
 
+  const handleAddNewClient = () => {
+    // Validate client data
+    if (!newClientData.name.trim()) {
+      return;
+    }
+    
+    // Add the new client
+    const clientData = {
+      ...newClientData,
+      joinDate: new Date().toISOString(),
+      openInvoices: 0
+    };
+    
+    addClient(clientData);
+    
+    // Update the sale data with the new client name
+    setNewSaleData({
+      ...newSaleData,
+      clientName: newClientData.name,
+    });
+    
+    // Reset new client form
+    setNewClientData({
+      name: "",
+      email: "",
+      phone: "",
+    });
+    
+    // Hide the form
+    setShowNewClientForm(false);
+  };
+
   return (
     <div className="grid gap-4 py-4">
       <div className="space-y-2">
@@ -93,33 +140,94 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       
       <div className="space-y-2">
         <Label htmlFor="client">Client</Label>
-        <select
-          id="client"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          onChange={(e) => {
-            const clientId = parseInt(e.target.value);
-            const selectedClient = clients.find(
-              (c) => c.id === clientId
-            );
-            setNewSaleData({
-              ...newSaleData,
-              clientId: clientId,
-              clientName: selectedClient?.name || "",
-            });
-          }}
-          value={newSaleData.clientId || ""}
-        >
-          <option value="">Select a client (optional)</option>
-          {clients.map((client) => (
-            <option 
-              key={client.id} 
-              value={client.id}
-            >
-              {client.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <select
+            id="client"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            onChange={(e) => {
+              const clientId = parseInt(e.target.value);
+              const selectedClient = clients.find(
+                (c) => c.id === clientId
+              );
+              setNewSaleData({
+                ...newSaleData,
+                clientId: clientId,
+                clientName: selectedClient?.name || "",
+              });
+              
+              // Hide new client form if a client is selected
+              if (clientId > 0) {
+                setShowNewClientForm(false);
+              }
+            }}
+            value={newSaleData.clientId || ""}
+          >
+            <option value="">Select a client (optional)</option>
+            {clients.map((client) => (
+              <option 
+                key={client.id} 
+                value={client.id}
+              >
+                {client.name}
+              </option>
+            ))}
+            <option value="new">➕ Add New Client</option>
+          </select>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="icon"
+            onClick={() => setShowNewClientForm(!showNewClientForm)}
+          >
+            <PlusCircle className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+      
+      {showNewClientForm && (
+        <div className="bg-muted/40 p-4 rounded-md border mt-2">
+          <h3 className="text-sm font-medium mb-3">Add New Client</h3>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="client-name">Name</Label>
+              <Input
+                id="client-name"
+                value={newClientData.name}
+                onChange={(e) => setNewClientData({...newClientData, name: e.target.value})}
+                placeholder="Client name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="client-email">Email</Label>
+              <Input
+                id="client-email"
+                type="email"
+                value={newClientData.email}
+                onChange={(e) => setNewClientData({...newClientData, email: e.target.value})}
+                placeholder="Email address"
+              />
+            </div>
+            <div>
+              <Label htmlFor="client-phone">Phone</Label>
+              <Input
+                id="client-phone"
+                value={newClientData.phone}
+                onChange={(e) => setNewClientData({...newClientData, phone: e.target.value})}
+                placeholder="Phone number"
+              />
+            </div>
+            <Button 
+              type="button" 
+              onClick={handleAddNewClient}
+              disabled={!newClientData.name.trim()}
+              className="w-full"
+            >
+              Save Client
+            </Button>
+          </div>
+        </div>
+      )}
       
       <div className="space-y-2">
         <Label htmlFor="quantity">Quantity</Label>

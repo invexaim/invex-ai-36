@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Warehouse, Plus, Trash2, MoveHorizontal, RefreshCw } from "lucide-react";
+import { Package, Warehouse, Plus, Trash2, MoveHorizontal, RefreshCw, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -18,6 +18,7 @@ import { TransferProductDialog } from "@/components/products/TransferProductDial
 import { AddCategoryDialog } from "@/components/products/AddCategoryDialog";
 import { RestockProductDialog } from "@/components/products/RestockProductDialog";
 import { Product } from "@/types";
+import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
 
 const formSchema = z.object({
   product_name: z.string().min(2, "Product name must be at least 2 characters"),
@@ -36,6 +37,7 @@ const Stock = () => {
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showRestockDialog, setShowRestockDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   
   const products = useAppStore((state) => state.products);
   const categories = useAppStore((state) => state.categories || []);
@@ -154,11 +156,20 @@ const Stock = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Stock Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your local shop and warehouse inventory
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Stock Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage your local shop and warehouse inventory
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => setShowReportDialog(true)}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" /> Download Report
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -499,6 +510,12 @@ const Stock = () => {
         open={showRestockDialog}
         onOpenChange={setShowRestockDialog}
         product={selectedProduct}
+      />
+      
+      {/* Report Download Dialog */}
+      <ReportDownloadDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
       />
     </div>
   );
