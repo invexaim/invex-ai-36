@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -35,6 +36,7 @@ export interface Sale {
   product?: Product;
   clientId?: number;
   clientName?: string;
+  relatedSaleId?: number;
 }
 
 export interface Client {
@@ -57,6 +59,7 @@ export interface Payment {
   status: "paid" | "pending" | "failed";
   method: string;
   description?: string;
+  relatedSaleId?: number;
 }
 
 export interface InventoryAnalysis {
