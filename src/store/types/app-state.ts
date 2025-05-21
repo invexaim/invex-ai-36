@@ -4,6 +4,7 @@ import { SaleState } from './sale-state';
 import { ClientState } from './client-state';
 import { PaymentState } from './payment-state';
 import { UserState } from './user-state';
+import { Product, Sale, Client, Payment } from '@/types';
 
 export interface AppState extends 
   Omit<ProductState, 'setProducts' | 'setCategories'>,
