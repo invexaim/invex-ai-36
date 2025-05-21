@@ -17,10 +17,6 @@ interface SalesHeaderProps {
 
 const SalesHeader = ({ productsExist }: SalesHeaderProps) => {
   const [openNewSale, setOpenNewSale] = useState(false);
-  
-  const handleOpenChange = (open: boolean) => {
-    setOpenNewSale(open);
-  };
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -30,28 +26,15 @@ const SalesHeader = ({ productsExist }: SalesHeaderProps) => {
           Manage your sales records
         </p>
       </div>
-      <Dialog open={openNewSale} onOpenChange={handleOpenChange}>
+      <Dialog open={openNewSale} onOpenChange={setOpenNewSale}>
         <Button 
           className="self-start sm:self-auto"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setOpenNewSale(true);
-          }}
+          onClick={() => setOpenNewSale(true)}
           disabled={!productsExist}
         >
           <Plus className="mr-2 h-4 w-4" /> Record Sale
         </Button>
-        <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={(e) => {
-          // Prevent closing on outside click if we're interacting with form elements
-          if (e.target && (
-            (e.target as Element).closest('input') || 
-            (e.target as Element).closest('select') ||
-            (e.target as Element).closest('button')
-          )) {
-            e.preventDefault();
-          }
-        }}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Record New Sale</DialogTitle>
             <DialogDescription>

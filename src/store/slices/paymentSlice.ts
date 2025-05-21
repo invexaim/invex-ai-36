@@ -14,10 +14,7 @@ export const createPaymentSlice = (
   
   setPayments: (payments: Payment[]) => set({ payments }),
   
-  setPendingSalePayment: (sale: Sale | null) => set((state: PaymentState) => {
-    // Ensure we maintain the current pending sale if not explicitly setting to null
-    return { pendingSalePayment: sale };
-  }),
+  setPendingSalePayment: (sale: Sale | null) => set({ pendingSalePayment: sale }),
   
   addPayment: (paymentData) => set((state: PaymentState) => {
     const newPayment: Payment = {

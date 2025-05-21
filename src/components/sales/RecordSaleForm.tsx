@@ -36,13 +36,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     phone: "",
   });
 
-  const handleAddSale = (e?: React.MouseEvent) => {
-    // Prevent default if event is provided to avoid page refreshes
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
+  const handleAddSale = () => {
     // Validate the form
     if (!newSaleData.product_id) {
       return;
@@ -63,19 +57,11 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       // Store the sale details for the payment page
       setPendingSalePayment(recordedSale);
       
-      // First close the dialog to prevent state issues during navigation
-      onClose();
-      
-      // Navigate to payments page after a small delay to ensure dialog is closed
-      setTimeout(() => {
-        navigate("/payments");
-      }, 10);
-    } else {
-      // If sale recording failed, just close the dialog
-      onClose();
+      // Navigate to payments page
+      navigate("/payments");
     }
     
-    // Reset form 
+    // Reset form and close dialog
     setNewSaleData({
       product_id: 0,
       quantity_sold: 1,
@@ -83,15 +69,10 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       clientId: 0,
       clientName: "",
     });
+    onClose();
   };
 
-  const handleAddNewClient = (e?: React.MouseEvent) => {
-    // Prevent default if event is provided
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
+  const handleAddNewClient = () => {
     // Validate client data
     if (!newClientData.name.trim()) {
       return;
@@ -124,7 +105,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   };
 
   return (
-    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
+    <div className="grid gap-4 py-4">
       <div className="space-y-2">
         <Label htmlFor="product">Product</Label>
         <select
@@ -164,30 +145,19 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
             id="client"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             onChange={(e) => {
-              const value = e.target.value;
+              const clientId = parseInt(e.target.value);
+              const selectedClient = clients.find(
+                (c) => c.id === clientId
+              );
+              setNewSaleData({
+                ...newSaleData,
+                clientId: clientId,
+                clientName: selectedClient?.name || "",
+              });
               
-              if (value === "new") {
-                setShowNewClientForm(true);
-                setNewSaleData({
-                  ...newSaleData,
-                  clientId: 0,
-                  clientName: "",
-                });
-              } else {
-                const clientId = parseInt(value);
-                const selectedClient = clients.find(
-                  (c) => c.id === clientId
-                );
-                setNewSaleData({
-                  ...newSaleData,
-                  clientId: clientId,
-                  clientName: selectedClient?.name || "",
-                });
-                
-                // Hide new client form if a client is selected
-                if (clientId > 0) {
-                  setShowNewClientForm(false);
-                }
+              // Hide new client form if a client is selected
+              if (clientId > 0) {
+                setShowNewClientForm(false);
               }
             }}
             value={newSaleData.clientId || ""}
@@ -208,11 +178,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
             type="button" 
             variant="outline" 
             size="icon"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowNewClientForm(!showNewClientForm);
-            }}
+            onClick={() => setShowNewClientForm(!showNewClientForm)}
           >
             <PlusCircle className="h-4 w-4" />
           </Button>
@@ -301,19 +267,11 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-4">
-        <Button 
-          variant="outline" 
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClose();
-          }}
-        >
+        <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
         <Button 
-          type="button" 
+          type="submit" 
           onClick={handleAddSale}
           disabled={!newSaleData.product_id || newSaleData.quantity_sold <= 0 || newSaleData.selling_price <= 0}
         >

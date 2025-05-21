@@ -24,7 +24,6 @@ interface ReportDownloadDialogProps {
 }
 
 const ReportDownloadDialog = ({ open, onOpenChange }: ReportDownloadDialogProps) => {
-  // Initialize with default values that persist during tab switching
   const [reportType, setReportType] = useState<ReportType>("local");
   const [timeRange, setTimeRange] = useState<TimeRange>("daily");
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(new Date());
@@ -51,7 +50,7 @@ const ReportDownloadDialog = ({ open, onOpenChange }: ReportDownloadDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Download Report</DialogTitle>
           <DialogDescription>

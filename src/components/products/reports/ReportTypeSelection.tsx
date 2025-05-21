@@ -3,7 +3,7 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export type ReportType = "local" | "warehouse" | "sales" | "payments" | "all";
+export type ReportType = "local" | "warehouse" | "sales" | "payments";
 
 interface ReportTypeSelectionProps {
   value: ReportType;
@@ -37,10 +37,6 @@ export const ReportTypeSelection: React.FC<ReportTypeSelectionProps> = ({
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="payments" id="payments" />
           <Label htmlFor="payments">Payment Report</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="all" id="all" />
-          <Label htmlFor="all">ALL</Label>
         </div>
       </RadioGroup>
     </div>

@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { Sale, Product } from '@/types';
 import { toast } from 'sonner';
-import { SaleState } from '@/store/types';
+import { SaleState } from '../types';
 
 export const createSaleSlice = (
   set: any, 
@@ -21,67 +21,55 @@ export const createSaleSlice = (
   },
   
   recordSale: (saleData) => {
-    try {
-      const products = getProducts();
-      // Find the product
-      const product = products.find(p => p.product_id === saleData.product_id);
-      
-      if (!product) {
-        toast.error("Product not found");
-        return null;
-      }
-      
-      // Ensure we have sufficient stock
-      const currentUnits = parseInt(product.units as string);
-      if (currentUnits < saleData.quantity_sold) {
-        toast.error(`Insufficient stock. Only ${currentUnits} units available.`);
-        return null;
-      }
-      
-      // Create new sale
-      let newSale: Sale;
-      
-      set((state: SaleState) => {
-        newSale = {
-          sale_id: state.sales.length > 0 ? Math.max(...state.sales.map(s => s.sale_id)) + 1 : 1,
-          product_id: saleData.product_id,
-          quantity_sold: saleData.quantity_sold,
-          selling_price: saleData.selling_price,
-          sale_date: new Date().toISOString(),
-          product,
-          clientId: saleData.clientId,
-          clientName: saleData.clientName
-        };
-        
-        return { 
-          sales: [newSale, ...state.sales]
-        };
-      });
-      
-      // Update product stock in the product store
-      const newUnits = Math.max(0, currentUnits - saleData.quantity_sold);
-      const updatedProduct = { 
-        ...product, 
-        units: newUnits.toString() 
+    const products = getProducts();
+    // Find the product
+    const product = products.find(p => p.product_id === saleData.product_id);
+    
+    if (!product) {
+      toast.error("Product not found");
+      return null;
+    }
+    
+    // Create new sale
+    let newSale: Sale;
+    
+    set((state: SaleState) => {
+      newSale = {
+        sale_id: state.sales.length > 0 ? Math.max(...state.sales.map(s => s.sale_id)) + 1 : 1,
+        product_id: saleData.product_id,
+        quantity_sold: saleData.quantity_sold,
+        selling_price: saleData.selling_price,
+        sale_date: new Date().toISOString(),
+        product,
+        clientId: saleData.clientId,
+        clientName: saleData.clientName
       };
-      
-      updateProduct(updatedProduct);
-      
-      // Update client purchase history if client is specified
-      if (saleData.clientName) {
-        const totalAmount = saleData.quantity_sold * saleData.selling_price;
-        updateClientPurchase(saleData.clientName, totalAmount);
-      }
       
       const clientInfo = saleData.clientName ? ` to ${saleData.clientName}` : '';
       toast.success(`Sale recorded successfully: ${saleData.quantity_sold} ${product.product_name}(s)${clientInfo}`);
       
-      return newSale;
-    } catch (error) {
-      console.error("Error recording sale:", error);
-      toast.error("Failed to record sale. Please try again.");
-      return null;
+      return { 
+        sales: [newSale, ...state.sales]
+      };
+    });
+    
+    // Update product stock in the product store
+    const currentUnits = parseInt(product.units as string);
+    const newUnits = Math.max(0, currentUnits - saleData.quantity_sold);
+    const updatedProduct = { 
+      ...product, 
+      units: newUnits.toString() 
+    };
+    
+    updateProduct(updatedProduct);
+    
+    // Update client purchase history if client is specified
+    if (saleData.clientName) {
+      const totalAmount = saleData.quantity_sold * saleData.selling_price;
+      updateClientPurchase(saleData.clientName, totalAmount);
     }
+    
+    return newSale;
   },
   
   deleteSale: (saleId) => {

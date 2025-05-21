@@ -1,5 +1,8 @@
 
 import React from "react";
-import { SidebarItemType } from "@/types/ui";
 
-export type { SidebarItemType };
+export interface SidebarItemType {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+}

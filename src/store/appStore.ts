@@ -73,18 +73,18 @@ const useAppStore = create<AppState>()(
       
       // Add auto-save functionality when data changes
       const setWithAutoSave = (fn: any) => {
-        // Apply the state update immediately
+        // Apply the state update
         set(fn);
         
         // Schedule a save operation if the user is logged in
-        const saveTimer = setTimeout(() => {
+        setTimeout(() => {
           const state = get();
           if (state.currentUser) {
             saveDataToSupabase().catch(error => {
               console.error("Error auto-saving data after state change:", error);
             });
           }
-        }, 200); // Reduced debounce time for faster sync
+        }, 300); // Reduce debounce time for faster sync
       };
       
       // Variable to store unsubscribe function for realtime updates
@@ -127,16 +127,6 @@ const useAppStore = create<AppState>()(
         isLoading: false,
         setIsLoading: (isLoading) => set({ isLoading }),
         pendingSalePayment: null,
-        
-        // Force save function for manual saving
-        forceSaveData: async () => {
-          try {
-            await saveDataToSupabase();
-            console.log("Data manually saved to Supabase");
-          } catch (error) {
-            console.error("Error during manual data save:", error);
-          }
-        },
         
         // Expose the saveDataToSupabase function
         saveDataToSupabase,
@@ -203,12 +193,6 @@ const useAppStore = create<AppState>()(
         const { currentUser, pendingSalePayment, ...rest } = state;
         return rest;
       },
-      // Add sync to ensure data is saved before navigation
-      onRehydrateStorage: () => {
-        return (state) => {
-          console.log("Store rehydrated from localStorage");
-        }
-      }
     }
   )
 );

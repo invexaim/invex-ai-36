@@ -1,152 +1,191 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, Warehouse, MoveHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import useAppStore from "@/store/appStore";
+import { toast } from "sonner";
+import { Product } from "@/types";
+
+// Import components
 import { StockHeader } from "@/components/products/stock/StockHeader";
 import { StockStats } from "@/components/products/stock/StockStats";
 import { SearchAndActions } from "@/components/products/stock/SearchAndActions";
 import { ProductInventory } from "@/components/products/stock/ProductInventory";
-import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
-import { AddProductDialog } from "@/components/products/AddProductDialog";
+import { TransferContent } from "@/components/products/stock/TransferContent";
+import { ProductForm, ProductFormValues } from "@/components/products/stock/ProductForm";
 import { TransferProductDialog } from "@/components/products/TransferProductDialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Product } from "@/types";
-import usePersistData from "@/hooks/usePersistData";
+import { AddCategoryDialog } from "@/components/products/AddCategoryDialog";
+import { RestockProductDialog } from "@/components/products/RestockProductDialog";
+import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
 
 const Stock = () => {
-  // Use the persist data hook to ensure data is saved during navigation
-  usePersistData();
-  
-  const navigate = useNavigate();
-  const { products, addProduct, restockProduct, transferProduct, saveDataToSupabase } = useAppStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-  const [isTransferOpen, setIsTransferOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("local");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openTransferDialog, setOpenTransferDialog] = useState(false);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showRestockDialog, setShowRestockDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  
+  const products = useAppStore((state) => state.products);
+  const categories = useAppStore((state) => state.categories || []);
+  const addProduct = useAppStore((state) => state.addProduct);
+  const deleteProduct = useAppStore((state) => state.deleteProduct);
 
-  // Filter products based on search query and location
-  const filterProducts = (products, search, isWarehouse = false) => {
-    return products.filter((product) => {
-      const matchesSearch = product.product_name
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesLocation = isWarehouse
-        ? product.product_name.includes("(Warehouse)")
-        : !product.product_name.includes("(Warehouse)");
-      return matchesSearch && matchesLocation;
-    });
+  // Filter products based on search query
+  const filteredProducts = products.filter((product) =>
+    product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSubmit = (values: ProductFormValues) => {
+    try {
+      // Add warehouse tag to product name if it's for warehouse
+      const productData = {
+        ...values,
+        product_name: values.location === "warehouse" 
+          ? `${values.product_name} (Warehouse)` 
+          : values.product_name,
+        price: parseFloat(values.price),
+        reorder_level: parseInt(values.reorder_level || "5"),
+      };
+      
+      addProduct(productData);
+      toast.success("Product added successfully");
+      setOpenDialog(false);
+    } catch (error) {
+      console.error("Error adding product:", error);
+      toast.error("Failed to add product");
+    }
   };
 
-  const localProducts = filterProducts(products, searchQuery, false);
-  const warehouseProducts = filterProducts(products, searchQuery, true);
+  // Function to handle product deletion
+  const handleDeleteProduct = (productId: number) => {
+    try {
+      deleteProduct(productId);
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("Failed to delete product");
+    }
+  };
 
-  const handleSearchChange = (e) => {
+  // Function to handle product restock
+  const handleRestock = (product: Product) => {
+    setSelectedProduct(product);
+    setShowRestockDialog(true);
+  };
+
+  // Handler for search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleAddProduct = (productData) => {
-    // For stock page, we need to determine if it's warehouse or local based on activeTab
-    if (activeTab === "warehouse") {
-      // If Warehouse tab is active
-      addProduct({
-        ...productData,
-        product_name: `${productData.product_name} (Warehouse)`,
-        category: productData.category || "Uncategorized",
-      });
-    } else {
-      // Local stock
-      addProduct({
-        ...productData,
-        category: productData.category || "Uncategorized",
-      });
-    }
-    
-    // Explicitly save data after adding product
-    saveDataToSupabase().catch(err => 
-      console.error("Error saving after adding product:", err)
-    );
-    
-    setIsAddProductOpen(false);
-  };
-
-  // Add this wrapper function to handle the different parameter signatures
-  const handleRestockProduct = (product: Product) => {
-    // We would typically show a dialog here to get the quantity
-    // For now, we'll just restock with a default value of 1
-    restockProduct(product.product_id, 1);
-    
-    // Explicitly save data after restocking
-    saveDataToSupabase().catch(err => 
-      console.error("Error saving after restocking:", err)
-    );
-  };
-
-  // Add this wrapper function for the delete operation
-  const handleDeleteProduct = (productId: number) => {
-    console.log('Delete product', productId);
-  };
-
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6">
       {/* Header */}
-      <StockHeader onOpenReportDialog={() => setIsReportOpen(true)} />
+      <StockHeader onOpenReportDialog={() => setShowReportDialog(true)} />
 
-      {/* Statistics */}
+      {/* Stats Cards */}
       <StockStats products={products} />
 
-      {/* Search and Actions */}
-      <SearchAndActions
+      {/* Search and Action Buttons */}
+      <SearchAndActions 
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        onOpenTransferDialog={() => setIsTransferOpen(true)}
-        onOpenProductDialog={() => setIsAddProductOpen(true)}
+        onOpenTransferDialog={() => setOpenTransferDialog(true)}
+        onOpenProductDialog={() => setOpenDialog(true)}
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="local" onValueChange={(value) => setActiveTab(value)}>
-        <TabsList className="grid grid-cols-2 w-full max-w-md">
-          <TabsTrigger value="local">Local Stock</TabsTrigger>
-          <TabsTrigger value="warehouse">Warehouse</TabsTrigger>
+      <Tabs defaultValue="local" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="local" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span>Local Stock</span>
+          </TabsTrigger>
+          <TabsTrigger value="warehouse" className="flex items-center gap-2">
+            <Warehouse className="h-4 w-4" />
+            <span>Warehouse Stock</span>
+          </TabsTrigger>
+          <TabsTrigger value="transfer" className="flex items-center gap-2">
+            <MoveHorizontal className="h-4 w-4" />
+            <span>Transfer</span>
+          </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="local">
+
+        <TabsContent value="local" className="space-y-4">
           <ProductInventory 
-            products={localProducts} 
-            title="Local Inventory" 
-            description="Products available in your local shop"
-            onRestock={handleRestockProduct}
+            title="Local Stock Inventory"
+            description="Manage stock available in your shop"
+            products={filteredProducts.filter(product => !product.product_name.includes("(Warehouse)"))}
+            onRestock={handleRestock}
             onDelete={handleDeleteProduct}
           />
         </TabsContent>
-        
-        <TabsContent value="warehouse">
+
+        <TabsContent value="warehouse" className="space-y-4">
           <ProductInventory 
-            products={warehouseProducts}
-            title="Warehouse Inventory"
-            description="Products available in your warehouse"
-            onRestock={handleRestockProduct}
-            onDelete={handleDeleteProduct} 
+            title="Warehouse Stock Inventory"
+            description="Manage stock available in your warehouse/godown"
+            products={filteredProducts.filter(product => product.product_name.includes("(Warehouse)"))}
+            onRestock={handleRestock}
+            onDelete={handleDeleteProduct}
+          />
+        </TabsContent>
+
+        <TabsContent value="transfer" className="space-y-4">
+          <TransferContent 
+            onOpenTransferDialog={() => {
+              setActiveTab("transfer");
+              setOpenTransferDialog(true);
+            }}
           />
         </TabsContent>
       </Tabs>
 
       {/* Add Product Dialog */}
-      <AddProductDialog
-        open={isAddProductOpen}
-        onOpenChange={setIsAddProductOpen}
-        onAddProduct={handleAddProduct}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new product to your inventory.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ProductForm 
+            categories={categories}
+            onSubmit={handleSubmit}
+            onCancel={() => setOpenDialog(false)}
+            onOpenAddCategoryDialog={() => setShowAddCategoryDialog(true)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Other Dialogs */}
+      <TransferProductDialog 
+        open={openTransferDialog} 
+        onOpenChange={setOpenTransferDialog}
+        sourceType={activeTab === "warehouse" ? "warehouse" : "local"}
       />
 
-      {/* Transfer Product Dialog */}
-      <TransferProductDialog
-        open={isTransferOpen}
-        onOpenChange={setIsTransferOpen}
-        sourceType={activeTab === "local" ? "local" : "warehouse"}
+      <AddCategoryDialog 
+        open={showAddCategoryDialog}
+        onOpenChange={setShowAddCategoryDialog}
       />
 
-      {/* Report Dialog */}
-      <ReportDownloadDialog open={isReportOpen} onOpenChange={setIsReportOpen} />
+      <RestockProductDialog
+        open={showRestockDialog}
+        onOpenChange={setShowRestockDialog}
+        product={selectedProduct}
+      />
+      
+      <ReportDownloadDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+      />
     </div>
   );
 };

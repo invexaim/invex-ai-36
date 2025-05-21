@@ -21,7 +21,6 @@ export const getReportTypeTitle = (type: ReportType): string => {
     case "warehouse": return "Warehouse Stock";
     case "sales": return "Sales";
     case "payments": return "Payments";
-    case "all": return "Complete Business Report";
   }
 };
 
@@ -135,15 +134,15 @@ export const generateProductsReport = (doc: jsPDF, items: Product[]): void => {
       product.category,
       product.price.toFixed(2),
       product.units,
-      parseInt(product.units as string) > 10 ? 'In Stock' : parseInt(product.units as string) > 0 ? 'Low Stock' : 'Out of Stock'
+      parseInt(product.units) > 10 ? 'In Stock' : parseInt(product.units) > 0 ? 'Low Stock' : 'Out of Stock'
     ])
   });
   
   // Summary
-  const totalValue = items.reduce((sum, product) => sum + (product.price * parseInt(product.units as string)), 0);
+  const totalValue = items.reduce((sum, product) => sum + (product.price * parseInt(product.units)), 0);
   const totalItems = items.length;
-  const outOfStock = items.filter(product => parseInt(product.units as string) === 0).length;
-  const lowStock = items.filter(product => parseInt(product.units as string) > 0 && parseInt(product.units as string) <= 10).length;
+  const outOfStock = items.filter(product => parseInt(product.units) === 0).length;
+  const lowStock = items.filter(product => parseInt(product.units) > 0 && parseInt(product.units) <= 10).length;
   
   pdfDoc.setFontSize(12);
   pdfDoc.text(`Summary:`, 15, pdfDoc.lastAutoTable.finalY + 10);
@@ -235,102 +234,6 @@ export const generatePaymentsReport = (
   pdfDoc.text(`Pending Amount: ₹${pendingAmount.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 50);
 };
 
-// Generate complete business report (ALL)
-export const generateCompleteReport = (
-  doc: jsPDF,
-  products: Product[],
-  sales: Sale[],
-  payments: Payment[],
-  timeRange: TimeRange,
-  customDateFrom?: Date,
-  customDateTo?: Date
-): void => {
-  const pdfDoc = doc as jsPDFWithAutoTable;
-  
-  // Starting Y position for each section
-  let currentY = 40;
-  
-  // Add product section
-  pdfDoc.setFontSize(14);
-  pdfDoc.text("PRODUCT INVENTORY", 15, currentY);
-  currentY += 10;
-  
-  // Local products
-  const localProducts = products.filter(p => !p.product_name.includes("(Warehouse)"));
-  pdfDoc.autoTable({
-    startY: currentY,
-    head: [['Product Name', 'Category', 'Price (₹)', 'Available Units']],
-    body: localProducts.map(product => [
-      product.product_name,
-      product.category,
-      product.price.toFixed(2),
-      product.units
-    ])
-  });
-  
-  currentY = pdfDoc.lastAutoTable.finalY + 20;
-  
-  // Sales section
-  pdfDoc.setFontSize(14);
-  pdfDoc.text("SALES REPORT", 15, currentY);
-  currentY += 10;
-  
-  // Filter sales based on time range
-  const filteredSales = filterByDateRange(sales, 'sale_date', timeRange, customDateFrom, customDateTo);
-  
-  pdfDoc.autoTable({
-    startY: currentY,
-    head: [['Product', 'Client', 'Quantity', 'Total (₹)', 'Date']],
-    body: filteredSales.map(sale => [
-      sale.product?.product_name || 'Unknown',
-      sale.clientName || 'General',
-      sale.quantity_sold,
-      (sale.quantity_sold * sale.selling_price).toFixed(2),
-      format(new Date(sale.sale_date), 'PPP')
-    ])
-  });
-  
-  currentY = pdfDoc.lastAutoTable.finalY + 20;
-  
-  // Payments section
-  pdfDoc.setFontSize(14);
-  pdfDoc.text("PAYMENT REPORT", 15, currentY);
-  currentY += 10;
-  
-  // Filter payments based on time range
-  const filteredPayments = filterByDateRange(payments, 'date', timeRange, customDateFrom, customDateTo);
-  
-  pdfDoc.autoTable({
-    startY: currentY,
-    head: [['Client', 'Amount (₹)', 'Method', 'Status', 'Date']],
-    body: filteredPayments.map(payment => [
-      payment.clientName || 'General',
-      payment.amount.toFixed(2),
-      payment.method,
-      payment.status,
-      format(new Date(payment.date), 'PPP')
-    ])
-  });
-  
-  currentY = pdfDoc.lastAutoTable.finalY + 20;
-  
-  // Summary section
-  pdfDoc.setFontSize(14);
-  pdfDoc.text("BUSINESS SUMMARY", 15, currentY);
-  currentY += 10;
-  
-  const totalSales = filteredSales.reduce((sum, sale) => sum + (sale.quantity_sold * sale.selling_price), 0);
-  const totalPayments = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  const pendingPayments = filteredPayments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0);
-  const inventoryValue = products.reduce((sum, p) => sum + (p.price * parseInt(p.units as string)), 0);
-  
-  pdfDoc.setFontSize(12);
-  pdfDoc.text(`Total Revenue: ₹${totalSales.toFixed(2)}`, 15, currentY);
-  pdfDoc.text(`Total Payments Received: ₹${totalPayments.toFixed(2)}`, 15, currentY + 10);
-  pdfDoc.text(`Pending Payments: ₹${pendingPayments.toFixed(2)}`, 15, currentY + 20);
-  pdfDoc.text(`Current Inventory Value: ₹${inventoryValue.toFixed(2)}`, 15, currentY + 30);
-};
-
 // Generate report based on type
 export const generateReport = (
   reportType: ReportType,
@@ -374,9 +277,6 @@ export const generateReport = (
       break;
     case "payments":
       generatePaymentsReport(doc, payments, timeRange, customDateFrom, customDateTo);
-      break;
-    case "all":
-      generateCompleteReport(doc, products, sales, payments, timeRange, customDateFrom, customDateTo);
       break;
   }
   
