@@ -1,15 +1,5 @@
 
 import { User } from "@supabase/supabase-js";
+import { UserState } from '@/store/types';
 
-export interface UserState {
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
-  syncDataWithSupabase: () => Promise<void>;
-  saveDataToSupabase: () => Promise<void>;
-  clearLocalData: () => void;
-  isSignedIn: boolean;
-  setIsSignedIn: (isSignedIn: boolean) => void;
-  isLoading: boolean;
-  setIsLoading: (isLoading: boolean) => void;
-  setupRealtimeUpdates?: (userId: string) => (() => void);
-}
+export type { UserState };

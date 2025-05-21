@@ -1,8 +1,7 @@
-
 import { create } from 'zustand';
 import { Sale, Product } from '@/types';
 import { toast } from 'sonner';
-import { SaleState } from '../types';
+import { SaleState } from '@/store/types';
 
 export const createSaleSlice = (
   set: any, 
