@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useAppStore from "@/store/appStore";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SalesListSection from "@/components/sales/SalesListSection";
@@ -12,18 +12,18 @@ const Sales = () => {
   const { products, sales, deleteSale, saveDataToSupabase } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-  };
+  }, []);
 
-  const handleDeleteSale = (saleId: number) => {
+  const handleDeleteSale = useCallback((saleId: number) => {
     deleteSale(saleId);
     
     // Explicitly save data after deleting a sale
     saveDataToSupabase().catch(err => 
       console.error("Error saving after sale deletion:", err)
     );
-  };
+  }, [deleteSale, saveDataToSupabase]);
 
   const filteredSales = sales.filter((sale) => {
     const productName = sale.product?.product_name.toLowerCase() || "";
