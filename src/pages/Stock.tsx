@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from "react";
-import { Tab } from "@headlessui/react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import { StockHeader } from "@/components/products/stock/StockHeader";
@@ -8,8 +7,9 @@ import { StockStats } from "@/components/products/stock/StockStats";
 import { SearchAndActions } from "@/components/products/stock/SearchAndActions";
 import { ProductInventory } from "@/components/products/stock/ProductInventory";
 import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
-import AddProductDialog from "@/components/products/AddProductDialog";
-import TransferProductDialog from "@/components/products/TransferProductDialog";
+import { AddProductDialog } from "@/components/products/AddProductDialog";
+import { TransferProductDialog } from "@/components/products/TransferProductDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Stock = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const Stock = () => {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("local");
 
   // Filter products based on search query and location
   const filterProducts = (products, search, isWarehouse = false) => {
@@ -42,7 +42,7 @@ const Stock = () => {
 
   const handleAddProduct = (productData) => {
     // For stock page, we need to determine if it's warehouse or local based on activeTab
-    if (activeTab === 1) {
+    if (activeTab === "warehouse") {
       // If Warehouse tab is active
       addProduct({
         ...productData,
@@ -76,43 +76,32 @@ const Stock = () => {
       />
 
       {/* Tabs */}
-      <Tab.Group onChange={(index) => setActiveTab(index)}>
-        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/10 p-1">
-          <Tab
-            className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium transition-all
-              ${
-                selected
-                  ? "bg-white shadow text-blue-900"
-                  : "text-gray-600 hover:bg-white/[0.12]"
-              }`
-            }
-          >
-            Local Stock
-          </Tab>
-          <Tab
-            className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium transition-all
-              ${
-                selected
-                  ? "bg-white shadow text-blue-900"
-                  : "text-gray-600 hover:bg-white/[0.12]"
-              }`
-            }
-          >
-            Warehouse
-          </Tab>
-        </Tab.List>
-
-        <Tab.Panels className="mt-2">
-          <Tab.Panel>
-            <ProductInventory products={localProducts} location="local" />
-          </Tab.Panel>
-          <Tab.Panel>
-            <ProductInventory products={warehouseProducts} location="warehouse" />
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+      <Tabs defaultValue="local" onValueChange={(value) => setActiveTab(value)}>
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsTrigger value="local">Local Stock</TabsTrigger>
+          <TabsTrigger value="warehouse">Warehouse</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="local">
+          <ProductInventory 
+            products={localProducts} 
+            title="Local Inventory" 
+            description="Products available in your local shop"
+            onRestock={restockProduct}
+            onDelete={(id) => console.log('Delete product', id)}
+          />
+        </TabsContent>
+        
+        <TabsContent value="warehouse">
+          <ProductInventory 
+            products={warehouseProducts}
+            title="Warehouse Inventory"
+            description="Products available in your warehouse"
+            onRestock={restockProduct}
+            onDelete={(id) => console.log('Delete product', id)} 
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Add Product Dialog */}
       <AddProductDialog
@@ -130,10 +119,9 @@ const Stock = () => {
 
       {/* Transfer Product Dialog */}
       <TransferProductDialog
-        isOpen={isTransferOpen}
+        open={isTransferOpen}
         onOpenChange={setIsTransferOpen}
-        products={products}
-        onTransferProduct={transferProduct}
+        sourceType={activeTab === "local" ? "local" : "warehouse"}
       />
 
       {/* Report Dialog */}
