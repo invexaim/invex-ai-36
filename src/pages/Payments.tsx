@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import PaymentHeader from "@/components/payments/PaymentHeader";
@@ -20,11 +20,11 @@ const Payments = () => {
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
 
   // Initialize add payment dialog when navigating from sales page
-  useState(() => {
+  useEffect(() => {
     if (pendingSalePayment) {
       setIsAddPaymentOpen(true);
     }
-  });
+  }, [pendingSalePayment]);
 
   const handleAddPayment = () => {
     setIsAddPaymentOpen(true);

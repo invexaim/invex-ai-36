@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAppStore from "@/store/appStore";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SalesListSection from "@/components/sales/SalesListSection";

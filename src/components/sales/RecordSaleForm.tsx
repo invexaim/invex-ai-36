@@ -105,7 +105,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   };
 
   return (
-    <div className="grid gap-4 py-4">
+    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
       <div className="space-y-2">
         <Label htmlFor="product">Product</Label>
         <select

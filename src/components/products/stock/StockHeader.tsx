@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ReportDownloadDialog from "../ReportDownloadDialog";
 
 interface StockHeaderProps {
   onOpenReportDialog: () => void;
