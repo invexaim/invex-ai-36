@@ -10,6 +10,7 @@ import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
 import { AddProductDialog } from "@/components/products/AddProductDialog";
 import { TransferProductDialog } from "@/components/products/TransferProductDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Product } from "@/types";
 
 const Stock = () => {
   const navigate = useNavigate();
@@ -59,6 +60,18 @@ const Stock = () => {
     setIsAddProductOpen(false);
   };
 
+  // Add this wrapper function to handle the different parameter signatures
+  const handleRestockProduct = (product: Product) => {
+    // We would typically show a dialog here to get the quantity
+    // For now, we'll just restock with a default value of 1
+    restockProduct(product.product_id, 1);
+  };
+
+  // Add this wrapper function for the delete operation
+  const handleDeleteProduct = (productId: number) => {
+    console.log('Delete product', productId);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -87,8 +100,8 @@ const Stock = () => {
             products={localProducts} 
             title="Local Inventory" 
             description="Products available in your local shop"
-            onRestock={restockProduct}
-            onDelete={(id) => console.log('Delete product', id)}
+            onRestock={handleRestockProduct}
+            onDelete={handleDeleteProduct}
           />
         </TabsContent>
         
@@ -97,15 +110,15 @@ const Stock = () => {
             products={warehouseProducts}
             title="Warehouse Inventory"
             description="Products available in your warehouse"
-            onRestock={restockProduct}
-            onDelete={(id) => console.log('Delete product', id)} 
+            onRestock={handleRestockProduct}
+            onDelete={handleDeleteProduct} 
           />
         </TabsContent>
       </Tabs>
 
       {/* Add Product Dialog */}
       <AddProductDialog
-        isOpen={isAddProductOpen}
+        open={isAddProductOpen}
         onOpenChange={setIsAddProductOpen}
         onAddProduct={handleAddProduct}
         initialData={{ 
