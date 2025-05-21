@@ -1,9 +1,8 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import useAppStore from "@/store/appStore";
-import AuthService from "@/services/authService";
 
 interface AuthContextType {
   user: User | null;
@@ -19,127 +18,149 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuthContext = () => useContext(AuthContext);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   
-  const setCurrentUser = useAppStore(state => state.setCurrentUser);
-  const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
-  const clearLocalData = useAppStore(state => state.clearLocalData);
-  const setupRealtimeUpdates = useAppStore(state => state.setupRealtimeUpdates);
-  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
-
+  const {
+    setCurrentUser,
+    syncDataWithSupabase,
+    setupRealtimeUpdates,
+    forceSaveData,
+    saveDataToSupabase,
+  } = useAppStore();
+  
+  // Detect page navigation/visibility changes to ensure data is saved
   useEffect(() => {
-    console.log("Setting up auth state listeners...");
-    let realtimeCleanup: (() => void) | null = null;
-    
-    // First check for existing session to avoid race conditions
-    const checkSession = async () => {
-      try {
-        const { session, error } = await AuthService.getSession();
-        const currentUser = session?.user ?? null;
-        console.log("Initial session check:", currentUser ? "User is logged in" : "No user session");
-        
-        setUser(currentUser);
-        setCurrentUser(currentUser);
-        
-        if (currentUser) {
-          // If user is already logged in, sync their data
-          try {
-            console.log("User already authenticated, syncing data on initial load...");
-            await syncDataWithSupabase();
-            console.log("Data synced successfully on initial load");
-            
-            // Set up realtime updates
-            const cleanup = setupRealtimeUpdates(currentUser.id);
-            if (typeof cleanup === 'function') {
-              realtimeCleanup = cleanup;
-            }
-            
-            // Force an initial save to ensure all latest data is on the server
-            setTimeout(() => {
-              saveDataToSupabase().catch(error => {
-                console.error("Error in initial data save:", error);
-              });
-            }, 1000);
-            
-            // Remove welcome shown flag from previous sessions when loading app
-            sessionStorage.removeItem("welcomeShown");
-          } catch (error) {
-            console.error("Error syncing data on initial load:", error);
-            toast.error("Failed to load your data. Please refresh the page.");
-          }
+    const saveBeforeUnloadOrHide = async () => {
+      if (user) {
+        console.log("Saving data before page unload or visibility change");
+        try {
+          await saveDataToSupabase();
+        } catch (error) {
+          console.error("Error saving data before unload/visibility change:", error);
         }
-        
-        setAuthChecked(true);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error checking session:", error);
-        setAuthChecked(true);
-        setIsLoading(false);
       }
     };
-
-    checkSession();
-
-    // Set up auth state listener after checking session
-    const subscription = AuthService.onAuthStateChange(async (currentUser) => {
-      setUser(currentUser);
-      setCurrentUser(currentUser);
-      
-      if (currentUser) {
-        // When user logs in, sync their data from Supabase to local state
-        try {
-          console.log("User authenticated, syncing data...");
-          await syncDataWithSupabase();
-          console.log("Data synced successfully after auth change");
-          toast.success("Your data has been loaded");
-          
-          // Set up realtime updates after login
-          if (realtimeCleanup) {
-            realtimeCleanup();
-          }
-          const cleanup = setupRealtimeUpdates(currentUser.id);
-          if (typeof cleanup === 'function') {
-            realtimeCleanup = cleanup;
-          }
-          
-          // Force an initial save to ensure all latest data is on the server
-          setTimeout(() => {
-            saveDataToSupabase().catch(error => {
-              console.error("Error in initial data save after auth:", error);
-            });
-          }, 1000);
-          
-          // Remove welcome shown flag to show welcome message on new login
-          sessionStorage.removeItem("welcomeShown");
-        } catch (error) {
-          console.error("Error syncing data after auth change:", error);
-          toast.error("Failed to load your data. Please refresh and try again.");
-        }
-      } else {
-        // When user logs out, clear local data
-        console.log("User signed out, clearing local data");
-        if (realtimeCleanup) {
-          realtimeCleanup();
-          realtimeCleanup = null;
-        }
-        clearLocalData();
+    
+    // Save data when user navigates away or closes tab
+    window.addEventListener("beforeunload", saveBeforeUnloadOrHide);
+    
+    // Save data when tab becomes hidden (switching tabs)
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        saveBeforeUnloadOrHide();
       }
     });
-
+    
     return () => {
-      subscription.unsubscribe();
-      if (realtimeCleanup) {
-        realtimeCleanup();
+      window.removeEventListener("beforeunload", saveBeforeUnloadOrHide);
+      document.removeEventListener("visibilitychange", saveBeforeUnloadOrHide);
+    };
+  }, [user, saveDataToSupabase]);
+
+  // Setup initial authentication check and subscription to auth changes
+  useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+    
+    const setupAuth = async () => {
+      try {
+        // Initial auth check
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentUser = session?.user || null;
+        
+        if (currentUser) {
+          console.log("User authenticated, syncing data...");
+          setUser(currentUser);
+          setCurrentUser(currentUser);
+          try {
+            await syncDataWithSupabase();
+            console.log("Data synced successfully after auth change");
+            
+            // Setup realtime updates for authenticated user
+            if (unsubscribe) {
+              unsubscribe();
+            }
+            unsubscribe = setupRealtimeUpdates(currentUser.id);
+            
+          } catch (error) {
+            console.error("Error syncing data after auth check:", error);
+          }
+        }
+        
+        setIsLoading(false);
+        setAuthChecked(true);
+        
+        // Subscribe to auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log("Auth state changed:", event);
+            const newUser = session?.user || null;
+            
+            // Make sure to save current data before updating user
+            if (user && newUser && user.id !== newUser.id) {
+              try {
+                await forceSaveData();
+              } catch (error) {
+                console.error("Error saving data during user change:", error);
+              }
+            }
+            
+            setUser(newUser);
+            setCurrentUser(newUser);
+            
+            if (event === "SIGNED_IN" && newUser) {
+              console.log("User authenticated, syncing data...");
+              try {
+                await syncDataWithSupabase();
+                console.log("Data synced successfully after auth change");
+                
+                // Clean up old subscription if exists
+                if (unsubscribe) {
+                  unsubscribe();
+                  unsubscribe = null;
+                }
+                
+                // Setup new subscription for the authenticated user
+                if (newUser) {
+                  unsubscribe = setupRealtimeUpdates(newUser.id);
+                }
+                
+              } catch (error) {
+                console.error("Error syncing data after auth change:", error);
+              }
+            } else if (event === "SIGNED_OUT") {
+              // Clean up subscription
+              if (unsubscribe) {
+                unsubscribe();
+                unsubscribe = null;
+              }
+            }
+          }
+        );
+        
+        return () => {
+          subscription.unsubscribe();
+          if (unsubscribe) {
+            unsubscribe();
+          }
+        };
+      } catch (error) {
+        console.error("Error in auth setup:", error);
+        setIsLoading(false);
+        setAuthChecked(true);
       }
     };
-  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates, saveDataToSupabase]);
+    
+    setupAuth();
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [setCurrentUser, syncDataWithSupabase, setupRealtimeUpdates]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, authChecked }}>

@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -155,7 +154,41 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
-export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState {}
+export interface AppState extends 
+  ProductState, 
+  SaleState, 
+  ClientState, 
+  PaymentState, 
+  UserState 
+{
+  // User state
+  isSignedIn: boolean;
+  setIsSignedIn: (isSignedIn: boolean) => void;
+  isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
+  
+  // Payment handling
+  pendingSalePayment: Sale | null;
+  setPendingSalePayment: (sale: Sale | null) => void;
+  
+  // Force immediate data save
+  forceSaveData: () => Promise<void>;
+  
+  // Products & categories
+  setCategories?: (categories: string[]) => void;
+  
+  // Session management
+  setupRealtimeUpdates?: (userId: string) => (() => void);
+  
+  // Additional methods for data slices
+  setProducts?: (products: Product[]) => void;
+  setSales?: (sales: Sale[]) => void;
+  setClients?: (clients: Client[]) => void;
+  setPayments?: (payments: Payment[]) => void;
+  
+  // Method to save data to Supabase
+  saveDataToSupabase?: () => Promise<void>;
+}
 
 // Add this helper function to check if a value is a valid user data row
 export function isUserDataRow(value: any): boolean {

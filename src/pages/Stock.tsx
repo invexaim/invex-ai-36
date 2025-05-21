@@ -11,10 +11,14 @@ import { AddProductDialog } from "@/components/products/AddProductDialog";
 import { TransferProductDialog } from "@/components/products/TransferProductDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Product } from "@/types";
+import usePersistData from "@/hooks/usePersistData";
 
 const Stock = () => {
+  // Use the persist data hook to ensure data is saved during navigation
+  usePersistData();
+  
   const navigate = useNavigate();
-  const { products, addProduct, restockProduct, transferProduct } = useAppStore();
+  const { products, addProduct, restockProduct, transferProduct, saveDataToSupabase } = useAppStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
@@ -57,6 +61,12 @@ const Stock = () => {
         category: productData.category || "Uncategorized",
       });
     }
+    
+    // Explicitly save data after adding product
+    saveDataToSupabase().catch(err => 
+      console.error("Error saving after adding product:", err)
+    );
+    
     setIsAddProductOpen(false);
   };
 
@@ -65,6 +75,11 @@ const Stock = () => {
     // We would typically show a dialog here to get the quantity
     // For now, we'll just restock with a default value of 1
     restockProduct(product.product_id, 1);
+    
+    // Explicitly save data after restocking
+    saveDataToSupabase().catch(err => 
+      console.error("Error saving after restocking:", err)
+    );
   };
 
   // Add this wrapper function for the delete operation

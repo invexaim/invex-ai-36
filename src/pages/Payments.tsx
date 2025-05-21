@@ -6,15 +6,20 @@ import PaymentHeader from "@/components/payments/PaymentHeader";
 import PaymentStats from "@/components/payments/PaymentStats";
 import PaymentTable from "@/components/payments/PaymentTable";
 import PaymentDialog from "@/components/payments/PaymentDialog";
+import usePersistData from "@/hooks/usePersistData";
 
 const Payments = () => {
+  // Use the persist data hook to ensure data is saved during navigation
+  usePersistData();
+  
   const { 
     payments, 
     addPayment, 
     deletePayment, 
     clients, 
     pendingSalePayment, 
-    setPendingSalePayment 
+    setPendingSalePayment,
+    saveDataToSupabase 
   } = useAppStore();
   
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
@@ -44,6 +49,11 @@ const Payments = () => {
     if (pendingSalePayment) {
       setPendingSalePayment(null);
     }
+    
+    // Explicitly save data after adding payment
+    saveDataToSupabase().catch(err => 
+      console.error("Error saving payment data:", err)
+    );
     
     // Close dialog
     setIsAddPaymentOpen(false);
