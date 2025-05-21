@@ -121,13 +121,6 @@ const Stock = () => {
         open={isAddProductOpen}
         onOpenChange={setIsAddProductOpen}
         onAddProduct={handleAddProduct}
-        initialData={{ 
-          product_name: "",
-          price: 0,
-          units: "0",
-          reorder_level: 5,
-          category: "Uncategorized"
-        }}
       />
 
       {/* Transfer Product Dialog */}
