@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -154,12 +155,13 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
+// Fix: Make AppState properly extend the other state interfaces by making all properties required
 export interface AppState extends 
-  ProductState, 
-  SaleState, 
-  ClientState, 
-  PaymentState, 
-  UserState 
+  Omit<ProductState, 'setProducts' | 'setCategories'>,
+  Omit<SaleState, 'setSales'>,
+  Omit<ClientState, 'setClients'>,
+  Omit<PaymentState, 'setPayments' | 'setPendingSalePayment'>,
+  Omit<UserState, 'setupRealtimeUpdates'>
 {
   // User state
   isSignedIn: boolean;
@@ -175,19 +177,19 @@ export interface AppState extends
   forceSaveData: () => Promise<void>;
   
   // Products & categories
-  setCategories?: (categories: string[]) => void;
+  setCategories: (categories: string[]) => void;
   
   // Session management
-  setupRealtimeUpdates?: (userId: string) => (() => void);
+  setupRealtimeUpdates: (userId: string) => (() => void);
   
-  // Additional methods for data slices
-  setProducts?: (products: Product[]) => void;
-  setSales?: (sales: Sale[]) => void;
-  setClients?: (clients: Client[]) => void;
-  setPayments?: (payments: Payment[]) => void;
+  // Methods for data slices that were omitted
+  setProducts: (products: Product[]) => void;
+  setSales: (sales: Sale[]) => void;
+  setClients: (clients: Client[]) => void;
+  setPayments: (payments: Payment[]) => void;
   
   // Method to save data to Supabase
-  saveDataToSupabase?: () => Promise<void>;
+  saveDataToSupabase: () => Promise<void>;
 }
 
 // Add this helper function to check if a value is a valid user data row
