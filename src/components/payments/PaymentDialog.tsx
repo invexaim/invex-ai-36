@@ -49,6 +49,13 @@ const PaymentDialog = ({
     description: "",
     relatedSaleId: undefined,
   });
+  
+  const [formErrors, setFormErrors] = useState({
+    clientName: false,
+    amount: false,
+    method: false,
+    description: false
+  });
 
   // Initialize payment form with pending sale data if available
   useEffect(() => {
@@ -82,23 +89,45 @@ const PaymentDialog = ({
         ...formData,
         [name]: parseFloat(value) || 0,
       });
+      setFormErrors({
+        ...formErrors,
+        amount: parseFloat(value) <= 0
+      });
     } else {
       setFormData({
         ...formData,
         [name]: value,
       });
+      
+      // Clear error for the field that was just changed
+      if (name in formErrors) {
+        setFormErrors({
+          ...formErrors,
+          [name]: value.trim() === ""
+        });
+      }
     }
   };
 
+  const validateForm = () => {
+    const errors = {
+      clientName: !formData.clientName,
+      amount: formData.amount <= 0,
+      method: !formData.method,
+      description: !formData.description
+    };
+    
+    setFormErrors(errors);
+    
+    return !Object.values(errors).some(error => error);
+  };
+
   const handleSubmit = () => {
-    if (!formData.description || formData.amount <= 0 || !formData.method) {
+    if (!validateForm()) {
       return;
     }
     
-    onSubmit({
-      ...formData,
-      clientName: formData.clientName || "General",
-    });
+    onSubmit(formData);
   };
 
   return (
@@ -123,6 +152,28 @@ const PaymentDialog = ({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
+            <Label htmlFor="clientName">Client <span className="text-red-500">*</span></Label>
+            <select
+              id="clientName"
+              name="clientName"
+              className={`flex h-10 w-full rounded-md border ${formErrors.clientName ? "border-red-500" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+              value={formData.clientName}
+              onChange={handleChange}
+              disabled={pendingSalePayment && !!pendingSalePayment.clientName}
+            >
+              <option value="">Select a client</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.name}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+            {formErrors.clientName && (
+              <p className="text-xs text-red-500">Client is required</p>
+            )}
+          </div>
+          
+          <div className="space-y-2">
             <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
             <Input
               id="description"
@@ -130,7 +181,11 @@ const PaymentDialog = ({
               value={formData.description}
               onChange={handleChange}
               placeholder="Enter payment description"
+              className={formErrors.description ? "border-red-500" : ""}
             />
+            {formErrors.description && (
+              <p className="text-xs text-red-500">Description is required</p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -144,7 +199,11 @@ const PaymentDialog = ({
               value={formData.amount || ""}
               onChange={handleChange}
               placeholder="Enter amount"
+              className={formErrors.amount ? "border-red-500" : ""}
             />
+            {formErrors.amount && (
+              <p className="text-xs text-red-500">Amount must be greater than 0</p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -152,7 +211,7 @@ const PaymentDialog = ({
             <select
               id="method"
               name="method"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`flex h-10 w-full rounded-md border ${formErrors.method ? "border-red-500" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
               value={formData.method}
               onChange={handleChange}
             >
@@ -163,6 +222,9 @@ const PaymentDialog = ({
                 </option>
               ))}
             </select>
+            {formErrors.method && (
+              <p className="text-xs text-red-500">Payment method is required</p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -179,25 +241,6 @@ const PaymentDialog = ({
               <option value="failed">Failed</option>
             </select>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="clientName">Client {pendingSalePayment ? "" : "(Optional)"}</Label>
-            <select
-              id="clientName"
-              name="clientName"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={formData.clientName}
-              onChange={handleChange}
-              disabled={pendingSalePayment && !!pendingSalePayment.clientName}
-            >
-              <option value="">Select a client {pendingSalePayment ? "" : "(optional)"}</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.name}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
         <DialogFooter>
           <Button 
@@ -209,7 +252,6 @@ const PaymentDialog = ({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!formData.description || formData.amount <= 0 || !formData.method}
             className="w-full sm:w-auto"
           >
             <CreditCard className="mr-2 h-4 w-4" /> 

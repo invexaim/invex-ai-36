@@ -24,7 +24,7 @@ interface ReportDownloadDialogProps {
 }
 
 const ReportDownloadDialog = ({ open, onOpenChange }: ReportDownloadDialogProps) => {
-  const [reportType, setReportType] = useState<ReportType>("local");
+  const [reportType, setReportType] = useState<ReportType>("all");
   const [timeRange, setTimeRange] = useState<TimeRange>("daily");
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(new Date());
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>(new Date());

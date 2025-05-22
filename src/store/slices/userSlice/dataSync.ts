@@ -134,15 +134,17 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
       (payload) => {
         console.log("Received realtime update:", payload);
         if (payload.new) {
-          // Don't process updates from the same session to avoid loops
-          const updateFromOtherDevice = true; // We'll always apply updates
+          // Check if update timestamp is recent to avoid processing stale updates
+          const updateTime = new Date(payload.new.updated_at).getTime();
+          const now = Date.now();
+          const isRecentUpdate = (now - updateTime) < 60000; // Within last minute
           
-          if (updateFromOtherDevice) {
+          if (isRecentUpdate) {
             console.log("Processing update from another device");
             // The callback will update the store with the new data
             dataUpdateCallback(payload.new);
           } else {
-            console.log("Ignoring update from this device");
+            console.log("Ignoring stale update");
           }
         }
       }

@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -17,6 +16,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 // Get report type title
 export const getReportTypeTitle = (type: ReportType): string => {
   switch (type) {
+    case "all": return "Consolidated";
     case "local": return "Local Stock";
     case "warehouse": return "Warehouse Stock";
     case "sales": return "Sales";
@@ -234,6 +234,121 @@ export const generatePaymentsReport = (
   pdfDoc.text(`Pending Amount: ₹${pendingAmount.toFixed(2)}`, 15, pdfDoc.lastAutoTable.finalY + 50);
 };
 
+// Generate all data report (consolidated)
+export const generateAllDataReport = (
+  doc: jsPDF,
+  products: Product[],
+  sales: Sale[],
+  payments: Payment[],
+  timeRange: TimeRange,
+  customDateFrom?: Date,
+  customDateTo?: Date
+): void => {
+  // Cast to our custom type that includes the autoTable method
+  const pdfDoc = doc as jsPDFWithAutoTable;
+
+  // Filter sales and payments based on time range
+  const filteredSales = filterByDateRange(sales, 'sale_date', timeRange, customDateFrom, customDateTo);
+  const filteredPayments = filterByDateRange(payments, 'date', timeRange, customDateFrom, customDateTo);
+  
+  // Products section
+  pdfDoc.setFontSize(14);
+  pdfDoc.text("Products", 15, 40);
+  
+  pdfDoc.autoTable({
+    startY: 45,
+    head: [['ID', 'Product Name', 'Category', 'Price (₹)', 'Available Units', 'Status']],
+    body: products.slice(0, 10).map(product => [
+      product.product_id,
+      product.product_name,
+      product.category,
+      product.price.toFixed(2),
+      product.units,
+      parseInt(product.units) > 10 ? 'In Stock' : parseInt(product.units) > 0 ? 'Low Stock' : 'Out of Stock'
+    ]),
+    foot: [['', '', '', '', '', `+ ${Math.max(0, products.length - 10)} more products`]]
+  });
+  
+  // Products summary
+  const totalProductsValue = products.reduce((sum, product) => sum + (product.price * parseInt(product.units)), 0);
+  
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Products Summary: Total Value: ₹${totalProductsValue.toFixed(2)} | Count: ${products.length}`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  
+  // Sales section
+  pdfDoc.setFontSize(14);
+  pdfDoc.text("Sales", 15, pdfDoc.lastAutoTable.finalY + 25);
+  
+  pdfDoc.autoTable({
+    startY: pdfDoc.lastAutoTable.finalY + 30,
+    head: [['ID', 'Product', 'Client', 'Quantity', 'Price (₹)', 'Total (₹)', 'Date']],
+    body: filteredSales.slice(0, 10).map(sale => [
+      sale.sale_id,
+      sale.product?.product_name || 'Unknown',
+      sale.clientName || 'General',
+      sale.quantity_sold,
+      sale.selling_price.toFixed(2),
+      (sale.quantity_sold * sale.selling_price).toFixed(2),
+      format(new Date(sale.sale_date), 'PPP')
+    ]),
+    foot: [['', '', '', '', '', '', `+ ${Math.max(0, filteredSales.length - 10)} more sales`]]
+  });
+  
+  // Sales summary
+  const totalSalesRevenue = filteredSales.reduce((sum, sale) => sum + (sale.quantity_sold * sale.selling_price), 0);
+  
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Sales Summary: Total Revenue: ₹${totalSalesRevenue.toFixed(2)} | Count: ${filteredSales.length}`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  
+  // Payments section
+  pdfDoc.setFontSize(14);
+  pdfDoc.text("Payments", 15, pdfDoc.lastAutoTable.finalY + 25);
+  
+  pdfDoc.autoTable({
+    startY: pdfDoc.lastAutoTable.finalY + 30,
+    head: [['ID', 'Client', 'Amount (₹)', 'Method', 'Status', 'Date']],
+    body: filteredPayments.slice(0, 10).map(payment => [
+      payment.id,
+      payment.clientName || 'General',
+      payment.amount.toFixed(2),
+      payment.method,
+      payment.status,
+      format(new Date(payment.date), 'PPP')
+    ]),
+    foot: [['', '', '', '', '', `+ ${Math.max(0, filteredPayments.length - 10)} more payments`]]
+  });
+  
+  // Payments summary
+  const totalPaymentsAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Payments Summary: Total Amount: ₹${totalPaymentsAmount.toFixed(2)} | Count: ${filteredPayments.length}`, 15, pdfDoc.lastAutoTable.finalY + 10);
+  
+  // Overall summary
+  pdfDoc.addPage();
+  pdfDoc.setFontSize(16);
+  pdfDoc.text("Overall Business Summary", 15, 20);
+  
+  pdfDoc.setFontSize(12);
+  pdfDoc.text(`Reporting Period: ${getDateRangeText(timeRange, customDateFrom, customDateTo)}`, 15, 30);
+  
+  // Create summary table
+  pdfDoc.autoTable({
+    startY: 40,
+    head: [['Metric', 'Value']],
+    body: [
+      ['Total Products', products.length.toString()],
+      ['Inventory Value', `₹${totalProductsValue.toFixed(2)}`],
+      ['Sales Count', filteredSales.length.toString()],
+      ['Sales Revenue', `₹${totalSalesRevenue.toFixed(2)}`],
+      ['Payments Count', filteredPayments.length.toString()],
+      ['Payments Amount', `₹${totalPaymentsAmount.toFixed(2)}`],
+      ['Products Out of Stock', products.filter(p => parseInt(p.units) === 0).length.toString()],
+      ['Products Low Stock', products.filter(p => parseInt(p.units) > 0 && parseInt(p.units) <= 10).length.toString()]
+    ]
+  });
+};
+
 // Generate report based on type
 export const generateReport = (
   reportType: ReportType,
@@ -266,6 +381,9 @@ export const generateReport = (
   
   // Generate content based on report type
   switch (reportType) {
+    case "all":
+      generateAllDataReport(doc, products, sales, payments, timeRange, customDateFrom, customDateTo);
+      break;
     case "local":
       generateProductsReport(doc, products.filter(p => !p.product_name.includes("(Warehouse)")));
       break;

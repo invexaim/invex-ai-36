@@ -90,6 +90,9 @@ const useAppStore = create<AppState>()(
       // Variable to store unsubscribe function for realtime updates
       let realtimeUnsubscribe: (() => void) | null = null;
       
+      // Flag to prevent updates from the same device
+      let lastUpdateTimestamp = Date.now();
+      
       // Combine all slices and expose them
       return {
         // Product slice
@@ -148,13 +151,39 @@ const useAppStore = create<AppState>()(
           
           // Set up new subscription
           realtimeUnsubscribe = setupRealtimeSubscription(userId, (userData) => {
-            console.log("Updating store with realtime data:", userData);
+            console.log("Receiving realtime update:", userData);
             
-            // Update store with the received data
+            // Check if this is a recent update from this device
+            const currentTime = Date.now();
+            if (currentTime - lastUpdateTimestamp < 5000) {
+              console.log("Ignoring recent update from this device");
+              return;
+            }
+            
+            // Compare local data with received data to prevent unnecessary updates
             const products = Array.isArray(userData.products) ? userData.products : [];
             const sales = Array.isArray(userData.sales) ? userData.sales : [];
             const clients = Array.isArray(userData.clients) ? userData.clients : [];
             const payments = Array.isArray(userData.payments) ? userData.payments : [];
+            
+            const currentState = get();
+            const hasDataChanged = 
+              JSON.stringify(products) !== JSON.stringify(currentState.products) ||
+              JSON.stringify(sales) !== JSON.stringify(currentState.sales) ||
+              JSON.stringify(clients) !== JSON.stringify(currentState.clients) ||
+              JSON.stringify(payments) !== JSON.stringify(currentState.payments);
+              
+            if (!hasDataChanged) {
+              console.log("No changes detected in realtime data, ignoring update");
+              return;
+            }
+            
+            console.log("Updating store with realtime data:", { 
+              productsCount: products.length,
+              salesCount: sales.length,
+              clientsCount: clients.length,
+              paymentsCount: payments.length
+            });
             
             set({
               products,

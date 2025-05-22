@@ -11,5 +11,5 @@ export interface UserState {
   setIsSignedIn: (isSignedIn: boolean) => void;
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
-  setupRealtimeUpdates?: (userId: string) => (() => void);
+  setupRealtimeUpdates: (userId: string) => (() => void);
 }
