@@ -1,9 +1,9 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import AuthService from "@/services/authService";
+import { setAutoSync } from "@/store/realtimeSync";
 
 interface AuthContextType {
   user: User | null;
@@ -52,21 +52,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // If user is already logged in, sync their data
           try {
             console.log("User already authenticated, syncing data on initial load...");
+            
+            // Disable auto sync by default - only sync on explicit user action
+            setAutoSync(false);
+            
             await syncDataWithSupabase();
             console.log("Data synced successfully on initial load");
             
-            // Set up realtime updates
+            // Set up realtime updates but keep auto-sync disabled
             const cleanup = setupRealtimeUpdates(currentUser.id);
             if (typeof cleanup === 'function') {
               realtimeCleanup = cleanup;
             }
-            
-            // Force an initial save to ensure all latest data is on the server
-            setTimeout(() => {
-              saveDataToSupabase().catch(error => {
-                console.error("Error in initial data save:", error);
-              });
-            }, 1000);
             
             // Remove welcome shown flag from previous sessions when loading app
             sessionStorage.removeItem("welcomeShown");
@@ -96,11 +93,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // When user logs in, sync their data from Supabase to local state
         try {
           console.log("User authenticated, syncing data...");
+          
+          // Disable auto sync by default - only sync on explicit user action
+          setAutoSync(false);
+          
           await syncDataWithSupabase();
           console.log("Data synced successfully after auth change");
           toast.success("Your data has been loaded");
           
-          // Set up realtime updates after login
+          // Set up realtime updates after login but keep auto-sync disabled
           if (realtimeCleanup) {
             realtimeCleanup();
           }
@@ -108,13 +109,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (typeof cleanup === 'function') {
             realtimeCleanup = cleanup;
           }
-          
-          // Force an initial save to ensure all latest data is on the server
-          setTimeout(() => {
-            saveDataToSupabase().catch(error => {
-              console.error("Error in initial data save after auth:", error);
-            });
-          }, 1000);
           
           // Remove welcome shown flag to show welcome message on new login
           sessionStorage.removeItem("welcomeShown");

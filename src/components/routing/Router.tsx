@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -9,6 +10,8 @@ import Payments from "@/pages/Payments";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
 import Stock from "@/pages/Stock";
+import Estimates from "@/pages/Estimates";
+import Delivery from "@/pages/Delivery";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -109,6 +112,22 @@ export const Router = () => {
           <ProtectedRoute>
             <MainLayout>
               <Stock />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/estimates" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Estimates />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/delivery" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Delivery />
             </MainLayout>
           </ProtectedRoute>
         } />

@@ -10,7 +10,9 @@ import {
   ShoppingCart, 
   CreditCard,
   Warehouse,
-  LogOut
+  LogOut,
+  FileText,
+  Truck
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
@@ -31,6 +33,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     localStorage.getItem('theme') as 'light' | 'dark' || 'light'
   );
   const clearLocalData = useAppStore(state => state.clearLocalData);
+  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
 
   useEffect(() => {
     // Update the data-theme attribute on the document element when the theme changes
@@ -47,6 +50,18 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const handleLogout = async () => {
     try {
       console.log("Logout initiated");
+      
+      // Explicitly save all data before logout
+      try {
+        toast.info("Saving your data before logout...");
+        console.log("Saving user data before logout");
+        await saveDataToSupabase();
+        console.log("Data saved successfully before logout");
+      } catch (saveError) {
+        console.error("Error saving data before logout:", saveError);
+        toast.error("Error saving your data. Please try again.");
+        return; // Prevent logout if saving fails
+      }
       
       // Clear local data first
       clearLocalData();
@@ -105,6 +120,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       icon: <Warehouse className="w-5 h-5" />,
       label: "Stock",
       href: "/stock",
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: "Estimates",
+      href: "/estimates",
+    },
+    {
+      icon: <Truck className="w-5 h-5" />,
+      label: "Delivery",
+      href: "/delivery",
     },
   ];
 
