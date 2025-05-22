@@ -4,9 +4,11 @@ import { FileText, PlusCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import useAppStore from '@/store/appStore';
+import { CreateEstimateDialog } from '@/components/estimates/CreateEstimateDialog';
 
 const Estimates = () => {
   const [estimates, setEstimates] = useState<any[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const products = useAppStore((state) => state.products);
 
   return (
@@ -19,7 +21,7 @@ const Estimates = () => {
             Estimates & Quotations
           </h1>
         </div>
-        <Button>
+        <Button onClick={() => setIsDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create New Estimate
         </Button>
@@ -33,7 +35,7 @@ const Estimates = () => {
           <p className="text-muted-foreground mb-6">
             Create estimates or quotations for your clients and send them via email or WhatsApp.
           </p>
-          <Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Your First Estimate
           </Button>
@@ -50,6 +52,12 @@ const Estimates = () => {
           <li>Set expiry dates for your quotations</li>
         </ul>
       </div>
+      
+      {/* Create Estimate Dialog */}
+      <CreateEstimateDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+      />
     </div>
   );
 };

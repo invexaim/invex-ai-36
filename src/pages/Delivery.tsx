@@ -4,9 +4,11 @@ import { Truck, PlusCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import useAppStore from '@/store/appStore';
+import { CreateChallanDialog } from '@/components/delivery/CreateChallanDialog';
 
 const Delivery = () => {
   const [challans, setChallans] = useState<any[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const products = useAppStore((state) => state.products);
 
   return (
@@ -19,7 +21,7 @@ const Delivery = () => {
             Delivery Challans
           </h1>
         </div>
-        <Button>
+        <Button onClick={() => setIsDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create New Challan
         </Button>
@@ -33,7 +35,7 @@ const Delivery = () => {
           <p className="text-muted-foreground mb-6">
             Create delivery challans to track product shipments to your customers.
           </p>
-          <Button>
+          <Button onClick={() => setIsDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Your First Delivery Challan
           </Button>
@@ -50,6 +52,12 @@ const Delivery = () => {
           <li>Print delivery receipts for your delivery team</li>
         </ul>
       </div>
+      
+      {/* Create Challan Dialog */}
+      <CreateChallanDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   );
 };
