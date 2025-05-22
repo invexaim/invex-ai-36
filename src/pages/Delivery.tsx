@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Truck, PlusCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAppStore } from '@/store';
+import useAppStore from '@/store/appStore';
 
 const Delivery = () => {
   const [challans, setChallans] = useState<any[]>([]);
