@@ -7,27 +7,30 @@ import { Sale, Product } from "@/types";
 
 interface TransactionSectionProps {
   sales: Sale[];
-  products: Product[];
-  searchTerm: string;
-  selectedDate: string;
-  transactionType: string;
-  filteredTransactions: Sale[];
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onDeleteTransaction: (id: number) => void;
+  productsExist: boolean;
+  products?: Product[];
+  searchTerm?: string;
+  selectedDate?: string;
+  transactionType?: string;
+  filteredTransactions?: Sale[];
+  onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDateChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTypeChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
 export const TransactionSection = ({
-  products,
-  searchTerm,
-  selectedDate,
-  transactionType,
-  filteredTransactions,
-  onSearchChange,
-  onDateChange,
-  onTypeChange,
+  sales,
+  products = [],
+  searchTerm = "",
+  selectedDate = "",
+  transactionType = "all",
+  filteredTransactions = sales,
+  onSearchChange = () => {},
+  onDateChange = () => {},
+  onTypeChange = () => {},
   onDeleteTransaction,
+  productsExist,
 }: TransactionSectionProps) => {
   return (
     <div className="bg-card rounded-lg border shadow-sm">
@@ -50,7 +53,7 @@ export const TransactionSection = ({
       <TransactionList
         filteredTransactions={filteredTransactions}
         onDeleteTransaction={onDeleteTransaction}
-        productsExist={products.length > 0}
+        productsExist={productsExist}
       />
     </div>
   );

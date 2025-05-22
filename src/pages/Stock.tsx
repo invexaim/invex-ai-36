@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Warehouse, MoveHorizontal } from "lucide-react";
@@ -42,6 +43,7 @@ const Stock = () => {
   const handleSubmit = (values: ProductFormValues) => {
     try {
       // Add warehouse tag to product name if it's for warehouse
+      // Ensure category is always provided
       const productData = {
         ...values,
         product_name: values.location === "warehouse" 
@@ -49,6 +51,8 @@ const Stock = () => {
           : values.product_name,
         price: parseFloat(values.price),
         reorder_level: parseInt(values.reorder_level || "5"),
+        category: values.category || "Uncategorized", // Ensure category is always provided
+        units: values.units || "0",
       };
       
       addProduct(productData);
