@@ -1,104 +1,99 @@
 
-import React, { useMemo } from "react";
+import { Sales } from "@/types";
 import { LineChart } from "@/components/charts/LineChart";
 import { BarChart } from "@/components/charts/BarChart";
-import { Sale } from "@/types";
-import { format, parseISO, compareAsc, differenceInDays } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface HistoryChartsProps {
-  sales: Sale[];
+  sales: Sales[];
+  showAllTime?: boolean;
 }
 
-export const HistoryCharts = ({ sales }: HistoryChartsProps) => {
-  // Generate sales trend data for all time
-  const salesChartData = useMemo(() => {
-    if (sales.length === 0) return [];
+export function HistoryCharts({ sales, showAllTime = false }: HistoryChartsProps) {
+  // Format data for charts
+  const prepareChartData = () => {
+    const salesByDate = new Map();
+    const productSales = new Map();
     
-    // Sort sales by date
-    const sortedSales = [...sales].sort((a, b) => 
-      compareAsc(parseISO(a.sale_date), parseISO(b.sale_date))
-    );
-    
-    // Get first and last sale dates
-    const firstSaleDate = parseISO(sortedSales[0].sale_date);
-    const lastSaleDate = parseISO(sortedSales[sortedSales.length - 1].sale_date);
-    
-    // Calculate total days between first and last sale
-    const totalDays = differenceInDays(lastSaleDate, firstSaleDate);
-    
-    // Group sales by date
-    const salesByDate = sortedSales.reduce((acc, sale) => {
-      const formattedDate = format(parseISO(sale.sale_date), "MMM dd");
+    // Process sales data
+    sales.forEach((sale) => {
+      const saleDate = new Date(sale.sale_date);
+      const dateStr = saleDate.toISOString().split('T')[0];
       
-      if (!acc[formattedDate]) {
-        acc[formattedDate] = 0;
-      }
+      // Aggregate data by date
+      const existingSale = salesByDate.get(dateStr) || 0;
+      salesByDate.set(dateStr, existingSale + sale.quantity_sold * sale.selling_price);
       
-      acc[formattedDate] += sale.quantity_sold * sale.selling_price;
-      return acc;
-    }, {} as Record<string, number>);
+      // Aggregate data by product
+      const productName = sale.product?.product_name || "Unknown Product";
+      const existingProductSale = productSales.get(productName) || 0;
+      productSales.set(productName, existingProductSale + sale.quantity_sold * sale.selling_price);
+    });
     
-    // Convert to chart data format (sorted chronologically)
-    return Object.entries(salesByDate).map(([name, value]) => ({
-      name,
-      value
-    }));
-  }, [sales]);
+    // Sort dates and prepare line chart data
+    let sortedDates = Array.from(salesByDate.keys()).sort();
+    
+    // If not showing all time, limit to last 7 dates with data 
+    // (removed this limit to show all data based on the user's request)
+    if (!showAllTime && sortedDates.length > 7) {
+      sortedDates = sortedDates.slice(-7);
+    }
+    
+    const lineChartData = sortedDates.map((date) => {
+      return {
+        name: date,
+        sales: salesByDate.get(date),
+      };
+    });
+    
+    // Sort products by sales volume and prepare bar chart data
+    const sortedProducts = Array.from(productSales.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    const barChartData = sortedProducts.map(([name, sales]) => {
+      return {
+        name,
+        sales,
+      };
+    });
+    
+    return {
+      lineChartData,
+      barChartData,
+    };
+  };
   
-  // Generate category data
-  const categoryChartData = useMemo(() => {
-    const categories = sales.reduce((acc, sale) => {
-      const category = sale.product?.category || "Uncategorized";
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += sale.quantity_sold * sale.selling_price;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return Object.entries(categories).map(([name, value]) => ({
-      name,
-      value
-    }));
-  }, [sales]);
+  const { lineChartData, barChartData } = prepareChartData();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
-        <h3 className="text-lg font-semibold mb-4">Sales Trend (All Time)</h3>
-        <div className="h-[270px]">
-          {sales.length > 0 ? (
-            <LineChart 
-              data={salesChartData} 
-              dataKey="value" 
-              xAxisDataKey="name"
-              stroke="#4f46e5"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>No sales data available yet</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      <div className="bg-card p-6 rounded-lg border shadow-sm h-[350px]">
-        <h3 className="text-lg font-semibold mb-4">Revenue by Category</h3>
-        <div className="h-[270px]">
-          {sales.length > 0 ? (
-            <BarChart 
-              data={categoryChartData} 
-              dataKey="value" 
-              xAxisDataKey="name"
-              fill="#22c55e"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>No category data available yet</p>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Sales Trend {showAllTime ? '(All Time)' : '(Last 7 Days)'}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pb-4">
+          <LineChart 
+            data={lineChartData} 
+            xAxisKey="name" 
+            yAxisKey="sales" 
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Products</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pb-4">
+          <BarChart 
+            data={barChartData} 
+            xAxisKey="name" 
+            yAxisKey="sales" 
+          />
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}

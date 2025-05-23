@@ -36,7 +36,17 @@ export const createClientSlice = (set: any, get: any) => ({
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),
   
+  // Fix the duplicate purchase counting issue
   updateClientPurchase: (clientName, amount) => set((state: ClientState) => {
+    // Only update if there is an actual client name - prevent empty client updates
+    if (!clientName) return { clients: state.clients };
+    
+    // Check if the client already exists
+    const clientExists = state.clients.some(client => client.name === clientName);
+    
+    // If client doesn't exist, we don't update anything
+    if (!clientExists) return { clients: state.clients };
+    
     // Update client if exists
     const updatedClients = state.clients.map(client => {
       if (client.name === clientName) {

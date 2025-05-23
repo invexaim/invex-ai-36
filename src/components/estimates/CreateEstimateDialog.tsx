@@ -38,10 +38,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CreateEstimateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEstimateCreated?: (estimateData: any) => void;
 }
 
 interface EstimateForm {
@@ -64,6 +66,7 @@ interface EstimateItem {
 export function CreateEstimateDialog({
   open,
   onOpenChange,
+  onEstimateCreated
 }: CreateEstimateDialogProps) {
   const [items, setItems] = useState<EstimateItem[]>([
     { id: 1, name: "", quantity: 1, price: 0, total: 0 },
@@ -127,6 +130,12 @@ export function CreateEstimateDialog({
     
     console.log("Creating estimate:", estimateData);
     toast.success("Estimate created successfully");
+    
+    // Call the callback function if it exists
+    if (onEstimateCreated) {
+      onEstimateCreated(estimateData);
+    }
+    
     onOpenChange(false);
     
     // Reset form and items
@@ -136,230 +145,232 @@ export function CreateEstimateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Create New Estimate</DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="clientName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a client" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clients.length > 0 ? (
-                          clients.map((client) => (
-                            <SelectItem key={client.id} value={client.name}>
-                              {client.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="new">Enter Client Name</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+        <ScrollArea className="h-[70vh] pr-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="clientName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className="pl-3 text-left font-normal"
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a client" />
+                          </SelectTrigger>
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">Items</h3>
-              <div className="border rounded-md p-2">
-                <div className="grid grid-cols-12 gap-2 font-medium text-sm py-2 px-2">
-                  <div className="col-span-5">Item</div>
-                  <div className="col-span-2">Qty</div>
-                  <div className="col-span-2">Price</div>
-                  <div className="col-span-2">Total</div>
-                  <div className="col-span-1"></div>
-                </div>
-                
-                <Separator />
-                
-                {items.map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-2 px-2">
-                    <div className="col-span-5">
-                      <Select
-                        value={item.name}
-                        onValueChange={(value) => updateItem(item.id, 'name', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select product" />
-                        </SelectTrigger>
                         <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem 
-                              key={product.product_id} 
-                              value={product.product_name}
-                              onClick={() => updateItem(item.id, 'price', product.price)}
-                            >
-                              {product.product_name} - ${product.price}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="custom">Custom Item</SelectItem>
+                          {clients.length > 0 ? (
+                            clients.map((client) => (
+                              <SelectItem key={client.id} value={client.name}>
+                                {client.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="new">Enter Client Name</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => 
-                          updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.price}
-                        onChange={(e) => 
-                          updateItem(item.id, 'price', parseFloat(e.target.value) || 0)
-                        }
-                      />
-                    </div>
-                    <div className="col-span-2 text-right pt-2">
-                      ${(item.quantity * item.price).toFixed(2)}
-                    </div>
-                    <div className="col-span-1 flex justify-center">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(item.id)}
-                        disabled={items.length === 1}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className="pl-3 text-left font-normal"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Items</h3>
+                <div className="border rounded-md p-2">
+                  <div className="grid grid-cols-12 gap-2 font-medium text-sm py-2 px-2">
+                    <div className="col-span-5">Item</div>
+                    <div className="col-span-2">Qty</div>
+                    <div className="col-span-2">Price</div>
+                    <div className="col-span-2">Total</div>
+                    <div className="col-span-1"></div>
                   </div>
-                ))}
-                
-                <div className="py-2 px-2">
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    className="w-full"
-                    onClick={addItem}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Item
-                  </Button>
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="flex justify-end py-2 px-2">
-                  <div className="w-1/3 space-y-1">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                  
+                  <Separator />
+                  
+                  {items.map((item) => (
+                    <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-2 px-2">
+                      <div className="col-span-5">
+                        <Select
+                          value={item.name}
+                          onValueChange={(value) => updateItem(item.id, 'name', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select product" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((product) => (
+                              <SelectItem 
+                                key={product.product_id} 
+                                value={product.product_name}
+                                onClick={() => updateItem(item.id, 'price', product.price)}
+                              >
+                                {product.product_name} - ₹{product.price}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="custom">Custom Item</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => 
+                            updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)
+                          }
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.price}
+                          onChange={(e) => 
+                            updateItem(item.id, 'price', parseFloat(e.target.value) || 0)
+                          }
+                        />
+                      </div>
+                      <div className="col-span-2 text-right pt-2">
+                        ₹{(item.quantity * item.price).toLocaleString()}
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(item.id)}
+                          disabled={items.length === 1}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex justify-between font-medium text-lg">
-                      <span>Total:</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                  ))}
+                  
+                  <div className="py-2 px-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="w-full"
+                      onClick={addItem}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Item
+                    </Button>
+                  </div>
+                  
+                  <Separator className="my-2" />
+                  
+                  <div className="flex justify-end py-2 px-2">
+                    <div className="w-1/3 space-y-1">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>₹{calculateTotal().toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between font-medium text-lg">
+                        <span>Total:</span>
+                        <span>₹{calculateTotal().toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional notes for the client"
-                        className="resize-none h-20"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
-              <FormField
-                control={form.control}
-                name="terms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Terms & Conditions</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Terms and conditions"
-                        className="resize-none h-20"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Create Estimate</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Additional notes for the client"
+                          className="resize-none h-20"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="terms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Terms & Conditions</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Terms and conditions"
+                          className="resize-none h-20"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Create Estimate</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

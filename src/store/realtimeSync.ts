@@ -1,10 +1,11 @@
+
 import { toast } from "sonner";
 import { AppState } from './types';
 
 // Variable to store the timestamp of the last update from this device
 let lastUpdateTimestamp = Date.now();
 
-// Flag to control automatic syncing
+// Flag to control automatic syncing - Disabled by default
 let autoSyncEnabled = false;
 
 /**
@@ -75,7 +76,7 @@ export function processRealtimeUpdate(
     return false;
   }
   
-  // Ask user permission before applying changes from another device
+  // Always ask user permission before applying changes from another device
   if (confirm("Another device has updated your data. Would you like to sync these changes now?")) {
     console.log("Updating store with realtime data:", { 
       productsCount: products.length,

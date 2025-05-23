@@ -13,9 +13,9 @@ const History = () => {
   useEffect(() => {
     const saveData = async () => {
       try {
-        const { saveDataToSupabase, currentUser } = useAppStore.getState();
+        const { saveDataToSupabase, currentUser, isSignedIn } = useAppStore.getState();
         
-        if (currentUser) {
+        if (currentUser && isSignedIn) {
           console.log("Ensuring data is saved when viewing History page");
           await saveDataToSupabase();
         }
@@ -27,13 +27,16 @@ const History = () => {
     saveData();
   }, []);
   
+  // To ensure we're showing all-time sales data, we don't need any additional filters here
+  // The TransactionSection component will handle the display
+  
   return (
     <div className="space-y-8 animate-fade-in">
       <HistoryHeader />
       
       <HistoryStats sales={sales} />
       
-      <HistoryCharts sales={sales} />
+      <HistoryCharts sales={sales} showAllTime={true} />
       
       <TransactionSection
         sales={sales}
