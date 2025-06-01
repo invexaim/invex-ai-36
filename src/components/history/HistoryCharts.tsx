@@ -1,11 +1,11 @@
 
-import { Sales } from "@/types";
+import { Sale } from "@/types";
 import { LineChart } from "@/components/charts/LineChart";
 import { BarChart } from "@/components/charts/BarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface HistoryChartsProps {
-  sales: Sales[];
+  sales: Sale[];
   showAllTime?: boolean;
 }
 
@@ -77,8 +77,8 @@ export function HistoryCharts({ sales, showAllTime = false }: HistoryChartsProps
         <CardContent className="px-2 pb-4">
           <LineChart 
             data={lineChartData} 
-            xAxisKey="name" 
-            yAxisKey="sales" 
+            xAxisDataKey="name" 
+            dataKey="sales" 
           />
         </CardContent>
       </Card>
@@ -89,8 +89,8 @@ export function HistoryCharts({ sales, showAllTime = false }: HistoryChartsProps
         <CardContent className="px-2 pb-4">
           <BarChart 
             data={barChartData} 
-            xAxisKey="name" 
-            yAxisKey="sales" 
+            xAxisDataKey="name" 
+            dataKey="sales" 
           />
         </CardContent>
       </Card>
