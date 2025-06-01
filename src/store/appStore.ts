@@ -56,7 +56,7 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // Method to update client purchase history
+      // Method to update client purchase history - THIS IS THE ONLY PLACE IT SHOULD BE CALLED
       (clientName, amount) => {
         clientSlice.updateClientPurchase(clientName, amount);
       }
@@ -143,11 +143,9 @@ const useAppStore = createPersistedStore<AppState>(
           processRealtimeUpdate(userData, get, set);
         });
         
-        // Force a data sync on setup
+        // Force a data sync on setup - but only if user explicitly requests it
         const { syncDataWithSupabase } = get();
-        syncDataWithSupabase().catch(error => {
-          console.error("Error syncing data during realtime setup:", error);
-        });
+        console.log("Realtime setup complete, not forcing immediate sync to preserve local changes");
         
         // Always return a cleanup function, even if realtimeUnsubscribe is null
         return () => {

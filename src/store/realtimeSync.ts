@@ -8,6 +8,9 @@ let lastUpdateTimestamp = Date.now();
 // Flag to control automatic syncing - Disabled by default
 let autoSyncEnabled = false;
 
+// Track if we have pending local changes
+let hasPendingChanges = false;
+
 /**
  * Configures a store for auto-saving with Supabase
  */
@@ -21,14 +24,21 @@ export function configureAutoSave(
     // Apply the state update
     set(fn);
     
+    // Mark that we have pending changes
+    hasPendingChanges = true;
+    
     // Only schedule a save operation if auto-sync is enabled and the user is logged in
     if (autoSyncEnabled) {
       setTimeout(() => {
         const state = get();
         if (state.currentUser) {
-          saveDataToSupabase().catch(error => {
-            console.error("Error auto-saving data after state change:", error);
-          });
+          saveDataToSupabase()
+            .then(() => {
+              hasPendingChanges = false; // Clear pending changes after successful save
+            })
+            .catch(error => {
+              console.error("Error auto-saving data after state change:", error);
+            });
         }
       }, 300); // Reduce debounce time for faster sync
     }
@@ -51,10 +61,25 @@ export function processRealtimeUpdate(
     return false;
   }
   
-  // Check if this is a recent update from this device
+  // If we have pending local changes, don't override them
+  if (hasPendingChanges) {
+    console.log("Ignoring update: pending local changes detected");
+    return false;
+  }
+  
+  // Check if this is a recent update from this device (within 10 seconds)
   const currentTime = Date.now();
-  if (currentTime - lastUpdateTimestamp < 5000) {
+  if (currentTime - lastUpdateTimestamp < 10000) {
     console.log("Ignoring recent update from this device");
+    return false;
+  }
+  
+  // Compare timestamps to see if remote data is actually newer
+  const remoteTimestamp = new Date(userData.updated_at || 0).getTime();
+  const localTimestamp = lastUpdateTimestamp;
+  
+  if (remoteTimestamp <= localTimestamp) {
+    console.log("Ignoring older remote data");
     return false;
   }
   
@@ -76,33 +101,33 @@ export function processRealtimeUpdate(
     return false;
   }
   
-  // Always ask user permission before applying changes from another device
-  if (confirm("Another device has updated your data. Would you like to sync these changes now?")) {
-    console.log("Updating store with realtime data:", { 
-      productsCount: products.length,
-      salesCount: sales.length,
-      clientsCount: clients.length,
-      paymentsCount: payments.length
-    });
-    
-    set({
-      products,
-      sales,
-      clients,
-      payments
-    });
-    
-    toast.success("Data synchronized from another device", {
-      id: "realtime-sync",
-      duration: 2000
-    });
-    
-    return true;
-  } else {
-    // User rejected the sync, so we'll keep their local data
-    console.log("User rejected data sync from another device");
-    return false;
-  }
+  // Only apply updates if user has been idle for a while and explicitly confirms
+  console.log("Remote data is newer and different from local data");
+  
+  // Don't show confirmation dialog automatically - this prevents data loss
+  // Instead, just log that an update is available
+  console.log("Update available from another device, but preserving local changes");
+  
+  // Optionally show a non-intrusive notification
+  toast.info("Updates available from another device", {
+    id: "update-available",
+    duration: 3000,
+    action: {
+      label: "Sync",
+      onClick: () => {
+        console.log("User manually triggered sync");
+        set({
+          products,
+          sales,
+          clients,
+          payments
+        });
+        toast.success("Data synchronized", { id: "manual-sync" });
+      }
+    }
+  });
+  
+  return false; // Don't auto-apply the update
 }
 
 /**
@@ -110,6 +135,7 @@ export function processRealtimeUpdate(
  */
 export function updateLastTimestamp() {
   lastUpdateTimestamp = Date.now();
+  hasPendingChanges = true; // Mark that we have pending changes
 }
 
 /**
@@ -118,6 +144,10 @@ export function updateLastTimestamp() {
 export function setAutoSync(enabled: boolean) {
   autoSyncEnabled = enabled;
   console.log(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`);
+  
+  if (!enabled) {
+    hasPendingChanges = false; // Clear pending changes when disabling auto-sync
+  }
 }
 
 /**
@@ -125,4 +155,18 @@ export function setAutoSync(enabled: boolean) {
  */
 export function isAutoSyncEnabled() {
   return autoSyncEnabled;
+}
+
+/**
+ * Mark that pending changes have been saved
+ */
+export function clearPendingChanges() {
+  hasPendingChanges = false;
+}
+
+/**
+ * Check if there are pending changes
+ */
+export function hasPendingLocalChanges() {
+  return hasPendingChanges;
 }
