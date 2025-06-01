@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -25,6 +26,7 @@ interface DeliveryChallan {
   deliveryAddress?: string;
   createdAt: string;
   items?: any[];
+  itemsCount?: number;
   notes?: string;
 }
 
@@ -54,6 +56,8 @@ const Delivery = () => {
   }, []);
 
   const handleCreateChallan = (challanData: any) => {
+    const itemsCount = challanData.items ? challanData.items.length : 0;
+    
     const newChallan = {
       id: challanData.challanNo || `DC-${Date.now().toString().slice(-6)}`,
       clientName: challanData.clientName,
@@ -64,6 +68,7 @@ const Delivery = () => {
       deliveryAddress: challanData.deliveryAddress,
       createdAt: challanData.createdAt || new Date().toISOString(),
       items: challanData.items,
+      itemsCount: itemsCount,
       notes: challanData.notes,
     };
     
@@ -149,7 +154,7 @@ const Delivery = () => {
                   </TableCell>
                   <TableCell>{challan.challanNo}</TableCell>
                   <TableCell>{challan.clientName}</TableCell>
-                  <TableCell className="text-center">{challan.itemsCount}</TableCell>
+                  <TableCell className="text-center">{challan.itemsCount || 0}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`${getStatusColor(challan.status)}`}>
                       {challan.status.charAt(0).toUpperCase() + challan.status.slice(1)}
