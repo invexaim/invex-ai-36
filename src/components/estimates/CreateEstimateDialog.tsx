@@ -98,6 +98,15 @@ export function CreateEstimateDialog({
     setItems(items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
+        
+        // Auto-fill price when product is selected
+        if (field === 'name' && value !== 'custom') {
+          const selectedProduct = products.find(p => p.product_name === value);
+          if (selectedProduct) {
+            updatedItem.price = selectedProduct.price;
+          }
+        }
+        
         // Recalculate total if quantity or price changed
         if (field === 'quantity' || field === 'price') {
           updatedItem.total = updatedItem.quantity * updatedItem.price;
@@ -248,7 +257,6 @@ export function CreateEstimateDialog({
                               <SelectItem 
                                 key={product.product_id} 
                                 value={product.product_name}
-                                onClick={() => updateItem(item.id, 'price', product.price)}
                               >
                                 {product.product_name} - ₹{product.price}
                               </SelectItem>
@@ -276,6 +284,8 @@ export function CreateEstimateDialog({
                           onChange={(e) => 
                             updateItem(item.id, 'price', parseFloat(e.target.value) || 0)
                           }
+                          disabled={item.name !== 'custom' && item.name !== ''}
+                          className={item.name !== 'custom' && item.name !== '' ? 'bg-gray-100' : ''}
                         />
                       </div>
                       <div className="col-span-2 text-right pt-2">

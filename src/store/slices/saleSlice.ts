@@ -63,7 +63,7 @@ export const createSaleSlice = (
     
     updateProduct(updatedProduct);
     
-    // Update client purchase history ONLY ONCE if client is specified
+    // Update client purchase history ONLY if client is specified and exists
     if (saleData.clientName) {
       const totalAmount = saleData.quantity_sold * saleData.selling_price;
       updateClientPurchase(saleData.clientName, totalAmount);

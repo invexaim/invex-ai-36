@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Settings, Printer } from 'lucide-react';
+import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import useAppStore from '@/store/appStore';
 import { CreateChallanDialog } from '@/components/delivery/CreateChallanDialog';
 import { DeliveryChallanPrint } from '@/components/delivery/DeliveryChallanPrint';
@@ -16,39 +14,28 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface DeliveryChallan {
   id: string;
   clientName: string;
   date: string;
   challanNo: string;
-  itemsCount: number;
-  status: "delivered" | "pending" | "received";
-  createdAt: string;
-  items?: any[];
+  status: "pending" | "delivered" | "cancelled";
   vehicleNo?: string;
   deliveryAddress?: string;
+  createdAt: string;
+  items?: any[];
   notes?: string;
 }
 
 const Delivery = () => {
   const [challans, setChallans] = useState<DeliveryChallan[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedChallan, setSelectedChallan] = useState<DeliveryChallan | null>(null);
-  const [tempCompanyName, setTempCompanyName] = useState('');
-  
-  const { products, companyName, setCompanyName } = useAppStore();
+  const { products, companyName } = useAppStore();
 
-  // Mock delivery challans data
+  // Load challans from localStorage
   useEffect(() => {
     const storedChallans = localStorage.getItem('deliveryChallans');
     if (storedChallans) {
@@ -63,13 +50,8 @@ const Delivery = () => {
       }
     }
     
-    // Default to empty array
     setChallans([]);
   }, []);
-
-  useEffect(() => {
-    setTempCompanyName(companyName);
-  }, [companyName]);
 
   const handleCreateChallan = (challanData: any) => {
     const newChallan = {
@@ -77,31 +59,24 @@ const Delivery = () => {
       clientName: challanData.clientName,
       date: challanData.date,
       challanNo: challanData.challanNo || `DC-${Date.now().toString().slice(-6)}`,
-      itemsCount: challanData.items.length,
-      status: challanData.status || "delivered",
-      createdAt: challanData.createdAt || new Date().toISOString(),
-      items: challanData.items,
+      status: challanData.status || "pending",
       vehicleNo: challanData.vehicleNo,
       deliveryAddress: challanData.deliveryAddress,
+      createdAt: challanData.createdAt || new Date().toISOString(),
+      items: challanData.items,
       notes: challanData.notes,
     };
     
     const updatedChallans = [newChallan, ...challans];
     setChallans(updatedChallans);
     
-    // Store locally for now
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
   };
 
   const deleteChallan = (id: string) => {
-    const updatedChallans = challans.filter(ch => ch.id !== id);
+    const updatedChallans = challans.filter(challan => challan.id !== id);
     setChallans(updatedChallans);
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
-  };
-
-  const handleSaveCompanyName = () => {
-    setCompanyName(tempCompanyName);
-    setIsSettingsOpen(false);
   };
 
   const handlePrintChallan = (challan: DeliveryChallan) => {
@@ -115,8 +90,8 @@ const Delivery = () => {
         return "bg-green-100 text-green-800 border-green-200";
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "received":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -129,42 +104,13 @@ const Delivery = () => {
         <div className="flex items-center gap-2">
           <Truck className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight">
-            Delivery Challans
+            Delivery Management
           </h1>
         </div>
-        <div className="flex gap-2">
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="mr-2 h-4 w-4" />
-                Company Settings
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Company Settings</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input
-                    id="company-name"
-                    value={tempCompanyName}
-                    onChange={(e) => setTempCompanyName(e.target.value)}
-                    placeholder="Enter your company name"
-                  />
-                </div>
-                <Button onClick={handleSaveCompanyName} className="w-full">
-                  Save Company Name
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create New Challan
-          </Button>
-        </div>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Delivery Challan
+        </Button>
       </div>
 
       {/* Main Content */}
