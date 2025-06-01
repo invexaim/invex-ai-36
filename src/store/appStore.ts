@@ -7,6 +7,7 @@ import { createSaleSlice } from './slices/saleSlice';
 import { createClientSlice } from './slices/clientSlice';
 import { createPaymentSlice } from './slices/paymentSlice';
 import { createUserSlice } from './slices/userSlice';
+import { createCompanySlice } from './slices/companySlice';
 import { saveUserDataToSupabase, setupRealtimeSubscription } from './slices/userSlice/dataSync';
 import { createPersistedStore } from './createStore';
 import { configureAutoSave, processRealtimeUpdate, updateLastTimestamp } from './realtimeSync';
@@ -39,6 +40,8 @@ const useAppStore = createPersistedStore<AppState>(
     const productSlice = createProductSlice(set, get);
     
     const clientSlice = createClientSlice(set, get);
+    
+    const companySlice = createCompanySlice(set, get);
     
     const saleSlice = createSaleSlice(
       set, 
@@ -87,6 +90,8 @@ const useAppStore = createPersistedStore<AppState>(
       deletePayment: paymentSlice.deletePayment,
       // User slice
       ...userSlice,
+      // Company slice
+      ...companySlice,
       
       // Override set method for specific actions to trigger Supabase sync
       setProducts: (products) => {

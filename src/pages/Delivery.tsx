@@ -1,10 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
+import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Settings, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import useAppStore from '@/store/appStore';
 import { CreateChallanDialog } from '@/components/delivery/CreateChallanDialog';
+import { DeliveryChallanPrint } from '@/components/delivery/DeliveryChallanPrint';
 import {
   Table,
   TableBody,
@@ -14,6 +16,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface DeliveryChallan {
   id: string;
@@ -23,12 +32,21 @@ interface DeliveryChallan {
   itemsCount: number;
   status: "delivered" | "pending" | "received";
   createdAt: string;
+  items?: any[];
+  vehicleNo?: string;
+  deliveryAddress?: string;
+  notes?: string;
 }
 
 const Delivery = () => {
   const [challans, setChallans] = useState<DeliveryChallan[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const products = useAppStore((state) => state.products);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [selectedChallan, setSelectedChallan] = useState<DeliveryChallan | null>(null);
+  const [tempCompanyName, setTempCompanyName] = useState('');
+  
+  const { products, companyName, setCompanyName } = useAppStore();
 
   // Mock delivery challans data
   useEffect(() => {
@@ -49,6 +67,10 @@ const Delivery = () => {
     setChallans([]);
   }, []);
 
+  useEffect(() => {
+    setTempCompanyName(companyName);
+  }, [companyName]);
+
   const handleCreateChallan = (challanData: any) => {
     const newChallan = {
       id: challanData.challanNo || `DC-${Date.now().toString().slice(-6)}`,
@@ -58,6 +80,10 @@ const Delivery = () => {
       itemsCount: challanData.items.length,
       status: challanData.status || "delivered",
       createdAt: challanData.createdAt || new Date().toISOString(),
+      items: challanData.items,
+      vehicleNo: challanData.vehicleNo,
+      deliveryAddress: challanData.deliveryAddress,
+      notes: challanData.notes,
     };
     
     const updatedChallans = [newChallan, ...challans];
@@ -71,6 +97,16 @@ const Delivery = () => {
     const updatedChallans = challans.filter(ch => ch.id !== id);
     setChallans(updatedChallans);
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+  };
+
+  const handleSaveCompanyName = () => {
+    setCompanyName(tempCompanyName);
+    setIsSettingsOpen(false);
+  };
+
+  const handlePrintChallan = (challan: DeliveryChallan) => {
+    setSelectedChallan(challan);
+    setIsPrintDialogOpen(true);
   };
 
   function getStatusColor(status: string) {
@@ -96,10 +132,39 @@ const Delivery = () => {
             Delivery Challans
           </h1>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Challan
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Company Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Company Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input
+                    id="company-name"
+                    value={tempCompanyName}
+                    onChange={(e) => setTempCompanyName(e.target.value)}
+                    placeholder="Enter your company name"
+                  />
+                </div>
+                <Button onClick={handleSaveCompanyName} className="w-full">
+                  Save Company Name
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Challan
+          </Button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -146,6 +211,13 @@ const Delivery = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handlePrintChallan(challan)}
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon">
                         <Download className="h-4 w-4" />
                       </Button>
@@ -186,6 +258,16 @@ const Delivery = () => {
         onOpenChange={setIsDialogOpen}
         onChallanCreated={handleCreateChallan}
       />
+      
+      {/* Print Dialog */}
+      {selectedChallan && (
+        <DeliveryChallanPrint
+          open={isPrintDialogOpen}
+          onOpenChange={setIsPrintDialogOpen}
+          challan={selectedChallan}
+          companyName={companyName}
+        />
+      )}
     </div>
   );
 };

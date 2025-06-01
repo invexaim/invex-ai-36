@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileText, PlusCircle, CalendarIcon, Download, Pencil, Trash2 } from 'lucide-react';
+import { Calculator, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import useAppStore from '@/store/appStore';
 import { CreateEstimateDialog } from '@/components/estimates/CreateEstimateDialog';
+import { EstimatePrint } from '@/components/estimates/EstimatePrint';
 import {
   Table,
   TableBody,
@@ -21,22 +22,23 @@ interface Estimate {
   date: string;
   referenceNo: string;
   totalAmount: number;
-  status: "pending" | "accepted" | "rejected" | "expired";
+  status: "pending" | "accepted" | "rejected";
+  validUntil: string;
   createdAt: string;
+  items?: any[];
+  notes?: string;
+  terms?: string;
 }
 
 const Estimates = () => {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const products = useAppStore((state) => state.products);
-  const clients = useAppStore((state) => state.clients);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
+  const { products, companyName } = useAppStore();
 
-  // Mock estimates data (this would normally come from your store)
+  // Load estimates from localStorage
   useEffect(() => {
-    // Create sample data for visualization
-    const mockEstimates: Estimate[] = [];
-    
-    // We'll properly integrate this with the store later
     const storedEstimates = localStorage.getItem('estimates');
     if (storedEstimates) {
       try {
@@ -50,24 +52,29 @@ const Estimates = () => {
       }
     }
     
-    setEstimates(mockEstimates);
+    // Default to empty array
+    setEstimates([]);
   }, []);
 
   const handleCreateEstimate = (estimateData: any) => {
     const newEstimate = {
-      id: `EST-${Date.now().toString().slice(-6)}`,
+      id: estimateData.referenceNo || `EST-${Date.now().toString().slice(-6)}`,
       clientName: estimateData.clientName,
       date: estimateData.date,
-      referenceNo: estimateData.referenceNo,
-      totalAmount: estimateData.totalAmount,
-      status: estimateData.status,
-      createdAt: estimateData.createdAt,
+      referenceNo: estimateData.referenceNo || `EST-${Date.now().toString().slice(-6)}`,
+      totalAmount: estimateData.totalAmount || 0,
+      status: estimateData.status || "pending",
+      validUntil: estimateData.validUntil,
+      createdAt: estimateData.createdAt || new Date().toISOString(),
+      items: estimateData.items,
+      notes: estimateData.notes,
+      terms: estimateData.terms,
     };
     
     const updatedEstimates = [newEstimate, ...estimates];
     setEstimates(updatedEstimates);
     
-    // Store locally for now, later will be integrated with the main store
+    // Store locally
     localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
   };
 
@@ -77,17 +84,21 @@ const Estimates = () => {
     localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
   };
 
+  const handlePrintEstimate = (estimate: Estimate) => {
+    setSelectedEstimate(estimate);
+    setIsPrintDialogOpen(true);
+  };
+
   function getStatusColor(status: string) {
     switch (status) {
       case "accepted":
         return "bg-green-100 text-green-800 border-green-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "rejected":
         return "bg-red-100 text-red-800 border-red-200";
-      case "expired":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "pending":
       default:
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   }
 
@@ -96,9 +107,9 @@ const Estimates = () => {
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <Calculator className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight">
-            Estimates & Quotations
+            Estimates
           </h1>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
@@ -111,10 +122,10 @@ const Estimates = () => {
       {estimates.length === 0 ? (
         <Card className="p-6">
           <div className="text-center py-16">
-            <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <Calculator className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">No Estimates Yet</h2>
             <p className="text-muted-foreground mb-6">
-              Create estimates or quotations for your clients and send them via email or WhatsApp.
+              Create estimates to provide price quotes to your customers.
             </p>
             <Button onClick={() => setIsDialogOpen(true)}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -130,7 +141,7 @@ const Estimates = () => {
                 <TableHead>Date</TableHead>
                 <TableHead>Reference No.</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Total Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -143,9 +154,7 @@ const Estimates = () => {
                   </TableCell>
                   <TableCell>{estimate.referenceNo}</TableCell>
                   <TableCell>{estimate.clientName}</TableCell>
-                  <TableCell className="text-right">
-                    ₹{estimate.totalAmount.toLocaleString()}
-                  </TableCell>
+                  <TableCell>₹{estimate.totalAmount.toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`${getStatusColor(estimate.status)}`}>
                       {estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}
@@ -153,11 +162,18 @@ const Estimates = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handlePrintEstimate(estimate)}
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon">
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
+                        <CheckCircle2 className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -177,13 +193,13 @@ const Estimates = () => {
       )}
 
       <div className="rounded-lg border bg-card p-6">
-        <h2 className="text-lg font-semibold mb-4">About Estimates & Quotations</h2>
+        <h2 className="text-lg font-semibold mb-4">About Estimates</h2>
         <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-          <li>Create professional estimates and quotations for your products or services</li>
-          <li>Share them with clients via email, WhatsApp, or as printed copies</li>
-          <li>Convert estimates to invoices with a single click</li>
-          <li>Track which estimates have been accepted or rejected</li>
-          <li>Set expiry dates for your quotations</li>
+          <li>Create detailed price quotes for potential customers</li>
+          <li>Track estimate status (pending, accepted, rejected)</li>
+          <li>Convert accepted estimates to invoices</li>
+          <li>Set validity periods for your estimates</li>
+          <li>Print professional estimate documents</li>
         </ul>
       </div>
       
@@ -191,8 +207,18 @@ const Estimates = () => {
       <CreateEstimateDialog 
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen}
-        onEstimateCreated={handleCreateEstimate} 
+        onEstimateCreated={handleCreateEstimate}
       />
+      
+      {/* Print Dialog */}
+      {selectedEstimate && (
+        <EstimatePrint
+          open={isPrintDialogOpen}
+          onOpenChange={setIsPrintDialogOpen}
+          estimate={selectedEstimate}
+          companyName={companyName}
+        />
+      )}
     </div>
   );
 };
