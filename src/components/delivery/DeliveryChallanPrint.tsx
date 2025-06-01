@@ -112,7 +112,7 @@ export function DeliveryChallanPrint({
           </div>
         </div>
         
-        <style jsx>{`
+        <style>{`
           @media print {
             .print\\:p-0 {
               padding: 0 !important;

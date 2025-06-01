@@ -120,9 +120,9 @@ const useAppStore = createPersistedStore<AppState>(
       // Expose the saveDataToSupabase function
       saveDataToSupabase,
       
-      // Add the addSale alias for recordSale for backward compatibility
+      // Add the addSale alias for recordSale for backward compatibility - return the sale
       addSale: (saleData) => {
-        saleSlice.recordSale(saleData);
+        return saleSlice.recordSale(saleData);
       },
       
       // Set up realtime updates for the current user
