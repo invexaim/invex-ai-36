@@ -1,10 +1,10 @@
+
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
 import { UserState } from './types';
 import { saveUserDataToSupabase, fetchUserDataFromSupabase, createEmptyUserData } from './dataSync';
 import { isUserDataRow } from '../../types';
-import { clearPendingChanges } from '../../realtimeSync';
 
 export const createUserSlice = (
   set: any,
@@ -30,7 +30,6 @@ export const createUserSlice = (
       saveDataToSupabase()
         .then(() => {
           console.log("Data saved successfully before logout");
-          clearPendingChanges(); // Clear pending changes flag
           // Only clear the user information, not the actual data
           set({ currentUser: null, isSignedIn: false });
         })
@@ -79,71 +78,34 @@ export const createUserSlice = (
           });
         }
       } else {
-        // Check if we should use remote data or keep local data
-        const localProducts = get().products || [];
-        const localSales = get().sales || [];
-        const localClients = get().clients || [];
-        const localPayments = get().payments || [];
-        
-        const hasLocalData = localProducts.length > 0 || localSales.length > 0 || 
-                           localClients.length > 0 || localPayments.length > 0;
-        
-        if (hasLocalData) {
-          // Ask user which data to keep
-          const useRemoteData = confirm(
-            "You have both local and cloud data. Would you like to use the cloud data? " +
-            "(Click 'Cancel' to keep your local data and upload it to the cloud)"
-          );
+        // If data exists in Supabase, use it to update local state
+        try {
+          // Safely parse and set products, sales, clients, payments
+          const products = Array.isArray(userData.products) ? userData.products : [];
+          const sales = Array.isArray(userData.sales) ? userData.sales : [];
+          const clients = Array.isArray(userData.clients) ? userData.clients : [];
+          const payments = Array.isArray(userData.payments) ? userData.payments : [];
           
-          if (useRemoteData) {
-            // Use remote data
-            const products = Array.isArray(userData.products) ? userData.products : [];
-            const sales = Array.isArray(userData.sales) ? userData.sales : [];
-            const clients = Array.isArray(userData.clients) ? userData.clients : [];
-            const payments = Array.isArray(userData.payments) ? userData.payments : [];
-            
-            set({
-              products,
-              sales,
-              clients,
-              payments
-            });
-            
-            console.log("Using cloud data");
-          } else {
-            // Keep local data and save to cloud
-            console.log("Keeping local data and saving to cloud");
-            await saveUserDataToSupabase(userId, get());
-          }
-        } else {
-          // No local data, use remote data
-          try {
-            const products = Array.isArray(userData.products) ? userData.products : [];
-            const sales = Array.isArray(userData.sales) ? userData.sales : [];
-            const clients = Array.isArray(userData.clients) ? userData.clients : [];
-            const payments = Array.isArray(userData.payments) ? userData.payments : [];
-            
-            console.log("Setting data from Supabase:", { 
-              productsCount: products.length,
-              salesCount: sales.length,
-              clientsCount: clients.length,
-              paymentsCount: payments.length
-            });
-            
-            // Update store with fetched data
-            set({
-              products,
-              sales,
-              clients,
-              payments
-            });
-            
-            console.log("Data loaded successfully from Supabase");
-          } catch (parseError) {
-            console.error('Error parsing data from Supabase:', parseError);
-            toast.error("Error parsing your data");
-            throw parseError;
-          }
+          console.log("Setting data from Supabase:", { 
+            productsCount: products.length,
+            salesCount: sales.length,
+            clientsCount: clients.length,
+            paymentsCount: payments.length
+          });
+          
+          // Update store with fetched data
+          set({
+            products,
+            sales,
+            clients,
+            payments
+          });
+          
+          console.log("Data loaded successfully from Supabase");
+        } catch (parseError) {
+          console.error('Error parsing data from Supabase:', parseError);
+          toast.error("Error parsing your data");
+          throw parseError;
         }
       }
     } catch (error) {
@@ -162,7 +124,6 @@ export const createUserSlice = (
     
     try {
       await saveUserDataToSupabase(currentUser.id, get());
-      clearPendingChanges(); // Clear pending changes after successful save
     } catch (error) {
       console.error('Error in saveDataToSupabase:', error);
       throw error;

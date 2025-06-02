@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { Sale, Product } from '@/types';
 import { toast } from 'sonner';
 import { SaleState } from '../types';
-import { updateLastTimestamp } from '../realtimeSync';
 
 export const createSaleSlice = (
   set: any, 
@@ -22,7 +21,6 @@ export const createSaleSlice = (
   },
   
   recordSale: (saleData) => {
-    console.log("Recording sale:", saleData);
     const products = getProducts();
     // Find the product
     const product = products.find(p => p.product_id === saleData.product_id);
@@ -55,9 +53,6 @@ export const createSaleSlice = (
       };
     });
     
-    // Mark that we made a local change
-    updateLastTimestamp();
-    
     // Update product stock in the product store
     const currentUnits = parseInt(product.units as string);
     const newUnits = Math.max(0, currentUnits - saleData.quantity_sold);
@@ -69,13 +64,9 @@ export const createSaleSlice = (
     updateProduct(updatedProduct);
     
     // Update client purchase history ONLY if client is specified and exists
-    // This is the ONLY place where client purchase should be updated for sales
-    if (saleData.clientName && saleData.clientName.trim() !== '') {
-      console.log("Updating client purchase for:", saleData.clientName);
+    if (saleData.clientName) {
       const totalAmount = saleData.quantity_sold * saleData.selling_price;
       updateClientPurchase(saleData.clientName, totalAmount);
-    } else {
-      console.log("No client specified, skipping client update");
     }
     
     return newSale;
@@ -90,11 +81,6 @@ export const createSaleSlice = (
       toast.error("Sale not found");
       return;
     }
-    
-    console.log("Deleting sale:", saleToDelete);
-    
-    // Mark that we made a local change
-    updateLastTimestamp();
     
     // Update product stock in the product store
     const products = getProducts();
@@ -118,9 +104,6 @@ export const createSaleSlice = (
         sales: state.sales.filter(sale => sale.sale_id !== saleId)
       };
     });
-    
-    // Note: We don't reverse client purchase history when deleting sales
-    // as this could create inconsistencies. Client history is kept for audit purposes.
   }
 });
 
