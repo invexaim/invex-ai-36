@@ -64,6 +64,7 @@ export const createSaleSlice = (
     updateProduct(updatedProduct);
     
     // Update client purchase history ONLY if client is specified and exists
+    // This will be handled by the callback from appStore.ts to prevent double counting
     if (saleData.clientName) {
       const totalAmount = saleData.quantity_sold * saleData.selling_price;
       updateClientPurchase(saleData.clientName, totalAmount);
