@@ -39,6 +39,13 @@ export interface Sale {
   relatedSaleId?: number;
 }
 
+export interface ProductPurchase {
+  productName: string;
+  quantity: number;
+  amount: number;
+  purchaseDate: string;
+}
+
 export interface Client {
   id: number;
   name: string;
@@ -49,6 +56,7 @@ export interface Client {
   lastPurchase: string;
   joinDate: string;
   openInvoices: number;
+  purchaseHistory: ProductPurchase[];
 }
 
 export interface Payment {

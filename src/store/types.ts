@@ -38,6 +38,13 @@ export interface Sale {
   relatedSaleId?: number; // Add reference to related sale
 }
 
+export interface ProductPurchase {
+  productName: string;
+  quantity: number;
+  amount: number;
+  purchaseDate: string;
+}
+
 export interface Client {
   id: number;
   name: string;
@@ -48,6 +55,7 @@ export interface Client {
   lastPurchase: string;
   joinDate: string;
   openInvoices: number;
+  purchaseHistory: ProductPurchase[];
 }
 
 export interface Payment {
@@ -126,8 +134,8 @@ export interface SaleState {
 export interface ClientState {
   clients: Client[];
   setClients: (clients: Client[]) => void;
-  addClient: (client: Omit<Client, 'id' | 'totalPurchases' | 'totalSpent' | 'lastPurchase' | 'joinDate' | 'openInvoices'>) => void;
-  updateClientPurchase: (clientName: string, amount: number) => void;
+  addClient: (client: Omit<Client, 'id' | 'totalPurchases' | 'totalSpent' | 'lastPurchase' | 'joinDate' | 'openInvoices' | 'purchaseHistory'>) => void;
+  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number) => void;
   deleteClient: (clientId: number) => void;
   removeClient: (clientId: number) => void;
 }

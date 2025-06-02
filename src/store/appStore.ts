@@ -1,4 +1,3 @@
-
 import { AppState } from './types';
 import { toast } from "sonner";
 
@@ -56,9 +55,9 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // Method to update client purchase history
-      (clientName, amount) => {
-        clientSlice.updateClientPurchase(clientName, amount);
+      // Method to update client purchase history with product details
+      (clientName, amount, productName, quantity) => {
+        clientSlice.updateClientPurchase(clientName, amount, productName, quantity);
       }
     );
     
@@ -67,7 +66,7 @@ const useAppStore = createPersistedStore<AppState>(
       get,
       // Give payment slice access to update client
       (clientName: string, amount: number) => {
-        clientSlice.updateClientPurchase(clientName, amount);
+        clientSlice.updateClientPurchase(clientName, amount, "Payment", 1);
       }
     );
     

@@ -9,7 +9,7 @@ export const createSaleSlice = (
   get: any, 
   getProducts: () => Product[], 
   updateProduct: (updatedProduct: Product) => void,
-  updateClientPurchase: (clientName: string, amount: number) => void
+  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number) => void
 ) => ({
   sales: [],
   
@@ -67,7 +67,7 @@ export const createSaleSlice = (
     // This will be handled by the callback from appStore.ts to prevent double counting
     if (saleData.clientName) {
       const totalAmount = saleData.quantity_sold * saleData.selling_price;
-      updateClientPurchase(saleData.clientName, totalAmount);
+      updateClientPurchase(saleData.clientName, totalAmount, product.product_name, saleData.quantity_sold);
     }
     
     return newSale;

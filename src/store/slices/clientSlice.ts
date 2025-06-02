@@ -20,6 +20,7 @@ export const createClientSlice = (set: any, get: any) => ({
       lastPurchase: new Date().toISOString(),
       joinDate: clientData.joinDate || new Date().toISOString(),
       openInvoices: clientData.openInvoices || 0,
+      purchaseHistory: [],
     };
     
     toast.success("Client added successfully");
@@ -36,8 +37,8 @@ export const createClientSlice = (set: any, get: any) => ({
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),
   
-  // Fix the duplicate purchase counting issue
-  updateClientPurchase: (clientName, amount) => set((state: ClientState) => {
+  // Updated to track individual product purchases and prevent double counting
+  updateClientPurchase: (clientName, amount, productName, quantity) => set((state: ClientState) => {
     // Only update if there is an actual client name - prevent empty client updates
     if (!clientName) return { clients: state.clients };
     
@@ -50,11 +51,19 @@ export const createClientSlice = (set: any, get: any) => ({
     // Update client if exists
     const updatedClients = state.clients.map(client => {
       if (client.name === clientName) {
+        const newPurchase = {
+          productName,
+          quantity,
+          amount,
+          purchaseDate: new Date().toISOString(),
+        };
+        
         return {
           ...client,
-          totalPurchases: client.totalPurchases + 1,
+          totalPurchases: client.totalPurchases + quantity,
           totalSpent: client.totalSpent + amount,
           lastPurchase: new Date().toISOString(),
+          purchaseHistory: [newPurchase, ...(client.purchaseHistory || [])],
         };
       }
       return client;
