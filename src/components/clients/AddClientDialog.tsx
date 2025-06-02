@@ -17,7 +17,7 @@ import { Client } from "@/types";
 interface AddClientDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddClient: (client: Omit<Client, "id" | "lastPurchase" | "totalPurchases" | "totalSpent">) => void;
+  onAddClient: (client: Omit<Client, "id" | "totalPurchases" | "totalSpent" | "lastPurchase">) => void;
 }
 
 export const AddClientDialog = ({ 
@@ -43,11 +43,12 @@ export const AddClientDialog = ({
       return;
     }
     
-    // Add client with the required joinDate and openInvoices properties
+    // Add client with all required properties including purchaseHistory
     onAddClient({
       ...formData,
       joinDate: new Date().toISOString(),
-      openInvoices: 0
+      openInvoices: 0,
+      purchaseHistory: [] // Initialize with empty purchase history
     });
     
     // Reset form
