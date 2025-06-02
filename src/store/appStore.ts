@@ -55,8 +55,9 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // Method to update client purchase history with product details
+      // Method to update client purchase history with product details - ENSURE THIS IS ONLY CALLED ONCE
       (clientName, amount, productName, quantity) => {
+        console.log("Updating client purchase:", { clientName, amount, productName, quantity });
         clientSlice.updateClientPurchase(clientName, amount, productName, quantity);
       }
     );
@@ -76,12 +77,45 @@ const useAppStore = createPersistedStore<AppState>(
     // Variable to store unsubscribe function for realtime updates
     let realtimeUnsubscribe: (() => void) | null = null;
     
+    // Override the recordSale function to ensure proper client updating
+    const enhancedRecordSale = (saleData) => {
+      console.log("Recording sale with client update:", saleData);
+      
+      // First record the sale
+      const newSale = saleSlice.recordSale(saleData);
+      
+      // Then update client if specified - ONLY HERE, NOT IN SALE SLICE
+      if (newSale && saleData.clientName) {
+        const totalAmount = saleData.quantity_sold * saleData.selling_price;
+        const product = get().products.find(p => p.product_id === saleData.product_id);
+        
+        if (product) {
+          console.log("Updating client purchase from appStore:", {
+            clientName: saleData.clientName,
+            amount: totalAmount,
+            productName: product.product_name,
+            quantity: saleData.quantity_sold
+          });
+          
+          clientSlice.updateClientPurchase(
+            saleData.clientName, 
+            totalAmount, 
+            product.product_name, 
+            saleData.quantity_sold
+          );
+        }
+      }
+      
+      return newSale;
+    };
+    
     // Combine all slices and expose them
     return {
       // Product slice
       ...productSlice,
-      // Sale slice
+      // Sale slice with enhanced recordSale
       ...saleSlice,
+      recordSale: enhancedRecordSale,
       // Client slice
       ...clientSlice,
       // Payment slice with deletePayment explicitly included
@@ -120,9 +154,7 @@ const useAppStore = createPersistedStore<AppState>(
       saveDataToSupabase,
       
       // Add the addSale alias for recordSale for backward compatibility - return the sale
-      addSale: (saleData) => {
-        return saleSlice.recordSale(saleData);
-      },
+      addSale: enhancedRecordSale,
       
       // Set up realtime updates for the current user
       setupRealtimeUpdates: (userId: string): (() => void) => {

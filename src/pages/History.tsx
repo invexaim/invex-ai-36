@@ -5,9 +5,13 @@ import { HistoryHeader } from "@/components/history/HistoryHeader";
 import { HistoryStats } from "@/components/history/HistoryStats";
 import { HistoryCharts } from "@/components/history/HistoryCharts";
 import { TransactionSection } from "@/components/history/TransactionSection";
+import ReportDownloadDialog from "@/components/products/ReportDownloadDialog";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 const History = () => {
   const { sales, products, deleteSale } = useAppStore();
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   
   // Ensure we save any pending changes when visiting this page
   useEffect(() => {
@@ -27,12 +31,18 @@ const History = () => {
     saveData();
   }, []);
   
-  // To ensure we're showing all-time sales data, we don't need any additional filters here
-  // The TransactionSection component will handle the display
-  
   return (
     <div className="space-y-8 animate-fade-in">
-      <HistoryHeader />
+      <div className="flex items-center justify-between">
+        <HistoryHeader />
+        <Button 
+          onClick={() => setIsReportDialogOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Download Report
+        </Button>
+      </div>
       
       <HistoryStats sales={sales} />
       
@@ -42,6 +52,11 @@ const History = () => {
         sales={sales}
         onDeleteTransaction={deleteSale}
         productsExist={products.length > 0}
+      />
+
+      <ReportDownloadDialog 
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
       />
     </div>
   );
