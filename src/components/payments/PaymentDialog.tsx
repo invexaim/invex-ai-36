@@ -1,9 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { CreditCard, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -14,20 +12,11 @@ import {
 import { Client, Sale } from "@/types";
 import { validateGSTNumber, lookupGSTDetails, formatGSTNumber } from "@/services/gstService";
 import { toast } from "sonner";
-
-interface PaymentFormData {
-  clientName: string;
-  amount: number;
-  status: "paid" | "pending" | "failed";
-  method: string;
-  description: string;
-  relatedSaleId: number | undefined;
-  gstNumber: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-}
+import PaymentClientSection from "./form/PaymentClientSection";
+import PaymentGSTSection from "./form/PaymentGSTSection";
+import PaymentAddressSection from "./form/PaymentAddressSection";
+import PaymentDetailsSection from "./form/PaymentDetailsSection";
+import { PaymentFormData, PaymentFormErrors } from "./form/types";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -37,8 +26,6 @@ interface PaymentDialogProps {
   pendingSalePayment: Sale | null;
   onCancel: () => void;
 }
-
-const paymentMethods = ["Credit Card", "UPI", "Bank Transfer", "Cash", "Cheque"];
 
 const PaymentDialog = ({ 
   isOpen, 
@@ -62,7 +49,7 @@ const PaymentDialog = ({
     pincode: "",
   });
   
-  const [formErrors, setFormErrors] = useState({
+  const [formErrors, setFormErrors] = useState<PaymentFormErrors>({
     clientName: false,
     amount: false,
     method: false,
@@ -225,182 +212,47 @@ const PaymentDialog = ({
               : "Add a new payment record. Fill in the payment details below."}
           </p>
         </DialogHeader>
+        
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="clientName">Client <span className="text-red-500">*</span></Label>
-            <select
-              id="clientName"
-              name="clientName"
-              className={`flex h-10 w-full rounded-md border ${formErrors.clientName ? "border-red-500" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
-              value={formData.clientName}
-              onChange={handleChange}
-              disabled={pendingSalePayment && !!pendingSalePayment.clientName}
-            >
-              <option value="">Select a client</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.name}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-            {formErrors.clientName && (
-              <p className="text-xs text-red-500">Client is required</p>
-            )}
-          </div>
+          <PaymentClientSection
+            clientName={formData.clientName}
+            clients={clients}
+            onChange={handleChange}
+            error={formErrors.clientName}
+            disabled={pendingSalePayment && !!pendingSalePayment.clientName}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="gstNumber">GST Number (Optional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="gstNumber"
-                name="gstNumber"
-                value={formData.gstNumber}
-                onChange={handleChange}
-                placeholder="Enter GST number (e.g., 27AABCU9603R1ZX)"
-                className={formErrors.gstNumber ? "border-red-500" : ""}
-                maxLength={15}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGSTLookup}
-                disabled={isGSTLoading || !formData.gstNumber}
-                className="px-3"
-              >
-                {isGSTLoading ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            {formErrors.gstNumber && (
-              <p className="text-xs text-red-500">Invalid GST number format</p>
-            )}
-          </div>
+          <PaymentGSTSection
+            gstNumber={formData.gstNumber}
+            onChange={handleChange}
+            onLookup={handleGSTLookup}
+            error={formErrors.gstNumber}
+            isLoading={isGSTLoading}
+          />
 
-          {(formData.address || formData.city || formData.state || formData.pincode) && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Address"
-                  readOnly={!!formData.gstNumber}
-                  className={formData.gstNumber ? "bg-gray-50" : ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  placeholder="City"
-                  readOnly={!!formData.gstNumber}
-                  className={formData.gstNumber ? "bg-gray-50" : ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  placeholder="State"
-                  readOnly={!!formData.gstNumber}
-                  className={formData.gstNumber ? "bg-gray-50" : ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pincode">Pincode</Label>
-                <Input
-                  id="pincode"
-                  name="pincode"
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  placeholder="Pincode"
-                  readOnly={!!formData.gstNumber}
-                  className={formData.gstNumber ? "bg-gray-50" : ""}
-                />
-              </div>
-            </div>
-          )}
+          <PaymentAddressSection
+            address={formData.address}
+            city={formData.city}
+            state={formData.state}
+            pincode={formData.pincode}
+            onChange={handleChange}
+            readOnly={!!formData.gstNumber}
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-            <Input
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter payment description"
-              className={formErrors.description ? "border-red-500" : ""}
-            />
-            {formErrors.description && (
-              <p className="text-xs text-red-500">Description is required</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount (₹) <span className="text-red-500">*</span></Label>
-            <Input
-              id="amount"
-              name="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.amount || ""}
-              onChange={handleChange}
-              placeholder="Enter amount"
-              className={formErrors.amount ? "border-red-500" : ""}
-            />
-            {formErrors.amount && (
-              <p className="text-xs text-red-500">Amount must be greater than 0</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="method">Payment Method <span className="text-red-500">*</span></Label>
-            <select
-              id="method"
-              name="method"
-              className={`flex h-10 w-full rounded-md border ${formErrors.method ? "border-red-500" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
-              value={formData.method}
-              onChange={handleChange}
-            >
-              <option value="">Select payment method</option>
-              {paymentMethods.map((method) => (
-                <option key={method} value={method}>
-                  {method}
-                </option>
-              ))}
-            </select>
-            {formErrors.method && (
-              <p className="text-xs text-red-500">Payment method is required</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              name="status"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={formData.status}
-              onChange={handleChange}
-            >
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
+          <PaymentDetailsSection
+            description={formData.description}
+            amount={formData.amount}
+            method={formData.method}
+            status={formData.status}
+            onChange={handleChange}
+            errors={{
+              description: formErrors.description,
+              amount: formErrors.amount,
+              method: formErrors.method
+            }}
+          />
         </div>
+        
         <DialogFooter>
           <Button 
             variant="outline" 
