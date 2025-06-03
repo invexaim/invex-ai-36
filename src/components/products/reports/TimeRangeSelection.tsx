@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type TimeRange = "daily" | "thisMonth" | "lastMonth" | "thisQuarter" | "thisYear" | "custom";
+export type TimeRange = "daily" | "weekly" | "monthly" | "custom";
 
 interface TimeRangeSelectionProps {
   timeRange: TimeRange;
@@ -45,20 +45,12 @@ export const TimeRangeSelection: React.FC<TimeRangeSelectionProps> = ({
           <Label htmlFor="daily">Today</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="thisMonth" id="thisMonth" />
-          <Label htmlFor="thisMonth">This Month</Label>
+          <RadioGroupItem value="weekly" id="weekly" />
+          <Label htmlFor="weekly">This Week</Label>
         </div>
         <div className="flex items-center space-x-2">
-          <RadioGroupItem value="lastMonth" id="lastMonth" />
-          <Label htmlFor="lastMonth">Last Month</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="thisQuarter" id="thisQuarter" />
-          <Label htmlFor="thisQuarter">This Quarter</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="thisYear" id="thisYear" />
-          <Label htmlFor="thisYear">This Year</Label>
+          <RadioGroupItem value="monthly" id="monthly" />
+          <Label htmlFor="monthly">This Month</Label>
         </div>
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="custom" id="custom" />

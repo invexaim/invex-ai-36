@@ -13,8 +13,8 @@ const getCompanyName = () => {
   return companyName || 'Your Company Name';
 };
 
-const filterDataByTimeRange = (
-  data: (Sale | Payment)[],
+const filterSalesByTimeRange = (
+  sales: Sale[],
   timeRange: TimeRange,
   customDateFrom?: Date,
   customDateTo?: Date
@@ -25,38 +25,85 @@ const filterDataByTimeRange = (
     case "daily":
       const startOfToday = new Date(now.setHours(0, 0, 0, 0));
       const endOfToday = new Date(now.setHours(23, 59, 59, 999));
-      return data.filter(item => {
-        const itemDate = new Date('sale_date' in item ? item.sale_date : item.date);
-        return isWithinInterval(itemDate, { start: startOfToday, end: endOfToday });
+      return sales.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        return isWithinInterval(saleDate, { start: startOfToday, end: endOfToday });
       });
       
     case "weekly":
       const weekStart = startOfWeek(now);
       const weekEnd = endOfWeek(now);
-      return data.filter(item => {
-        const itemDate = new Date('sale_date' in item ? item.sale_date : item.date);
-        return isWithinInterval(itemDate, { start: weekStart, end: weekEnd });
+      return sales.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        return isWithinInterval(saleDate, { start: weekStart, end: weekEnd });
       });
       
     case "monthly":
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
-      return data.filter(item => {
-        const itemDate = new Date('sale_date' in item ? item.sale_date : item.date);
-        return isWithinInterval(itemDate, { start: monthStart, end: monthEnd });
+      return sales.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        return isWithinInterval(saleDate, { start: monthStart, end: monthEnd });
       });
       
     case "custom":
       if (customDateFrom && customDateTo) {
-        return data.filter(item => {
-          const itemDate = new Date('sale_date' in item ? item.sale_date : item.date);
-          return isWithinInterval(itemDate, { start: customDateFrom, end: customDateTo });
+        return sales.filter(sale => {
+          const saleDate = new Date(sale.sale_date);
+          return isWithinInterval(saleDate, { start: customDateFrom, end: customDateTo });
         });
       }
-      return data;
+      return sales;
       
     default:
-      return data;
+      return sales;
+  }
+};
+
+const filterPaymentsByTimeRange = (
+  payments: Payment[],
+  timeRange: TimeRange,
+  customDateFrom?: Date,
+  customDateTo?: Date
+) => {
+  const now = new Date();
+  
+  switch (timeRange) {
+    case "daily":
+      const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+      const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+      return payments.filter(payment => {
+        const paymentDate = new Date(payment.date);
+        return isWithinInterval(paymentDate, { start: startOfToday, end: endOfToday });
+      });
+      
+    case "weekly":
+      const weekStart = startOfWeek(now);
+      const weekEnd = endOfWeek(now);
+      return payments.filter(payment => {
+        const paymentDate = new Date(payment.date);
+        return isWithinInterval(paymentDate, { start: weekStart, end: weekEnd });
+      });
+      
+    case "monthly":
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      return payments.filter(payment => {
+        const paymentDate = new Date(payment.date);
+        return isWithinInterval(paymentDate, { start: monthStart, end: monthEnd });
+      });
+      
+    case "custom":
+      if (customDateFrom && customDateTo) {
+        return payments.filter(payment => {
+          const paymentDate = new Date(payment.date);
+          return isWithinInterval(paymentDate, { start: customDateFrom, end: customDateTo });
+        });
+      }
+      return payments;
+      
+    default:
+      return payments;
   }
 };
 
@@ -83,8 +130,8 @@ export const generateReport = (
   let yPosition = 60;
   
   // Filter data based on time range
-  const filteredSales = filterDataByTimeRange(sales, timeRange, customDateFrom, customDateTo);
-  const filteredPayments = filterDataByTimeRange(payments, timeRange, customDateFrom, customDateTo);
+  const filteredSales = filterSalesByTimeRange(sales, timeRange, customDateFrom, customDateTo);
+  const filteredPayments = filterPaymentsByTimeRange(payments, timeRange, customDateFrom, customDateTo);
   
   if (reportType === "all" || reportType === "inventory") {
     // Inventory Section
