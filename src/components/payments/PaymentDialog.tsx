@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Client, Sale } from "@/types";
+import { validateGSTNumber, lookupGSTDetails, formatGSTNumber } from "@/services/gstService";
+import { toast } from "sonner";
 
 interface PaymentFormData {
   clientName: string;
@@ -20,6 +22,11 @@ interface PaymentFormData {
   method: string;
   description: string;
   relatedSaleId: number | undefined;
+  gstNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 interface PaymentDialogProps {
@@ -48,14 +55,22 @@ const PaymentDialog = ({
     method: "",
     description: "",
     relatedSaleId: undefined,
+    gstNumber: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
   
   const [formErrors, setFormErrors] = useState({
     clientName: false,
     amount: false,
     method: false,
-    description: false
+    description: false,
+    gstNumber: false
   });
+
+  const [isGSTLoading, setIsGSTLoading] = useState(false);
 
   // Initialize payment form with pending sale data if available
   useEffect(() => {
@@ -67,6 +82,11 @@ const PaymentDialog = ({
         method: "",
         description: `Payment for ${pendingSalePayment.quantity_sold} ${pendingSalePayment.product?.product_name || "items"}`,
         relatedSaleId: pendingSalePayment.sale_id,
+        gstNumber: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
       });
     } else {
       // Reset form when no pending sale
@@ -77,6 +97,11 @@ const PaymentDialog = ({
         method: "",
         description: "",
         relatedSaleId: undefined,
+        gstNumber: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
       });
     }
   }, [pendingSalePayment]);
@@ -109,12 +134,59 @@ const PaymentDialog = ({
     }
   };
 
+  const handleGSTLookup = async () => {
+    const gstNumber = formatGSTNumber(formData.gstNumber);
+    
+    if (!gstNumber) {
+      toast.error("Please enter a GST number");
+      return;
+    }
+
+    if (!validateGSTNumber(gstNumber)) {
+      setFormErrors({
+        ...formErrors,
+        gstNumber: true
+      });
+      toast.error("Invalid GST number format");
+      return;
+    }
+
+    setIsGSTLoading(true);
+    setFormErrors({
+      ...formErrors,
+      gstNumber: false
+    });
+
+    try {
+      const gstDetails = await lookupGSTDetails(gstNumber);
+      
+      if (gstDetails) {
+        setFormData({
+          ...formData,
+          gstNumber: gstDetails.gstNumber,
+          address: gstDetails.address,
+          city: gstDetails.city,
+          state: gstDetails.state,
+          pincode: gstDetails.pincode,
+        });
+        toast.success("GST details found and populated");
+      } else {
+        toast.error("GST number not found in database");
+      }
+    } catch (error) {
+      toast.error("Error looking up GST details");
+    } finally {
+      setIsGSTLoading(false);
+    }
+  };
+
   const validateForm = () => {
     const errors = {
       clientName: !formData.clientName,
       amount: formData.amount <= 0,
       method: !formData.method,
-      description: !formData.description
+      description: !formData.description,
+      gstNumber: formData.gstNumber && !validateGSTNumber(formatGSTNumber(formData.gstNumber))
     };
     
     setFormErrors(errors);
@@ -127,7 +199,10 @@ const PaymentDialog = ({
       return;
     }
     
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      gstNumber: formData.gstNumber ? formatGSTNumber(formData.gstNumber) : ""
+    });
   };
 
   return (
@@ -139,7 +214,7 @@ const PaymentDialog = ({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">
             {pendingSalePayment ? "Complete Sale Payment" : "New Payment"}
@@ -172,6 +247,90 @@ const PaymentDialog = ({
               <p className="text-xs text-red-500">Client is required</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gstNumber">GST Number (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="gstNumber"
+                name="gstNumber"
+                value={formData.gstNumber}
+                onChange={handleChange}
+                placeholder="Enter GST number (e.g., 27AABCU9603R1ZX)"
+                className={formErrors.gstNumber ? "border-red-500" : ""}
+                maxLength={15}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGSTLookup}
+                disabled={isGSTLoading || !formData.gstNumber}
+                className="px-3"
+              >
+                {isGSTLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {formErrors.gstNumber && (
+              <p className="text-xs text-red-500">Invalid GST number format</p>
+            )}
+          </div>
+
+          {(formData.address || formData.city || formData.state || formData.pincode) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Address"
+                  readOnly={!!formData.gstNumber}
+                  className={formData.gstNumber ? "bg-gray-50" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="City"
+                  readOnly={!!formData.gstNumber}
+                  className={formData.gstNumber ? "bg-gray-50" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  placeholder="State"
+                  readOnly={!!formData.gstNumber}
+                  className={formData.gstNumber ? "bg-gray-50" : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pincode">Pincode</Label>
+                <Input
+                  id="pincode"
+                  name="pincode"
+                  value={formData.pincode}
+                  onChange={handleChange}
+                  placeholder="Pincode"
+                  readOnly={!!formData.gstNumber}
+                  className={formData.gstNumber ? "bg-gray-50" : ""}
+                />
+              </div>
+            </div>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>

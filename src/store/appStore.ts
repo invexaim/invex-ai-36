@@ -1,3 +1,4 @@
+
 import { AppState } from './types';
 import { toast } from "sonner";
 
@@ -77,45 +78,12 @@ const useAppStore = createPersistedStore<AppState>(
     // Variable to store unsubscribe function for realtime updates
     let realtimeUnsubscribe: (() => void) | null = null;
     
-    // Override the recordSale function to ensure proper client updating
-    const enhancedRecordSale = (saleData) => {
-      console.log("Recording sale with client update:", saleData);
-      
-      // First record the sale
-      const newSale = saleSlice.recordSale(saleData);
-      
-      // Then update client if specified - ONLY HERE, NOT IN SALE SLICE
-      if (newSale && saleData.clientName) {
-        const totalAmount = saleData.quantity_sold * saleData.selling_price;
-        const product = get().products.find(p => p.product_id === saleData.product_id);
-        
-        if (product) {
-          console.log("Updating client purchase from appStore:", {
-            clientName: saleData.clientName,
-            amount: totalAmount,
-            productName: product.product_name,
-            quantity: saleData.quantity_sold
-          });
-          
-          clientSlice.updateClientPurchase(
-            saleData.clientName, 
-            totalAmount, 
-            product.product_name, 
-            saleData.quantity_sold
-          );
-        }
-      }
-      
-      return newSale;
-    };
-    
     // Combine all slices and expose them
     return {
       // Product slice
       ...productSlice,
-      // Sale slice with enhanced recordSale
+      // Sale slice - use the original recordSale without duplication
       ...saleSlice,
-      recordSale: enhancedRecordSale,
       // Client slice
       ...clientSlice,
       // Payment slice with deletePayment explicitly included
@@ -154,7 +122,7 @@ const useAppStore = createPersistedStore<AppState>(
       saveDataToSupabase,
       
       // Add the addSale alias for recordSale for backward compatibility - return the sale
-      addSale: enhancedRecordSale,
+      addSale: saleSlice.recordSale,
       
       // Set up realtime updates for the current user
       setupRealtimeUpdates: (userId: string): (() => void) => {

@@ -66,7 +66,12 @@ export interface Payment {
   status: "paid" | "pending" | "failed";
   method: string;
   description?: string;
-  relatedSaleId?: number; // Add reference to related sale
+  relatedSaleId?: number;
+  gstNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
 }
 
 export interface InventoryAnalysis {

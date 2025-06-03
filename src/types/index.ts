@@ -68,6 +68,11 @@ export interface Payment {
   method: string;
   description?: string;
   relatedSaleId?: number;
+  gstNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
 }
 
 export interface InventoryAnalysis {
@@ -110,4 +115,13 @@ export interface StockPredictionInput {
   current_stock: number;
   previous_sales: number;
   price: number;
+}
+
+export interface GSTDetails {
+  gstNumber: string;
+  companyName: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
