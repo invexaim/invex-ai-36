@@ -29,7 +29,7 @@ export function DeliveryChallanPrint({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Print Delivery Challan</DialogTitle>
@@ -40,49 +40,57 @@ export function DeliveryChallanPrint({
           </div>
         </DialogHeader>
         
-        <div className="print:p-0 p-6 bg-white" id="challan-print">
-          {/* Header */}
-          <div className="text-center mb-6 border-b pb-4">
-            <h1 className="text-2xl font-bold text-gray-800">{companyName || 'Your Company Name'}</h1>
-            <h2 className="text-lg font-semibold text-gray-600 mt-2">DELIVERY CHALLAN</h2>
+        <div className="print-content bg-white" id="challan-print">
+          {/* Header with Company Name */}
+          <div className="text-center mb-8 pb-4 border-b-2 border-gray-800">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">{companyName || 'Your Company Name'}</h1>
+            <h2 className="text-xl font-semibold text-gray-600">DELIVERY CHALLAN</h2>
           </div>
           
-          {/* Challan Details */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Challan Information Section */}
+          <div className="grid grid-cols-2 gap-8 mb-8">
             <div>
-              <p><strong>Challan No:</strong> {challan.challanNo}</p>
-              <p><strong>Date:</strong> {new Date(challan.date).toLocaleDateString()}</p>
-              <p><strong>Vehicle No:</strong> {challan.vehicleNo || 'N/A'}</p>
+              <h3 className="font-semibold text-lg mb-4 text-blue-600">Challan Details</h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold">Challan No:</span> {challan.challanNo}</p>
+                <p><span className="font-semibold">Date:</span> {new Date(challan.date).toLocaleDateString()}</p>
+                <p><span className="font-semibold">Vehicle No:</span> {challan.vehicleNo || 'N/A'}</p>
+                <p><span className="font-semibold">Status:</span> {challan.status}</p>
+              </div>
             </div>
             <div>
-              <p><strong>Client:</strong> {challan.clientName}</p>
-              <p><strong>Status:</strong> {challan.status}</p>
+              <h3 className="font-semibold text-lg mb-4 text-blue-600">Client Information</h3>
+              <div className="space-y-2">
+                <p><span className="font-semibold">Client:</span> {challan.clientName}</p>
+                {challan.deliveryAddress && (
+                  <div>
+                    <p className="font-semibold">Delivery Address:</p>
+                    <p className="text-gray-700 ml-4">{challan.deliveryAddress}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
-          {/* Delivery Address */}
-          {challan.deliveryAddress && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Delivery Address:</h3>
-              <p className="text-gray-700">{challan.deliveryAddress}</p>
-            </div>
-          )}
           
           {/* Items Table */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-2">Items:</h3>
-            <table className="w-full border-collapse border border-gray-300">
+          <div className="mb-8">
+            <h3 className="font-semibold text-lg mb-4 text-blue-600">Items for Delivery</h3>
+            <table className="w-full border-collapse border-2 border-gray-400">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="border border-gray-300 p-2 text-left">Item</th>
-                  <th className="border border-gray-300 p-2 text-center">Quantity</th>
+                <tr className="bg-blue-100">
+                  <th className="border border-gray-400 p-3 text-left font-semibold">#</th>
+                  <th className="border border-gray-400 p-3 text-left font-semibold">Item Name</th>
+                  <th className="border border-gray-400 p-3 text-center font-semibold">Quantity</th>
+                  <th className="border border-gray-400 p-3 text-center font-semibold">Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 {challan.items?.map((item: any, index: number) => (
-                  <tr key={index}>
-                    <td className="border border-gray-300 p-2">{item.name}</td>
-                    <td className="border border-gray-300 p-2 text-center">{item.quantity}</td>
+                  <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                    <td className="border border-gray-400 p-3 text-center">{index + 1}</td>
+                    <td className="border border-gray-400 p-3">{item.name}</td>
+                    <td className="border border-gray-400 p-3 text-center">{item.quantity}</td>
+                    <td className="border border-gray-400 p-3 text-center">-</td>
                   </tr>
                 ))}
               </tbody>
@@ -91,22 +99,28 @@ export function DeliveryChallanPrint({
           
           {/* Notes */}
           {challan.notes && (
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Notes:</h3>
-              <p className="text-gray-700">{challan.notes}</p>
+            <div className="mb-8">
+              <h3 className="font-semibold text-lg mb-2 text-blue-600">Special Instructions</h3>
+              <div className="bg-gray-50 p-4 rounded border">
+                <p className="text-gray-700">{challan.notes}</p>
+              </div>
             </div>
           )}
           
           {/* Signature Section */}
-          <div className="grid grid-cols-2 gap-8 mt-12">
-            <div>
-              <div className="border-t border-gray-400 pt-2">
-                <p className="text-center text-sm">Delivered By</p>
+          <div className="mt-16 pt-8">
+            <div className="grid grid-cols-2 gap-16">
+              <div className="text-center">
+                <div className="border-t-2 border-gray-800 pt-2">
+                  <p className="font-semibold">Delivered By</p>
+                  <p className="text-sm text-gray-600 mt-1">Name & Signature</p>
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="border-t border-gray-400 pt-2">
-                <p className="text-center text-sm">Received By</p>
+              <div className="text-center">
+                <div className="border-t-2 border-gray-800 pt-2">
+                  <p className="font-semibold">Received By</p>
+                  <p className="text-sm text-gray-600 mt-1">Name & Signature</p>
+                </div>
               </div>
             </div>
           </div>
@@ -114,20 +128,55 @@ export function DeliveryChallanPrint({
         
         <style>{`
           @media print {
-            .print\\:p-0 {
-              padding: 0 !important;
+            @page {
+              margin: 20mm;
+              size: A4;
             }
+            
             body * {
               visibility: hidden;
             }
+            
             #challan-print, #challan-print * {
               visibility: visible;
             }
+            
             #challan-print {
               position: absolute;
               left: 0;
               top: 0;
               width: 100%;
+              background: white !important;
+              color: black !important;
+            }
+            
+            .print-content {
+              padding: 0 !important;
+              margin: 0 !important;
+              font-size: 12px !important;
+              line-height: 1.4 !important;
+            }
+            
+            .print-content h1 {
+              font-size: 24px !important;
+              margin-bottom: 8px !important;
+            }
+            
+            .print-content h2 {
+              font-size: 18px !important;
+            }
+            
+            .print-content h3 {
+              font-size: 14px !important;
+            }
+            
+            .print-content table {
+              font-size: 11px !important;
+            }
+            
+            .print-content th,
+            .print-content td {
+              padding: 8px !important;
             }
           }
         `}</style>
