@@ -14,7 +14,6 @@ import { validateGSTNumber, lookupGSTDetails, formatGSTNumber } from "@/services
 import { toast } from "sonner";
 import PaymentClientSection from "./form/PaymentClientSection";
 import PaymentGSTSection from "./form/PaymentGSTSection";
-import PaymentAddressSection from "./form/PaymentAddressSection";
 import PaymentDetailsSection from "./form/PaymentDetailsSection";
 import { PaymentFormData, PaymentFormErrors } from "./form/types";
 
@@ -224,19 +223,14 @@ const PaymentDialog = ({
 
           <PaymentGSTSection
             gstNumber={formData.gstNumber}
-            onChange={handleChange}
-            onLookup={handleGSTLookup}
-            error={formErrors.gstNumber}
-            isLoading={isGSTLoading}
-          />
-
-          <PaymentAddressSection
             address={formData.address}
             city={formData.city}
             state={formData.state}
             pincode={formData.pincode}
             onChange={handleChange}
-            readOnly={!!formData.gstNumber}
+            onLookup={handleGSTLookup}
+            error={formErrors.gstNumber}
+            isLoading={isGSTLoading}
           />
           
           <PaymentDetailsSection
