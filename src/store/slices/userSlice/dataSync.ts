@@ -1,10 +1,17 @@
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { isUserDataRow } from "../../types";
 
 export async function saveUserDataToSupabase(userId: string, state: any) {
   console.log("Saving data to Supabase for user:", userId);
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) {
+    console.error("User not authenticated or ID mismatch");
+    toast.error("Authentication required to save data");
+    throw new Error("Authentication required");
+  }
   
   try {
     // Get current data to save
@@ -41,8 +48,16 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
 export async function fetchUserDataFromSupabase(userId: string) {
   console.log("Starting data sync for user:", userId);
   
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) {
+    console.error("User not authenticated or ID mismatch");
+    toast.error("Authentication required to load data");
+    throw new Error("Authentication required");
+  }
+  
   try {
-    // Try to fetch existing data from Supabase
+    // Try to fetch existing data from Supabase using RLS-protected query
     const { data, error } = await supabase
       .from('user_data')
       .select('*')
@@ -75,6 +90,14 @@ export async function fetchUserDataFromSupabase(userId: string) {
 
 export async function createEmptyUserData(userId: string) {
   console.log("Creating empty user data record for user:", userId);
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== userId) {
+    console.error("User not authenticated or ID mismatch");
+    toast.error("Authentication required to initialize data");
+    throw new Error("Authentication required");
+  }
   
   try {
     const userData = {

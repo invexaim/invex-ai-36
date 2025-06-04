@@ -47,7 +47,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          clients: Json | null
+          created_at: string | null
+          id: string
+          payments: Json | null
+          products: Json | null
+          sales: Json | null
+          updated_at: string | null
+          user_id: string
+        }[]
+      }
+      user_owns_data: {
+        Args: { data_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
