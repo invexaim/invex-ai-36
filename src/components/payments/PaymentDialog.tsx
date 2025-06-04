@@ -1,54 +1,52 @@
-
 import { useState, useEffect } from "react";
-import { CreditCard } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { Client, Sale } from "@/types";
-import { validateGSTNumber, lookupGSTDetails, formatGSTNumber } from "@/services/gstService";
-import { toast } from "sonner";
 import PaymentClientSection from "./form/PaymentClientSection";
-import PaymentGSTSection from "./form/PaymentGSTSection";
 import PaymentDetailsSection from "./form/PaymentDetailsSection";
+import PaymentGSTSection from "./form/PaymentGSTSection";
 import { PaymentFormData, PaymentFormErrors } from "./form/types";
+import { useSecureForm } from "@/hooks/useSecureForm";
+import { validatePaymentData } from "@/utils/validationUtils";
+import useAppStore from "@/store/appStore";
 
 interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: PaymentFormData) => void;
-  clients: Client[];
-  pendingSalePayment: Sale | null;
   onCancel: () => void;
+  clients: Client[];
+  pendingSalePayment?: Sale | null;
 }
 
 const PaymentDialog = ({ 
   isOpen, 
   onClose, 
   onSubmit, 
+  onCancel, 
   clients, 
-  pendingSalePayment, 
-  onCancel 
+  pendingSalePayment 
 }: PaymentDialogProps) => {
+  const { currentUser } = useAppStore();
+  
   const [formData, setFormData] = useState<PaymentFormData>({
-    clientName: "",
-    amount: 0,
-    status: "paid",
+    clientName: pendingSalePayment?.customer || "",
+    amount: pendingSalePayment?.total || 0,
+    status: "paid" as const,
     method: "",
-    description: "",
-    relatedSaleId: undefined,
+    description: pendingSalePayment ? 
+      `Payment for Sale #${pendingSalePayment.id} - ${pendingSalePayment.products?.map(p => p.name).join(", ")}` : 
+      "",
+    relatedSaleId: pendingSalePayment?.id,
     gstNumber: "",
     address: "",
     city: "",
     state: "",
-    pincode: "",
+    pincode: ""
   });
-  
-  const [formErrors, setFormErrors] = useState<PaymentFormErrors>({
+
+  const [errors, setErrors] = useState<PaymentFormErrors>({
     clientName: false,
     amount: false,
     method: false,
@@ -56,181 +54,111 @@ const PaymentDialog = ({
     gstNumber: false
   });
 
-  const [isGSTLoading, setIsGSTLoading] = useState(false);
+  const { handleSubmit: secureSubmit, isSubmitting, errors: validationErrors } = useSecureForm({
+    validateFn: validatePaymentData,
+    onSubmit: async (sanitizedData) => {
+      onSubmit(sanitizedData);
+      handleClose();
+    },
+    rateLimitAction: 'payment_creation',
+    userId: currentUser?.id
+  });
 
-  // Initialize payment form with pending sale data if available
-  useEffect(() => {
-    if (pendingSalePayment) {
-      setFormData({
-        clientName: pendingSalePayment.clientName || "",
-        amount: pendingSalePayment.quantity_sold * pendingSalePayment.selling_price,
-        status: "paid",
-        method: "",
-        description: `Payment for ${pendingSalePayment.quantity_sold} ${pendingSalePayment.product?.product_name || "items"}`,
-        relatedSaleId: pendingSalePayment.sale_id,
-        gstNumber: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-      });
-    } else {
-      // Reset form when no pending sale
-      setFormData({
-        clientName: "",
-        amount: 0,
-        status: "paid",
-        method: "",
-        description: "",
-        relatedSaleId: undefined,
-        gstNumber: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-      });
-    }
-  }, [pendingSalePayment]);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    secureSubmit(formData);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     
-    if (name === "amount") {
-      setFormData({
-        ...formData,
-        [name]: parseFloat(value) || 0,
-      });
-      setFormErrors({
-        ...formErrors,
-        amount: parseFloat(value) <= 0
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-      
-      // Clear error for the field that was just changed
-      if (name in formErrors) {
-        setFormErrors({
-          ...formErrors,
-          [name]: value.trim() === ""
-        });
-      }
+    // Clear specific error when user starts typing
+    if (errors[name as keyof PaymentFormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: false }));
     }
   };
 
-  const handleGSTLookup = async () => {
-    const gstNumber = formatGSTNumber(formData.gstNumber);
-    
-    if (!gstNumber) {
-      toast.error("Please enter a GST number");
-      return;
-    }
+  const validateForm = (): boolean => {
+    const newErrors: PaymentFormErrors = {
+      clientName: !formData.clientName.trim(),
+      amount: !formData.amount || formData.amount <= 0,
+      method: !formData.method,
+      description: !formData.description.trim(),
+      gstNumber: false
+    };
 
-    if (!validateGSTNumber(gstNumber)) {
-      setFormErrors({
-        ...formErrors,
-        gstNumber: true
-      });
-      toast.error("Invalid GST number format");
-      return;
-    }
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error);
+  };
 
-    setIsGSTLoading(true);
-    setFormErrors({
-      ...formErrors,
+  const handleClose = () => {
+    setFormData({
+      clientName: "",
+      amount: 0,
+      status: "paid",
+      method: "",
+      description: "",
+      relatedSaleId: undefined,
+      gstNumber: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: ""
+    });
+    setErrors({
+      clientName: false,
+      amount: false,
+      method: false,
+      description: false,
       gstNumber: false
     });
+    onClose();
+  };
 
-    try {
-      const gstDetails = await lookupGSTDetails(gstNumber);
-      
-      if (gstDetails) {
-        setFormData({
-          ...formData,
-          gstNumber: gstDetails.gstNumber,
-          address: gstDetails.address,
-          city: gstDetails.city,
-          state: gstDetails.state,
-          pincode: gstDetails.pincode,
-        });
-        toast.success("GST details found and populated");
-      } else {
-        toast.error("GST number not found in database");
-      }
-    } catch (error) {
-      toast.error("Error looking up GST details");
-    } finally {
-      setIsGSTLoading(false);
+  useEffect(() => {
+    if (pendingSalePayment) {
+      setFormData(prev => ({
+        ...prev,
+        clientName: pendingSalePayment.customer || "",
+        amount: pendingSalePayment.total || 0,
+        description: `Payment for Sale #${pendingSalePayment.id} - ${pendingSalePayment.products?.map(p => p.name).join(", ")}`,
+        relatedSaleId: pendingSalePayment.id
+      }));
     }
-  };
-
-  const validateForm = () => {
-    const errors = {
-      clientName: !formData.clientName,
-      amount: formData.amount <= 0,
-      method: !formData.method,
-      description: !formData.description,
-      gstNumber: formData.gstNumber && !validateGSTNumber(formatGSTNumber(formData.gstNumber))
-    };
-    
-    setFormErrors(errors);
-    
-    return !Object.values(errors).some(error => error);
-  };
-
-  const handleSubmit = () => {
-    if (!validateForm()) {
-      return;
-    }
-    
-    onSubmit({
-      ...formData,
-      gstNumber: formData.gstNumber ? formatGSTNumber(formData.gstNumber) : ""
-    });
-  };
+  }, [pendingSalePayment]);
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        if (!open) {
-          onCancel();
-        }
-      }}
-    >
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl">
-            {pendingSalePayment ? "Complete Sale Payment" : "New Payment"}
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-2">
-            {pendingSalePayment 
-              ? "Complete the payment for your recently recorded sale." 
-              : "Add a new payment record. Fill in the payment details below."}
-          </p>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle>Add New Payment</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            className="h-6 w-6"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <PaymentClientSection
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {validationErrors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <ul className="text-sm text-red-600">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <PaymentClientSection 
             clientName={formData.clientName}
             clients={clients}
             onChange={handleChange}
-            error={formErrors.clientName}
-            disabled={pendingSalePayment && !!pendingSalePayment.clientName}
-          />
-
-          <PaymentGSTSection
-            gstNumber={formData.gstNumber}
-            address={formData.address}
-            city={formData.city}
-            state={formData.state}
-            pincode={formData.pincode}
-            onChange={handleChange}
-            onLookup={handleGSTLookup}
-            error={formErrors.gstNumber}
-            isLoading={isGSTLoading}
+            error={errors.clientName}
           />
           
           <PaymentDetailsSection
@@ -240,29 +168,39 @@ const PaymentDialog = ({
             status={formData.status}
             onChange={handleChange}
             errors={{
-              description: formErrors.description,
-              amount: formErrors.amount,
-              method: formErrors.method
+              description: errors.description,
+              amount: errors.amount,
+              method: errors.method
             }}
           />
-        </div>
-        
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            className="w-full sm:w-auto"
-          >
-            <CreditCard className="mr-2 h-4 w-4" /> 
-            {pendingSalePayment ? "Complete Payment" : "Add Payment"}
-          </Button>
-        </DialogFooter>
+          
+          <PaymentGSTSection
+            gstNumber={formData.gstNumber}
+            address={formData.address}
+            city={formData.city}
+            state={formData.state}
+            pincode={formData.pincode}
+            onChange={handleChange}
+            error={errors.gstNumber}
+          />
+          
+          <div className="flex justify-end space-x-3 pt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Adding..." : "Add Payment"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
