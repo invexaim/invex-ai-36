@@ -40,13 +40,21 @@ export const createClientSlice = (set: any, get: any) => ({
   // Updated to track individual product purchases and prevent double counting
   updateClientPurchase: (clientName, amount, productName, quantity) => set((state: ClientState) => {
     // Only update if there is an actual client name - prevent empty client updates
-    if (!clientName) return { clients: state.clients };
+    if (!clientName || !clientName.trim()) {
+      console.log("Skipping client update - no client name provided");
+      return { clients: state.clients };
+    }
     
     // Check if the client already exists
     const clientExists = state.clients.some(client => client.name === clientName);
     
     // If client doesn't exist, we don't update anything
-    if (!clientExists) return { clients: state.clients };
+    if (!clientExists) {
+      console.log("Skipping client update - client does not exist:", clientName);
+      return { clients: state.clients };
+    }
+    
+    console.log("Processing client purchase update:", { clientName, amount, productName, quantity });
     
     // Update client if exists
     const updatedClients = state.clients.map(client => {
@@ -58,13 +66,16 @@ export const createClientSlice = (set: any, get: any) => ({
           purchaseDate: new Date().toISOString(),
         };
         
-        return {
+        const updatedClient = {
           ...client,
           totalPurchases: client.totalPurchases + quantity,
           totalSpent: client.totalSpent + amount,
           lastPurchase: new Date().toISOString(),
           purchaseHistory: [newPurchase, ...(client.purchaseHistory || [])],
         };
+        
+        console.log("Updated client data:", updatedClient);
+        return updatedClient;
       }
       return client;
     });

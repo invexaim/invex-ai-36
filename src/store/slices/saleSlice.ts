@@ -63,8 +63,16 @@ export const createSaleSlice = (
     
     updateProduct(updatedProduct);
     
-    // REMOVED: Direct client update call - this was causing the duplication
-    // The client update will be handled by the callback from appStore.ts
+    // Update client purchase ONLY if there's a client name and it's not empty
+    if (saleData.clientName && saleData.clientName.trim()) {
+      console.log("Updating client purchase from saleSlice:", { 
+        clientName: saleData.clientName, 
+        amount: saleData.selling_price, 
+        productName: product.product_name, 
+        quantity: saleData.quantity_sold 
+      });
+      updateClientPurchase(saleData.clientName, saleData.selling_price, product.product_name, saleData.quantity_sold);
+    }
     
     return newSale;
   },
