@@ -63,7 +63,8 @@ export const createSaleSlice = (
     
     updateProduct(updatedProduct);
     
-    // Update client purchase ONLY if there's a client name and it's not empty
+    // ONLY update client purchase if there's a client name and it's not empty
+    // This is the ONLY place where client purchase should be updated to prevent duplication
     if (saleData.clientName && saleData.clientName.trim()) {
       console.log("Updating client purchase from saleSlice:", { 
         clientName: saleData.clientName, 

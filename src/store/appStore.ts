@@ -56,12 +56,8 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // Method to update client purchase history with product details - ENSURE THIS IS ONLY CALLED ONCE
-      (clientName, amount, productName, quantity) => {
-        console.log("Updating client purchase from appStore:", { clientName, amount, productName, quantity });
-        // Call the client slice method directly to avoid duplication
-        clientSlice.updateClientPurchase(clientName, amount, productName, quantity);
-      }
+      // Method to update client purchase history - pass the client slice method directly
+      clientSlice.updateClientPurchase
     );
     
     const paymentSlice = createPaymentSlice(
