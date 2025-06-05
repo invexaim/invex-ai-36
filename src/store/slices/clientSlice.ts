@@ -37,26 +37,25 @@ export const createClientSlice = (set: any, get: any) => ({
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),
   
-  // Updated to track individual product purchases and prevent double counting
+  // This is the ONLY function that should update client purchase data
   updateClientPurchase: (clientName, amount, productName, quantity) => set((state: ClientState) => {
-    // Only update if there is an actual client name - prevent empty client updates
+    // Skip if no client name
     if (!clientName || !clientName.trim()) {
-      console.log("Skipping client update - no client name provided");
+      console.log("CLIENT UPDATE: Skipping - no client name provided");
       return { clients: state.clients };
     }
     
-    // Check if the client already exists
+    // Check if the client exists
     const clientExists = state.clients.some(client => client.name === clientName);
     
-    // If client doesn't exist, we don't update anything
     if (!clientExists) {
-      console.log("Skipping client update - client does not exist:", clientName);
+      console.log("CLIENT UPDATE: Skipping - client does not exist:", clientName);
       return { clients: state.clients };
     }
     
-    console.log("Processing client purchase update:", { clientName, amount, productName, quantity });
+    console.log("CLIENT UPDATE: Processing purchase update:", { clientName, amount, productName, quantity });
     
-    // Update client if exists
+    // Update the client
     const updatedClients = state.clients.map(client => {
       if (client.name === clientName) {
         const newPurchase = {
@@ -74,7 +73,12 @@ export const createClientSlice = (set: any, get: any) => ({
           purchaseHistory: [newPurchase, ...(client.purchaseHistory || [])],
         };
         
-        console.log("Updated client data:", updatedClient);
+        console.log("CLIENT UPDATE: Updated client data:", {
+          name: updatedClient.name,
+          totalPurchases: updatedClient.totalPurchases,
+          totalSpent: updatedClient.totalSpent,
+          newPurchase
+        });
         return updatedClient;
       }
       return client;

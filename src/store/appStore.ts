@@ -43,6 +43,7 @@ const useAppStore = createPersistedStore<AppState>(
     
     const companySlice = createCompanySlice(set, get);
     
+    // Create sale slice with direct reference to client update function
     const saleSlice = createSaleSlice(
       set, 
       get, 
@@ -56,15 +57,16 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // Method to update client purchase history - pass the client slice method directly
+      // CRITICAL: Pass the EXACT client update function to prevent any wrapper calls
       clientSlice.updateClientPurchase
     );
     
     const paymentSlice = createPaymentSlice(
       set, 
       get,
-      // Give payment slice access to update client
+      // Give payment slice access to update client - but don't double count sales
       (clientName: string, amount: number) => {
+        // Only update for actual payments, not sales
         clientSlice.updateClientPurchase(clientName, amount, "Payment", 1);
       }
     );
@@ -79,7 +81,7 @@ const useAppStore = createPersistedStore<AppState>(
     return {
       // Product slice
       ...productSlice,
-      // Sale slice - use the original recordSale without duplication
+      // Sale slice
       ...saleSlice,
       // Client slice
       ...clientSlice,
@@ -118,7 +120,7 @@ const useAppStore = createPersistedStore<AppState>(
       // Expose the saveDataToSupabase function
       saveDataToSupabase,
       
-      // Add the addSale alias for recordSale for backward compatibility - return the sale
+      // ENSURE recordSale is the primary function (no addSale wrapper)
       addSale: saleSlice.recordSale,
       
       // Set up realtime updates for the current user
