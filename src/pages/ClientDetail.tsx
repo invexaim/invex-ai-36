@@ -107,7 +107,7 @@ const ClientDetail = () => {
                 <CreditCard className="w-4 h-4 mr-2 text-muted-foreground" />
                 <span>Total Spent</span>
               </div>
-              <span className="font-medium">${client.totalSpent.toFixed(2)}</span>
+              <span className="font-medium">₹{client.totalSpent.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
