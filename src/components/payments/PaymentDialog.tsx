@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { PaymentFormData, PaymentFormErrors } from "./form/types";
 import { useSecureForm } from "@/hooks/useSecureForm";
 import { validatePaymentData } from "@/utils/validationUtils";
 import useAppStore from "@/store/appStore";
+import { toast } from "sonner";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -31,14 +33,14 @@ const PaymentDialog = ({
   const { currentUser } = useAppStore();
   
   const [formData, setFormData] = useState<PaymentFormData>({
-    clientName: pendingSalePayment?.customer || "",
-    amount: pendingSalePayment?.total || 0,
+    clientName: pendingSalePayment?.clientName || "",
+    amount: pendingSalePayment?.selling_price || 0,
     status: "paid" as const,
     method: "",
     description: pendingSalePayment ? 
-      `Payment for Sale #${pendingSalePayment.id} - ${pendingSalePayment.products?.map(p => p.name).join(", ")}` : 
+      `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}` : 
       "",
-    relatedSaleId: pendingSalePayment?.id,
+    relatedSaleId: pendingSalePayment?.sale_id,
     gstNumber: "",
     address: "",
     city: "",
@@ -53,6 +55,8 @@ const PaymentDialog = ({
     description: false,
     gstNumber: false
   });
+
+  const [isGSTLoading, setIsGSTLoading] = useState(false);
 
   const { handleSubmit: secureSubmit, isSubmitting, errors: validationErrors } = useSecureForm({
     validateFn: validatePaymentData,
@@ -76,6 +80,34 @@ const PaymentDialog = ({
     // Clear specific error when user starts typing
     if (errors[name as keyof PaymentFormErrors]) {
       setErrors(prev => ({ ...prev, [name]: false }));
+    }
+  };
+
+  const handleGSTLookup = async () => {
+    if (!formData.gstNumber) {
+      toast.error("Please enter a GST number");
+      return;
+    }
+
+    setIsGSTLoading(true);
+    try {
+      // Mock GST lookup - in real implementation, this would call an API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock data for demonstration
+      setFormData(prev => ({
+        ...prev,
+        address: "123 Business Street",
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001"
+      }));
+      
+      toast.success("GST details retrieved successfully");
+    } catch (error) {
+      toast.error("Failed to retrieve GST details");
+    } finally {
+      setIsGSTLoading(false);
     }
   };
 
@@ -120,10 +152,10 @@ const PaymentDialog = ({
     if (pendingSalePayment) {
       setFormData(prev => ({
         ...prev,
-        clientName: pendingSalePayment.customer || "",
-        amount: pendingSalePayment.total || 0,
-        description: `Payment for Sale #${pendingSalePayment.id} - ${pendingSalePayment.products?.map(p => p.name).join(", ")}`,
-        relatedSaleId: pendingSalePayment.id
+        clientName: pendingSalePayment.clientName || "",
+        amount: pendingSalePayment.selling_price || 0,
+        description: `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}`,
+        relatedSaleId: pendingSalePayment.sale_id
       }));
     }
   }, [pendingSalePayment]);
@@ -181,7 +213,9 @@ const PaymentDialog = ({
             state={formData.state}
             pincode={formData.pincode}
             onChange={handleChange}
+            onLookup={handleGSTLookup}
             error={errors.gstNumber}
+            isLoading={isGSTLoading}
           />
           
           <div className="flex justify-end space-x-3 pt-6">
