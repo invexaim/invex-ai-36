@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Client } from "@/types";
+import GSTLookupSection from "../payments/form/GSTLookupSection";
 
 interface AddClientDialogProps {
   isOpen: boolean;
@@ -29,7 +30,15 @@ export const AddClientDialog = ({
     name: "",
     email: "",
     phone: "",
+    gstNumber: "",
+    companyName: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: ""
   });
+
+  const [isGSTLoading, setIsGSTLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -38,17 +47,29 @@ export const AddClientDialog = ({
     });
   };
 
+  const handleGSTDetailsUpdate = (details: {
+    companyName: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      ...details
+    }));
+  };
+
   const handleSubmit = () => {
     if (!formData.name.trim()) {
       return;
     }
     
-    // Add client with all required properties including purchaseHistory
     onAddClient({
       ...formData,
       joinDate: new Date().toISOString(),
       openInvoices: 0,
-      purchaseHistory: [] // Initialize with empty purchase history
+      purchaseHistory: []
     });
     
     // Reset form
@@ -56,15 +77,20 @@ export const AddClientDialog = ({
       name: "",
       email: "",
       phone: "",
+      gstNumber: "",
+      companyName: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: ""
     });
     
-    // Close dialog
     onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
           <DialogDescription>
@@ -105,6 +131,20 @@ export const AddClientDialog = ({
               placeholder="Enter client's phone number"
             />
           </div>
+
+          <GSTLookupSection
+            gstNumber={formData.gstNumber}
+            companyName={formData.companyName}
+            address={formData.address}
+            city={formData.city}
+            state={formData.state}
+            pincode={formData.pincode}
+            onChange={handleChange}
+            onGSTDetailsUpdate={handleGSTDetailsUpdate}
+            error={false}
+            isLoading={isGSTLoading}
+            setIsLoading={setIsGSTLoading}
+          />
         </div>
         <DialogFooter>
           <Button 

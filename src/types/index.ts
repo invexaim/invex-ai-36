@@ -57,6 +57,12 @@ export interface Client {
   joinDate: string;
   openInvoices: number;
   purchaseHistory: ProductPurchase[];
+  gstNumber?: string;
+  companyName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
 }
 
 export interface Payment {
@@ -69,6 +75,7 @@ export interface Payment {
   description?: string;
   relatedSaleId?: number;
   gstNumber?: string;
+  companyName?: string;
   address?: string;
   city?: string;
   state?: string;

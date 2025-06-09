@@ -7,6 +7,7 @@ export interface PaymentFormData {
   description: string;
   relatedSaleId: number | undefined;
   gstNumber: string;
+  companyName: string;
   address: string;
   city: string;
   state: string;
