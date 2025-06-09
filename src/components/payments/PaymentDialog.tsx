@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -157,6 +156,7 @@ const PaymentDialog = ({
             </div>
           )}
 
+          {/* Client Section */}
           <PaymentClientSection 
             clientName={formData.clientName} 
             clients={clients} 
@@ -164,6 +164,7 @@ const PaymentDialog = ({
             error={errors.clientName} 
           />
           
+          {/* GST Section - positioned between client and description */}
           <GSTLookupSection
             gstNumber={formData.gstNumber}
             companyName={formData.companyName}
@@ -178,6 +179,7 @@ const PaymentDialog = ({
             setIsLoading={setIsGSTLoading}
           />
           
+          {/* Payment Details Section */}
           <PaymentDetailsSection 
             description={formData.description} 
             amount={formData.amount} 

@@ -98,6 +98,7 @@ export const AddClientDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* Client Basic Details */}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -132,6 +133,7 @@ export const AddClientDialog = ({
             />
           </div>
 
+          {/* GST Section with Address and Company Name */}
           <GSTLookupSection
             gstNumber={formData.gstNumber}
             companyName={formData.companyName}

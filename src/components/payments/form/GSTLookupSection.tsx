@@ -73,10 +73,9 @@ const GSTLookupSection = ({
     }
   };
 
-  const hasGSTData = companyName || address || city || state || pincode;
-
   return (
     <div className="space-y-4">
+      {/* GST Number Input */}
       <div className="space-y-2">
         <Label htmlFor="gstNumber">GST Number (Optional)</Label>
         <div className="flex gap-2">
@@ -108,51 +107,59 @@ const GSTLookupSection = ({
         )}
       </div>
 
-      {hasGSTData && (
-        <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Registered Address</Label>
-              <Input
-                value={address}
-                placeholder="Address"
-                readOnly
-                className="bg-white border-gray-200"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={city}
-                  placeholder="City"
-                  readOnly
-                  className="bg-white border-gray-200"
-                />
-                <Input
-                  value={pincode}
-                  placeholder="Pincode"
-                  readOnly
-                  className="bg-white border-gray-200"
-                />
-              </div>
-              <Input
-                value={state}
-                placeholder="State"
-                readOnly
-                className="bg-white border-gray-200"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Company Name</Label>
-              <Input
-                value={companyName}
-                placeholder="Company Name"
-                readOnly
-                className="bg-white border-gray-200"
-              />
-            </div>
+      {/* Auto-populated Address Section */}
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">Registered Address</Label>
+          <Input
+            name="address"
+            value={address}
+            onChange={onChange}
+            placeholder="Address will auto-populate when GST is entered"
+            readOnly={!!address && address.length > 0}
+            className={address ? "bg-gray-50 border-gray-200" : ""}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              name="city"
+              value={city}
+              onChange={onChange}
+              placeholder="City"
+              readOnly={!!city && city.length > 0}
+              className={city ? "bg-gray-50 border-gray-200" : ""}
+            />
+            <Input
+              name="pincode"
+              value={pincode}
+              onChange={onChange}
+              placeholder="Pincode"
+              readOnly={!!pincode && pincode.length > 0}
+              className={pincode ? "bg-gray-50 border-gray-200" : ""}
+            />
           </div>
+          <Input
+            name="state"
+            value={state}
+            onChange={onChange}
+            placeholder="State"
+            readOnly={!!state && state.length > 0}
+            className={state ? "bg-gray-50 border-gray-200" : ""}
+          />
         </div>
-      )}
+        
+        {/* Company Name Section */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">Company Name</Label>
+          <Input
+            name="companyName"
+            value={companyName}
+            onChange={onChange}
+            placeholder="Company name will auto-populate when GST is entered"
+            readOnly={!!companyName && companyName.length > 0}
+            className={companyName ? "bg-gray-50 border-gray-200" : ""}
+          />
+        </div>
+      </div>
     </div>
   );
 };
