@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { useSecureForm } from "@/hooks/useSecureForm";
 import { validatePaymentData } from "@/utils/validationUtils";
 import useAppStore from "@/store/appStore";
 import { toast } from "sonner";
-
 interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,25 +19,23 @@ interface PaymentDialogProps {
   clients: Client[];
   pendingSalePayment?: Sale | null;
 }
-
-const PaymentDialog = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  onCancel, 
-  clients, 
-  pendingSalePayment 
+const PaymentDialog = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  onCancel,
+  clients,
+  pendingSalePayment
 }: PaymentDialogProps) => {
-  const { currentUser } = useAppStore();
-  
+  const {
+    currentUser
+  } = useAppStore();
   const [formData, setFormData] = useState<PaymentFormData>({
     clientName: pendingSalePayment?.clientName || "",
     amount: pendingSalePayment?.selling_price || 0,
     status: "paid" as const,
     method: "",
-    description: pendingSalePayment ? 
-      `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}` : 
-      "",
+    description: pendingSalePayment ? `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}` : "",
     relatedSaleId: pendingSalePayment?.sale_id,
     gstNumber: "",
     address: "",
@@ -47,7 +43,6 @@ const PaymentDialog = ({
     state: "",
     pincode: ""
   });
-
   const [errors, setErrors] = useState<PaymentFormErrors>({
     clientName: false,
     amount: false,
@@ -55,45 +50,52 @@ const PaymentDialog = ({
     description: false,
     gstNumber: false
   });
-
   const [isGSTLoading, setIsGSTLoading] = useState(false);
-
-  const { handleSubmit: secureSubmit, isSubmitting, errors: validationErrors } = useSecureForm({
+  const {
+    handleSubmit: secureSubmit,
+    isSubmitting,
+    errors: validationErrors
+  } = useSecureForm({
     validateFn: validatePaymentData,
-    onSubmit: async (sanitizedData) => {
+    onSubmit: async sanitizedData => {
       onSubmit(sanitizedData);
       handleClose();
     },
     rateLimitAction: 'payment_creation',
     userId: currentUser?.id
   });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     secureSubmit(formData);
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
     // Clear specific error when user starts typing
     if (errors[name as keyof PaymentFormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: false }));
+      setErrors(prev => ({
+        ...prev,
+        [name]: false
+      }));
     }
   };
-
   const handleGSTLookup = async () => {
     if (!formData.gstNumber) {
       toast.error("Please enter a GST number");
       return;
     }
-
     setIsGSTLoading(true);
     try {
       // Mock GST lookup - in real implementation, this would call an API
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Mock data for demonstration
       setFormData(prev => ({
         ...prev,
@@ -102,7 +104,6 @@ const PaymentDialog = ({
         state: "Maharashtra",
         pincode: "400001"
       }));
-      
       toast.success("GST details retrieved successfully");
     } catch (error) {
       toast.error("Failed to retrieve GST details");
@@ -110,7 +111,6 @@ const PaymentDialog = ({
       setIsGSTLoading(false);
     }
   };
-
   const validateForm = (): boolean => {
     const newErrors: PaymentFormErrors = {
       clientName: !formData.clientName.trim(),
@@ -119,11 +119,9 @@ const PaymentDialog = ({
       description: !formData.description.trim(),
       gstNumber: false
     };
-
     setErrors(newErrors);
     return !Object.values(newErrors).some(error => error);
   };
-
   const handleClose = () => {
     setFormData({
       clientName: "",
@@ -147,7 +145,6 @@ const PaymentDialog = ({
     });
     onClose();
   };
-
   useEffect(() => {
     if (pendingSalePayment) {
       setFormData(prev => ({
@@ -159,85 +156,40 @@ const PaymentDialog = ({
       }));
     }
   }, [pendingSalePayment]);
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+  return <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>Add New Payment</DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="h-6 w-6"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {validationErrors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          {validationErrors.length > 0 && <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <ul className="text-sm text-red-600">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
+                {validationErrors.map((error, index) => <li key={index}>• {error}</li>)}
               </ul>
-            </div>
-          )}
+            </div>}
 
-          <PaymentClientSection 
-            clientName={formData.clientName}
-            clients={clients}
-            onChange={handleChange}
-            error={errors.clientName}
-          />
+          <PaymentClientSection clientName={formData.clientName} clients={clients} onChange={handleChange} error={errors.clientName} />
           
-          <PaymentDetailsSection
-            description={formData.description}
-            amount={formData.amount}
-            method={formData.method}
-            status={formData.status}
-            onChange={handleChange}
-            errors={{
-              description: errors.description,
-              amount: errors.amount,
-              method: errors.method
-            }}
-          />
+          <PaymentDetailsSection description={formData.description} amount={formData.amount} method={formData.method} status={formData.status} onChange={handleChange} errors={{
+          description: errors.description,
+          amount: errors.amount,
+          method: errors.method
+        }} />
           
-          <PaymentGSTSection
-            gstNumber={formData.gstNumber}
-            address={formData.address}
-            city={formData.city}
-            state={formData.state}
-            pincode={formData.pincode}
-            onChange={handleChange}
-            onLookup={handleGSTLookup}
-            error={errors.gstNumber}
-            isLoading={isGSTLoading}
-          />
+          <PaymentGSTSection gstNumber={formData.gstNumber} address={formData.address} city={formData.city} state={formData.state} pincode={formData.pincode} onChange={handleChange} onLookup={handleGSTLookup} error={errors.gstNumber} isLoading={isGSTLoading} />
           
           <div className="flex justify-end space-x-3 pt-6">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-            >
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Adding..." : "Add Payment"}
             </Button>
           </div>
         </form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default PaymentDialog;
