@@ -1,4 +1,5 @@
-import { Moon, Sun, Menu, LogOut } from "lucide-react";
+
+import { Moon, Sun, Menu, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SidebarItem from "./SidebarItem";
@@ -8,6 +9,15 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import AuthService from "@/services/authService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
@@ -27,6 +37,9 @@ const MobileNavigation = ({
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
+  const { companyName, setCompanyName } = useAppStore();
+  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
+  const [tempCompanyName, setTempCompanyName] = useState(companyName);
   
   const handleItemClick = () => {
     setOpen(false);
@@ -57,6 +70,11 @@ const MobileNavigation = ({
       toast.error("Failed to log out. Please try again.");
     }
   };
+
+  const handleSaveCompanyName = () => {
+    setCompanyName(tempCompanyName);
+    setIsCompanyDialogOpen(false);
+  };
   
   return (
     <div className="fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between z-10 md:hidden px-4 bg-background">
@@ -77,6 +95,40 @@ const MobileNavigation = ({
                   <SidebarItem icon={item.icon} label={item.label} href={item.href} isActive={currentPath === item.href} />
                 </div>
               ))}
+              
+              {/* Company Settings below Delivery */}
+              <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+                <DialogTrigger asChild>
+                  <div className="flex items-center space-x-3 px-4 py-3 rounded-md transition-all hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
+                    <Settings className="w-5 h-5" />
+                    <span className="font-medium">Company Settings</span>
+                  </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Company Settings</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div>
+                      <Label htmlFor="company-name">Company Name</Label>
+                      <Input
+                        id="company-name"
+                        value={tempCompanyName}
+                        onChange={(e) => setTempCompanyName(e.target.value)}
+                        placeholder="Enter your company name"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveCompanyName}>
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </nav>
             <div className="p-4 border-t">
               <Button onClick={handleLogout} className="flex items-center justify-start w-full text-destructive" variant="ghost">

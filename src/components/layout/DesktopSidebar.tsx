@@ -1,4 +1,5 @@
-import { Moon, Sun, LogOut } from "lucide-react";
+
+import { Moon, Sun, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
 import { SidebarItemType } from "./types";
@@ -6,6 +7,16 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import AuthService from "@/services/authService";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
@@ -24,6 +35,9 @@ const DesktopSidebar = ({
 }: DesktopSidebarProps) => {
   const navigate = useNavigate();
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
+  const { companyName, setCompanyName } = useAppStore();
+  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
+  const [tempCompanyName, setTempCompanyName] = useState(companyName);
 
   const handleLogout = async () => {
     try {
@@ -50,6 +64,11 @@ const DesktopSidebar = ({
     }
   };
 
+  const handleSaveCompanyName = () => {
+    setCompanyName(tempCompanyName);
+    setIsCompanyDialogOpen(false);
+  };
+
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border hidden md:flex flex-col">
       <div className="px-4 py-6 border-b">
@@ -65,6 +84,40 @@ const DesktopSidebar = ({
             isActive={currentPath === item.href}
           />
         ))}
+        
+        {/* Company Settings below Delivery */}
+        <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex items-center space-x-3 px-4 py-3 rounded-md transition-all hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
+              <Settings className="w-5 h-5" />
+              <span className="font-medium">Company Settings</span>
+            </div>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Company Settings</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input
+                  id="company-name"
+                  value={tempCompanyName}
+                  onChange={(e) => setTempCompanyName(e.target.value)}
+                  placeholder="Enter your company name"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveCompanyName}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </nav>
       <div className="p-4 border-t flex flex-col gap-2">
         <Button 

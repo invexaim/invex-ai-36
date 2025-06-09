@@ -12,31 +12,18 @@ import {
   Package,
   Users,
   Wallet,
-  Settings,
 } from "lucide-react";
 import { AIInsight } from "@/types";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import { format, subDays, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 const Dashboard = () => {
   const { products, sales, clients, payments, companyName, setCompanyName } = useAppStore();
   const navigate = useNavigate();
   const { authChecked } = useAuthContext();
   const [welcomeShown, setWelcomeShown] = useState(false);
-  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
-  const [tempCompanyName, setTempCompanyName] = useState(companyName);
 
   // Only show welcome message on first load after authentication
   useEffect(() => {
@@ -55,11 +42,6 @@ const Dashboard = () => {
       sessionStorage.setItem("welcomeShown", "true");
     }
   }, [authChecked, welcomeShown]);
-
-  const handleSaveCompanyName = () => {
-    setCompanyName(tempCompanyName);
-    setIsCompanyDialogOpen(false);
-  };
 
   // Calculate low stock items
   const lowStockItems = useMemo(() => {
@@ -254,40 +236,6 @@ const Dashboard = () => {
             Overview of your inventory system with AI-powered insights
           </p>
         </div>
-        
-        {/* Company Settings in top right */}
-        <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Company Settings
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Company Settings</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input
-                  id="company-name"
-                  value={tempCompanyName}
-                  onChange={(e) => setTempCompanyName(e.target.value)}
-                  placeholder="Enter your company name"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveCompanyName}>
-                  Save
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Stats Cards */}
