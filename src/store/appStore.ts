@@ -44,6 +44,7 @@ const useAppStore = createPersistedStore<AppState>(
     const companySlice = createCompanySlice(set, get);
     
     // Create sale slice with direct reference to client update function
+    // Pass the updateClientPurchase function with proper signature including transactionId
     const saleSlice = createSaleSlice(
       set, 
       get, 
@@ -57,8 +58,17 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // CRITICAL: Pass the EXACT client update function to prevent any wrapper calls
-      clientSlice.updateClientPurchase
+      // CRITICAL: Pass the EXACT client update function with transaction ID support
+      (clientName: string, amount: number, productName: string, quantity: number, transactionId?: string) => {
+        console.log("APP STORE: Routing client update with transaction ID:", { 
+          clientName, 
+          amount, 
+          productName, 
+          quantity, 
+          transactionId 
+        });
+        clientSlice.updateClientPurchase(clientName, amount, productName, quantity, transactionId);
+      }
     );
     
     const paymentSlice = createPaymentSlice(
@@ -66,8 +76,11 @@ const useAppStore = createPersistedStore<AppState>(
       get,
       // Give payment slice access to update client - but don't double count sales
       (clientName: string, amount: number) => {
+        // Generate unique transaction ID for payments
+        const transactionId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        console.log("APP STORE: Processing payment with transaction ID:", { clientName, amount, transactionId });
         // Only update for actual payments, not sales
-        clientSlice.updateClientPurchase(clientName, amount, "Payment", 1);
+        clientSlice.updateClientPurchase(clientName, amount, "Payment", 1, transactionId);
       }
     );
     
@@ -122,6 +135,22 @@ const useAppStore = createPersistedStore<AppState>(
       
       // ENSURE recordSale is the primary function (no addSale wrapper)
       addSale: saleSlice.recordSale,
+      
+      // Add debug function to clear processed transactions
+      clearProcessedTransactions: () => {
+        console.log("APP STORE: Clearing processed transactions");
+        if (clientSlice.clearProcessedTransactions) {
+          clientSlice.clearProcessedTransactions();
+        }
+      },
+      
+      // Add function to recalculate client totals
+      recalculateClientTotals: (clientId: number) => {
+        console.log("APP STORE: Recalculating client totals for:", clientId);
+        if (clientSlice.recalculateClientTotals) {
+          clientSlice.recalculateClientTotals(clientId);
+        }
+      },
       
       // Set up realtime updates for the current user
       setupRealtimeUpdates: (userId: string): (() => void) => {

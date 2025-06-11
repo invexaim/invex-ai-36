@@ -9,7 +9,7 @@ export const createSaleSlice = (
   get: any, 
   getProducts: () => Product[], 
   updateProduct: (updatedProduct: Product) => void,
-  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number) => void
+  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number, transactionId?: string) => void
 ) => ({
   sales: [],
   
@@ -30,6 +30,10 @@ export const createSaleSlice = (
       return null;
     }
     
+    // Generate unique transaction ID for this sale
+    const transactionId = `sale-${Date.now()}-${saleData.product_id}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log("SALE RECORD: Starting sale with transaction ID:", transactionId);
+    
     // Create new sale
     let newSale: Sale;
     
@@ -42,10 +46,20 @@ export const createSaleSlice = (
         sale_date: new Date().toISOString(),
         product,
         clientId: saleData.clientId,
-        clientName: saleData.clientName
+        clientName: saleData.clientName,
+        transactionId // Add transaction ID to sale record
       };
       
       const clientInfo = saleData.clientName ? ` to ${saleData.clientName}` : '';
+      console.log("SALE RECORD: Created sale record:", {
+        saleId: newSale.sale_id,
+        transactionId,
+        clientName: saleData.clientName,
+        product: product.product_name,
+        quantity: saleData.quantity_sold,
+        price: saleData.selling_price
+      });
+      
       toast.success(`Sale recorded successfully: ${saleData.quantity_sold} ${product.product_name}(s)${clientInfo}`);
       
       return { 
@@ -61,19 +75,35 @@ export const createSaleSlice = (
       units: newUnits.toString() 
     };
     
+    console.log("SALE RECORD: Updating product stock:", {
+      productId: product.product_id,
+      oldUnits: currentUnits,
+      newUnits,
+      quantitySold: saleData.quantity_sold
+    });
+    
     updateProduct(updatedProduct);
     
-    // CRITICAL: Only update client purchase if client name exists and we haven't already updated
+    // CRITICAL: Only update client purchase if client name exists and we have a transaction ID
     if (saleData.clientName && saleData.clientName.trim()) {
-      console.log("Recording sale - updating client purchase ONCE:", { 
+      console.log("SALE RECORD: Updating client purchase with transaction ID:", { 
         clientName: saleData.clientName, 
         amount: saleData.selling_price, 
         productName: product.product_name, 
-        quantity: saleData.quantity_sold 
+        quantity: saleData.quantity_sold,
+        transactionId
       });
       
-      // Call the update function only once here
-      updateClientPurchase(saleData.clientName, saleData.selling_price, product.product_name, saleData.quantity_sold);
+      // Call the update function with transaction ID to prevent duplicates
+      updateClientPurchase(
+        saleData.clientName, 
+        saleData.selling_price, 
+        product.product_name, 
+        saleData.quantity_sold,
+        transactionId
+      );
+    } else {
+      console.log("SALE RECORD: No client specified, skipping client update");
     }
     
     return newSale;
@@ -89,6 +119,12 @@ export const createSaleSlice = (
       return;
     }
     
+    console.log("SALE DELETE: Deleting sale:", {
+      saleId,
+      transactionId: saleToDelete.transactionId,
+      clientName: saleToDelete.clientName
+    });
+    
     // Update product stock in the product store
     const products = getProducts();
     const product = products.find(p => p.product_id === saleToDelete.product_id);
@@ -101,6 +137,13 @@ export const createSaleSlice = (
         units: newUnits.toString() 
       };
       
+      console.log("SALE DELETE: Restoring product stock:", {
+        productId: product.product_id,
+        oldUnits: currentUnits,
+        newUnits,
+        quantityRestored: saleToDelete.quantity_sold
+      });
+      
       updateProduct(updatedProduct);
     }
     
@@ -111,6 +154,10 @@ export const createSaleSlice = (
         sales: state.sales.filter(sale => sale.sale_id !== saleId)
       };
     });
+    
+    // Note: We don't reverse the client purchase here as it would require
+    // more complex logic to handle the transaction ID and ensure consistency
+    console.log("SALE DELETE: Sale deletion complete, client totals not automatically adjusted");
   }
 });
 

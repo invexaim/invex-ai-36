@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -35,7 +36,8 @@ export interface Sale {
   product?: Product;
   clientId?: number;
   clientName?: string;
-  relatedSaleId?: number; // Add reference to related sale
+  relatedSaleId?: number;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface ProductPurchase {
@@ -43,6 +45,7 @@ export interface ProductPurchase {
   quantity: number;
   amount: number;
   purchaseDate: string;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface Client {
@@ -79,6 +82,7 @@ export interface Payment {
   city?: string;
   state?: string;
   pincode?: string;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface InventoryAnalysis {
@@ -145,11 +149,14 @@ export interface SaleState {
 
 export interface ClientState {
   clients: Client[];
+  processedTransactions?: Set<string>; // Track processed transactions
   setClients: (clients: Client[]) => void;
   addClient: (client: Omit<Client, 'id' | 'totalPurchases' | 'totalSpent' | 'lastPurchase' | 'joinDate' | 'openInvoices' | 'purchaseHistory'>) => void;
-  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number) => void;
+  updateClientPurchase: (clientName: string, amount: number, productName: string, quantity: number, transactionId?: string) => void;
   deleteClient: (clientId: number) => void;
   removeClient: (clientId: number) => void;
+  recalculateClientTotals?: (clientId: number) => void;
+  clearProcessedTransactions?: () => void;
 }
 
 export interface PaymentState {
