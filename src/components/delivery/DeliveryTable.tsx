@@ -62,6 +62,20 @@ export function DeliveryTable({
     }
   };
 
+  // Sort challans by challan number in descending order (newest first)
+  const sortedChallans = [...challans].sort((a, b) => {
+    // Extract number from challan number (e.g., "DC-123456" -> 123456)
+    const extractNumber = (challanNo: string) => {
+      const match = challanNo.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
+    
+    const aNum = extractNumber(a.challanNo);
+    const bNum = extractNumber(b.challanNo);
+    
+    return bNum - aNum; // Descending order
+  });
+
   return (
     <Card className="p-0">
       <Table>
@@ -76,7 +90,7 @@ export function DeliveryTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {challans.map((challan) => (
+          {sortedChallans.map((challan) => (
             <TableRow key={challan.id}>
               <TableCell>
                 {new Date(challan.date).toLocaleDateString()}
