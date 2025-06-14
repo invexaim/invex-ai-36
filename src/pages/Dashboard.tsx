@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Package, Users, CreditCard, TrendingUp, Calendar } from "lucide-react";
+import { Package, Users, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/LineChart";
@@ -16,7 +17,8 @@ const Dashboard = () => {
     sales, 
     payments,
     productExpiries,
-    getExpiringProducts
+    getExpiringProducts,
+    getExpiredProducts
   } = useAppStore();
 
   // Calculate today's revenue
@@ -30,8 +32,11 @@ const Dashboard = () => {
     parseInt(product.units as string) < product.reorder_level
   ).length;
 
-  // Calculate expiring soon items
+  // Calculate expiring soon items (7 days)
   const expiringSoonItems = getExpiringProducts(7).length;
+  
+  // Calculate expired items
+  const expiredItems = getExpiredProducts().length;
 
   const stats = [
     {
@@ -56,7 +61,23 @@ const Dashboard = () => {
       title: "Expiring Soon",
       value: expiringSoonItems,
       icon: <Calendar className="h-5 w-5 text-warning" />,
-      onClick: () => navigate("/expiry"),
+      onClick: () => navigate("/expiry?filter=expiring"),
+    },
+  ];
+
+  // Additional expiry stats for bottom section
+  const expiryStats = [
+    {
+      title: "Expiring Products",
+      value: expiringSoonItems,
+      icon: <Calendar className="h-5 w-5 text-warning" />,
+      onClick: () => navigate("/expiry?filter=expiring"),
+    },
+    {
+      title: "Expired Products", 
+      value: expiredItems,
+      icon: <AlertTriangle className="h-5 w-5 text-destructive" />,
+      onClick: () => navigate("/expiry?filter=expired"),
     },
   ];
 
@@ -83,7 +104,6 @@ const Dashboard = () => {
     return last7Days;
   };
 
-  // Updated: Prepare Revenue by Category data - show ALL categories with sales
   const prepareRevenueByCategory = () => {
     const categoryRevenue = new Map();
     
@@ -95,14 +115,12 @@ const Dashboard = () => {
       categoryRevenue.set(category, (categoryRevenue.get(category) || 0) + revenue);
     });
     
-    // Return ALL categories with sales (not just top 5), sorted by revenue
     return Array.from(categoryRevenue.entries())
-      .filter(([name, sales]) => sales > 0) // Only include categories with actual sales
-      .sort((a, b) => b[1] - a[1]) // Sort by revenue (highest first)
+      .filter(([name, sales]) => sales > 0)
+      .sort((a, b) => b[1] - a[1])
       .map(([name, sales]) => ({ name, sales }));
   };
 
-  // Prepare Weekly Analysis data
   const prepareWeeklyAnalysis = () => {
     const totalInventoryValue = products.reduce((sum, product) => 
       sum + (product.price * parseInt(product.units as string)), 0
@@ -159,7 +177,7 @@ const Dashboard = () => {
           <p className="text-sm text-muted-foreground">
             You have {expiringSoonItems} product{expiringSoonItems > 1 ? 's' : ''} expiring within the next 7 days. 
             <button 
-              onClick={() => navigate("/expiry")} 
+              onClick={() => navigate("/expiry?filter=expiring")} 
               className="ml-1 text-warning hover:underline font-medium"
             >
               View details
@@ -244,6 +262,23 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* New Expiry Stats Section */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Product Expiry Overview</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {expiryStats.map((stat, index) => (
+            <CardStat
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              onClick={stat.onClick}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

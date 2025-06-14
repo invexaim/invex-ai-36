@@ -1,15 +1,22 @@
 
+import React from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ExpiryHeaderProps {
   onAddExpiry: () => void;
   searchTerm: string;
-  onSearchChange: (term: string) => void;
+  onSearchChange: (value: string) => void;
   statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
+  onStatusFilterChange: (value: string) => void;
 }
 
 export const ExpiryHeader = ({
@@ -17,45 +24,45 @@ export const ExpiryHeader = ({
   searchTerm,
   onSearchChange,
   statusFilter,
-  onStatusFilterChange
+  onStatusFilterChange,
 }: ExpiryHeaderProps) => {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Product Expiry</h1>
-          <p className="text-muted-foreground">
-            Track and manage product expiration dates to minimize waste and ensure quality.
-          </p>
-        </div>
-        <Button onClick={onAddExpiry} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Expiry
-        </Button>
+    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Product Expiry</h1>
+        <p className="text-muted-foreground">
+          Track and manage product expiration dates
+        </p>
       </div>
 
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search products or batch numbers..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full sm:w-[250px]"
           />
         </div>
-        
+
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="expiring">Expiring Soon</SelectItem>
             <SelectItem value="expired">Expired</SelectItem>
             <SelectItem value="disposed">Disposed</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button onClick={onAddExpiry} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Expiry Record
+        </Button>
       </div>
     </div>
   );
