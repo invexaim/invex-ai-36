@@ -3,9 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import EstimateInfoCard from "./form/EstimateInfoCard";
 import SaleFormContent from "./form/SaleFormContent";
-import LoadingState from "./form/LoadingState";
 import { useSaleFormSimple } from "./hooks/useSaleFormSimple";
-import { useFormReadiness } from "./hooks/useFormReadiness";
 import { useFormSubmission } from "./hooks/useFormSubmission";
 import useAppStore from "@/store/appStore";
 
@@ -19,7 +17,8 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     products, 
     clients, 
     addClient, 
-    pendingEstimateForSale 
+    pendingEstimateForSale,
+    recordSale 
   } = useAppStore();
   
   const {
@@ -35,30 +34,34 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     isInitialized
   } = useSaleFormSimple(isFromEstimate);
 
-  const { isFormReady, hasProducts, hasRecordSale, hasPendingEstimate } = useFormReadiness(
-    isFromEstimate,
-    isInitialized
-  );
-
   const { isSubmitting, handleSubmit } = useFormSubmission(onClose, isFromEstimate);
+
+  // Simple validation - show error if critical data is missing
+  if (!products || products.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600 mb-4">No products available</p>
+        <p className="text-sm text-muted-foreground">Please add products before recording sales.</p>
+        <Button onClick={onClose} className="mt-4">Close</Button>
+      </div>
+    );
+  }
+
+  if (!recordSale || typeof recordSale !== 'function') {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-600 mb-4">Sales system not ready</p>
+        <p className="text-sm text-muted-foreground">Please refresh the page and try again.</p>
+        <Button onClick={onClose} className="mt-4">Close</Button>
+      </div>
+    );
+  }
 
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
 
   const onSubmit = async () => {
     await handleSubmit(newSaleData, validateForm, estimateInfo, moveToNextItem);
   };
-
-  if (!isFormReady) {
-    return (
-      <LoadingState
-        hasProducts={hasProducts}
-        hasRecordSale={hasRecordSale}
-        isFromEstimate={isFromEstimate}
-        hasPendingEstimate={hasPendingEstimate}
-        isInitialized={isInitialized}
-      />
-    );
-  }
 
   return (
     <ScrollArea className="h-[80vh]">
@@ -90,7 +93,7 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={onSubmit} disabled={isSubmitting || !isFormReady}>
+          <Button onClick={onSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Recording..." : 
              estimateInfo && estimateInfo.hasMoreItems 
                ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`

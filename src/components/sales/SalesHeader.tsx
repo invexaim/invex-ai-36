@@ -22,7 +22,6 @@ const SalesHeader = ({
 }: SalesHeaderProps) => {
 
   const handleDialogOpenChange = (open: boolean) => {
-    console.log("SALES HEADER: Dialog open change:", { open, currentState: isRecordSaleOpen });
     if (!open) {
       onCloseDialog();
     }
@@ -67,9 +66,7 @@ const SalesHeader = ({
               {isFromEstimate ? "Record Sale from Estimate" : "Record New Sale"}
             </DialogTitle>
           </DialogHeader>
-          {isRecordSaleOpen && (
-            <RecordSaleForm onClose={onCloseDialog} isFromEstimate={isFromEstimate} />
-          )}
+          <RecordSaleForm onClose={onCloseDialog} isFromEstimate={isFromEstimate} />
         </DialogContent>
       </Dialog>
     </>
