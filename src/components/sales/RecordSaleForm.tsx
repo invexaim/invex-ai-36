@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
   } = useAppStore();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormReady, setIsFormReady] = useState(false);
   
   const {
     newSaleData,
@@ -40,33 +41,78 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     moveToNextItem
   } = useSaleFormSimple(isFromEstimate);
 
+  // Check if form is ready
+  useEffect(() => {
+    console.log("RECORD SALE FORM: Checking form readiness", {
+      hasProducts: !!products && products.length > 0,
+      hasClients: !!clients,
+      hasRecordSale: typeof recordSale === 'function',
+      isFromEstimate,
+      hasPendingEstimate: !!pendingEstimateForSale,
+      newSaleData
+    });
+
+    const ready = products && 
+                  clients && 
+                  typeof recordSale === 'function' &&
+                  (!isFromEstimate || pendingEstimateForSale);
+    
+    setIsFormReady(ready);
+    
+    if (!ready) {
+      console.warn("RECORD SALE FORM: Form not ready", {
+        missingProducts: !products || products.length === 0,
+        missingClients: !clients,
+        missingRecordSale: typeof recordSale !== 'function',
+        missingEstimate: isFromEstimate && !pendingEstimateForSale
+      });
+    }
+  }, [products, clients, recordSale, isFromEstimate, pendingEstimateForSale, newSaleData]);
+
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
 
   const handleSubmit = async () => {
-    console.log("RECORD SALE: Starting submission", { isFromEstimate, newSaleData });
+    console.log("RECORD SALE FORM: Starting submission", { 
+      isFromEstimate, 
+      newSaleData,
+      isFormReady,
+      isSubmitting 
+    });
+    
+    if (!isFormReady) {
+      toast.error("Form is not ready. Please wait or refresh the page.");
+      return;
+    }
     
     if (isSubmitting) {
       toast.warning("Sale recording in progress...");
       return;
     }
 
+    // Validate form data
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    if (!recordSale || typeof recordSale !== 'function') {
-      toast.error("Sale recording system not available");
-      return;
+    // Additional validation for stock
+    if (selectedProduct) {
+      const availableStock = parseInt(selectedProduct.units as string);
+      if (availableStock < newSaleData.quantity_sold) {
+        toast.error(`Insufficient stock. Available: ${availableStock}, Required: ${newSaleData.quantity_sold}`);
+        return;
+      }
     }
 
     setIsSubmitting(true);
     
     try {
+      console.log("RECORD SALE FORM: Calling recordSale with data:", newSaleData);
       const result = recordSale(newSaleData);
+      console.log("RECORD SALE FORM: recordSale result:", result);
       
-      if (result) {
-        console.log("RECORD SALE: Sale recorded successfully:", result);
+      if (result && result.sale_id) {
+        console.log("RECORD SALE FORM: Sale recorded successfully:", result);
         
         // Handle estimate flow
         if (estimateInfo && estimateInfo.hasMoreItems) {
@@ -83,7 +129,11 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
           isFromEstimate: !!pendingEstimateForSale
         };
         
-        setPendingSalePayment(saleWithEstimateInfo);
+        if (typeof setPendingSalePayment === 'function') {
+          setPendingSalePayment(saleWithEstimateInfo);
+        } else {
+          console.error("RECORD SALE FORM: setPendingSalePayment not available");
+        }
         
         // Clear estimate if complete
         if (isFromEstimate) {
@@ -98,15 +148,33 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
         }, 100);
         
       } else {
-        toast.error("Failed to record sale");
+        console.error("RECORD SALE FORM: recordSale failed, result:", result);
+        toast.error("Failed to record sale. Please try again.");
       }
     } catch (error) {
-      console.error("RECORD SALE: Error:", error);
+      console.error("RECORD SALE FORM: Error during submission:", error);
       toast.error("An error occurred while recording the sale");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading state if form is not ready
+  if (!isFormReady) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <p className="text-muted-foreground">Preparing form...</p>
+          {!products || products.length === 0 && (
+            <p className="text-sm text-red-600 mt-2">No products available</p>
+          )}
+          {typeof recordSale !== 'function' && (
+            <p className="text-sm text-red-600 mt-2">Sales system not ready</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ScrollArea className="h-[80vh]">
@@ -122,8 +190,8 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
           isFromEstimate={isFromEstimate}
           estimateInfo={estimateInfo}
           selectedProduct={selectedProduct}
-          products={products}
-          clients={clients}
+          products={products || []}
+          clients={clients || []}
           newSaleData={newSaleData}
           formErrors={formErrors}
           isSubmitting={isSubmitting}
@@ -138,7 +206,7 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !isFormReady}>
             {isSubmitting ? "Recording..." : 
              estimateInfo && estimateInfo.hasMoreItems 
                ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`

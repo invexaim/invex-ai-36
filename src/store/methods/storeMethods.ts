@@ -54,26 +54,51 @@ export const createStoreMethods = (
     recordSale: (...args) => {
       console.log("STORE METHODS: recordSale called with args:", args);
       
-      // Validate slices availability
-      if (!slices) {
-        console.error("STORE METHODS: No slices available");
-        return null;
-      }
-      
-      if (!slices.saleSlice) {
-        console.error("STORE METHODS: Sale slice not available");
-        console.error("STORE METHODS: Available slices:", Object.keys(slices));
-        return null;
-      }
-      
-      if (typeof slices.saleSlice.recordSale !== 'function') {
-        console.error("STORE METHODS: Sale slice recordSale function not available");
-        console.error("STORE METHODS: Sale slice contents:", Object.keys(slices.saleSlice));
-        return null;
-      }
-      
       try {
-        console.log("STORE METHODS: Calling sale slice recordSale function");
+        // Validate current state
+        const currentState = get();
+        if (!currentState) {
+          console.error("STORE METHODS: Current state is null/undefined");
+          return null;
+        }
+        
+        // Validate slices availability
+        if (!slices) {
+          console.error("STORE METHODS: No slices available");
+          return null;
+        }
+        
+        if (!slices.saleSlice) {
+          console.error("STORE METHODS: Sale slice not available");
+          console.error("STORE METHODS: Available slices:", Object.keys(slices));
+          return null;
+        }
+        
+        if (typeof slices.saleSlice.recordSale !== 'function') {
+          console.error("STORE METHODS: Sale slice recordSale function not available");
+          console.error("STORE METHODS: Sale slice contents:", Object.keys(slices.saleSlice));
+          return null;
+        }
+        
+        // Validate arguments
+        if (!args || args.length === 0) {
+          console.error("STORE METHODS: No arguments provided to recordSale");
+          return null;
+        }
+        
+        const saleData = args[0];
+        if (!saleData || typeof saleData !== 'object') {
+          console.error("STORE METHODS: Invalid sale data provided:", saleData);
+          return null;
+        }
+        
+        // Validate required sale data fields
+        if (!saleData.product_id || !saleData.quantity_sold || !saleData.selling_price) {
+          console.error("STORE METHODS: Missing required sale data fields:", saleData);
+          return null;
+        }
+        
+        console.log("STORE METHODS: All validations passed, calling sale slice recordSale");
         const result = slices.saleSlice.recordSale(...args);
         console.log("STORE METHODS: recordSale result:", result);
         
@@ -89,6 +114,7 @@ export const createStoreMethods = (
         }
       } catch (error) {
         console.error("STORE METHODS: Error in recordSale wrapper:", error);
+        console.error("STORE METHODS: Error stack:", error instanceof Error ? error.stack : 'No stack trace');
         return null;
       }
     },

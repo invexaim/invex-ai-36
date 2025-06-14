@@ -37,35 +37,57 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
   });
 
   const [currentEstimateItem, setCurrentEstimateItem] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize form based on mode
   useEffect(() => {
+    console.log("SALE FORM SIMPLE: Initializing form", {
+      isFromEstimate,
+      hasPendingEstimate: !!pendingEstimateForSale,
+      estimateItemsCount: pendingEstimateForSale?.items?.length || 0,
+      currentEstimateItem,
+      productsCount: products?.length || 0
+    });
+
     if (isFromEstimate && pendingEstimateForSale?.items?.length > 0) {
-      console.log("SALE FORM: Initializing with estimate data");
+      console.log("SALE FORM SIMPLE: Initializing with estimate data");
       const currentItem = pendingEstimateForSale.items[currentEstimateItem];
+      console.log("SALE FORM SIMPLE: Current estimate item:", currentItem);
+      
+      if (!currentItem) {
+        console.error("SALE FORM SIMPLE: No current item found");
+        toast.error("No estimate item found");
+        setIsInitialized(true);
+        return;
+      }
       
       // Find product by ID first, then by name
       let matchedProduct = null;
       if (currentItem.product_id) {
-        matchedProduct = products.find(p => p.product_id === currentItem.product_id);
+        matchedProduct = products?.find(p => p.product_id === currentItem.product_id);
       }
       if (!matchedProduct && currentItem.name) {
-        matchedProduct = products.find(p => p.product_name === currentItem.name);
+        matchedProduct = products?.find(p => p.product_name === currentItem.name);
       }
       
+      console.log("SALE FORM SIMPLE: Matched product:", matchedProduct);
+      
       if (matchedProduct) {
-        setNewSaleData({
+        const newData = {
           product_id: matchedProduct.product_id,
           quantity_sold: currentItem.quantity || 1,
           selling_price: currentItem.price || matchedProduct.price,
           clientId: 0,
           clientName: pendingEstimateForSale.clientName || "",
-        });
+        };
+        console.log("SALE FORM SIMPLE: Setting estimate data:", newData);
+        setNewSaleData(newData);
       } else {
+        console.error("SALE FORM SIMPLE: Product not found for item:", currentItem);
         toast.error(`Product "${currentItem.name}" not found in inventory`);
       }
-    } else {
-      console.log("SALE FORM: Initializing regular sale");
+    } else if (!isFromEstimate) {
+      console.log("SALE FORM SIMPLE: Initializing regular sale");
       setNewSaleData({
         product_id: 0,
         quantity_sold: 1,
@@ -74,9 +96,13 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
         clientName: "",
       });
     }
+    
+    setIsInitialized(true);
   }, [isFromEstimate, pendingEstimateForSale, currentEstimateItem, products]);
 
   const validateForm = () => {
+    console.log("SALE FORM SIMPLE: Validating form", { newSaleData, isFromEstimate });
+    
     const errors: FormErrors = {
       product_id: !newSaleData.product_id,
       quantity_sold: newSaleData.quantity_sold <= 0,
@@ -84,11 +110,17 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
       clientName: !isFromEstimate && !newSaleData.clientName.trim()
     };
     
+    console.log("SALE FORM SIMPLE: Validation errors:", errors);
     setFormErrors(errors);
-    return !Object.values(errors).some(error => error);
+    
+    const isValid = !Object.values(errors).some(error => error);
+    console.log("SALE FORM SIMPLE: Form is valid:", isValid);
+    
+    return isValid;
   };
 
   const handleProductChange = (productId: number, price: number) => {
+    console.log("SALE FORM SIMPLE: Product change", { productId, price });
     setNewSaleData(prev => ({
       ...prev,
       product_id: productId,
@@ -98,6 +130,7 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
   };
 
   const handleClientChange = (clientId: number, clientName: string) => {
+    console.log("SALE FORM SIMPLE: Client change", { clientId, clientName });
     setNewSaleData(prev => ({
       ...prev,
       clientId: clientId,
@@ -107,11 +140,13 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
   };
 
   const handleQuantityChange = (quantity: number) => {
+    console.log("SALE FORM SIMPLE: Quantity change", { quantity });
     setNewSaleData(prev => ({ ...prev, quantity_sold: quantity }));
     setFormErrors(prev => ({ ...prev, quantity_sold: quantity <= 0 }));
   };
 
   const handlePriceChange = (price: number) => {
+    console.log("SALE FORM SIMPLE: Price change", { price });
     setNewSaleData(prev => ({ ...prev, selling_price: price }));
     setFormErrors(prev => ({ ...prev, selling_price: price <= 0 }));
   };
@@ -128,8 +163,15 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
   };
 
   const moveToNextItem = () => {
-    if (currentEstimateItem < (pendingEstimateForSale?.items?.length || 0) - 1) {
+    const maxItems = pendingEstimateForSale?.items?.length || 0;
+    console.log("SALE FORM SIMPLE: Moving to next item", { 
+      currentIndex: currentEstimateItem, 
+      maxItems 
+    });
+    
+    if (currentEstimateItem < maxItems - 1) {
       setCurrentEstimateItem(prev => prev + 1);
+      setIsInitialized(false); // Trigger re-initialization
     }
   };
 
@@ -143,6 +185,7 @@ export const useSaleFormSimple = (isFromEstimate: boolean = false) => {
     handlePriceChange,
     estimateInfo: getEstimateInfo(),
     moveToNextItem,
-    isFromEstimate
+    isFromEstimate,
+    isInitialized
   };
 };
