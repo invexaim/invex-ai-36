@@ -14,11 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Product } from "@/types";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Plus } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import { AddCategoryDialog } from "./AddCategoryDialog";
 
@@ -33,7 +29,7 @@ export const AddProductDialog = ({
   onOpenChange,
   onAddProduct,
 }: AddProductDialogProps) => {
-  const { categories = [], addProductExpiry, products } = useAppStore();
+  const { categories = [], products } = useAppStore();
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -42,12 +38,6 @@ export const AddProductDialog = ({
     price: 0,
     units: "0",
     reorder_level: 5,
-  });
-
-  const [expiryData, setExpiryData] = useState({
-    expiry_date: undefined as Date | undefined,
-    batch_number: "",
-    expiry_quantity: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -62,17 +52,8 @@ export const AddProductDialog = ({
     }
   };
 
-  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setExpiryData({ ...expiryData, [name]: value });
-  };
-
   const handleCategoryChange = (value: string) => {
     setFormData({ ...formData, category: value });
-  };
-
-  const handleExpiryDateChange = (date: Date | undefined) => {
-    setExpiryData({ ...expiryData, expiry_date: date });
   };
 
   const resetForm = () => {
@@ -82,11 +63,6 @@ export const AddProductDialog = ({
       price: 0,
       units: "0",
       reorder_level: 5,
-    });
-    setExpiryData({
-      expiry_date: undefined,
-      batch_number: "",
-      expiry_quantity: "",
     });
   };
 
@@ -112,46 +88,9 @@ export const AddProductDialog = ({
       return;
     }
 
-    // Validate expiry data if provided
-    if (expiryData.expiry_date) {
-      if (expiryData.expiry_date <= new Date()) {
-        toast.error("Expiry date must be in the future");
-        return;
-      }
-
-      const expiryQuantity = parseInt(expiryData.expiry_quantity) || parseInt(formData.units);
-      if (expiryQuantity <= 0) {
-        toast.error("Expiry quantity must be greater than zero");
-        return;
-      }
-
-      if (expiryQuantity > parseInt(formData.units)) {
-        toast.error("Expiry quantity cannot exceed total units");
-        return;
-      }
-    }
-
-    // Calculate the next product ID
-    const nextProductId = products.length > 0 ? Math.max(...products.map(p => p.product_id)) + 1 : 1;
-
     // Submit product
     onAddProduct(formData);
-    
-    // If expiry data is provided, add it to expiry tracking
-    if (expiryData.expiry_date) {
-      addProductExpiry({
-        product_id: nextProductId,
-        product_name: formData.product_name,
-        expiry_date: expiryData.expiry_date.toISOString().split('T')[0],
-        batch_number: expiryData.batch_number || undefined,
-        quantity: parseInt(expiryData.expiry_quantity) || parseInt(formData.units),
-        notes: `Added with product creation`,
-      });
-      
-      toast.success(`Product added with expiry tracking`);
-    } else {
-      toast.success(`Product added successfully`);
-    }
+    toast.success("Product added successfully");
     
     // Reset form and close dialog
     resetForm();
@@ -208,39 +147,6 @@ export const AddProductDialog = ({
                 </Button>
               </div>
             </div>
-
-            {/* Expiry Date Field - moved between category and price */}
-            <div className="space-y-2">
-              <Label>Expiry Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !expiryData.expiry_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryData.expiry_date ? (
-                      format(expiryData.expiry_date, "PPP")
-                    ) : (
-                      <span>Pick expiry date (optional)</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expiryData.expiry_date}
-                    onSelect={handleExpiryDateChange}
-                    disabled={(date) => date <= new Date()}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
             
             <div className="space-y-2">
               <Label htmlFor="price">Price (₹)</Label>
@@ -281,34 +187,6 @@ export const AddProductDialog = ({
                 placeholder="Enter reorder level"
               />
             </div>
-
-            {/* Additional expiry fields - shown only when expiry date is selected */}
-            {expiryData.expiry_date && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label htmlFor="batch_number">Batch Number (Optional)</Label>
-                  <Input
-                    id="batch_number"
-                    name="batch_number"
-                    value={expiryData.batch_number}
-                    onChange={handleExpiryChange}
-                    placeholder="e.g., BATCH001"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expiry_quantity">Expiry Quantity</Label>
-                  <Input
-                    id="expiry_quantity"
-                    name="expiry_quantity"
-                    type="number"
-                    min="1"
-                    value={expiryData.expiry_quantity}
-                    onChange={handleExpiryChange}
-                    placeholder={formData.units || "0"}
-                  />
-                </div>
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>

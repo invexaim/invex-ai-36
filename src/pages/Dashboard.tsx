@@ -1,5 +1,6 @@
+
 import React from "react";
-import { Package, Users, CreditCard, TrendingUp, Calendar } from "lucide-react";
+import { Package, Users, CreditCard, TrendingUp } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/LineChart";
@@ -14,8 +15,7 @@ const Dashboard = () => {
     products, 
     clients, 
     sales, 
-    payments,
-    productExpiries 
+    payments
   } = useAppStore();
 
   // Calculate today's revenue
@@ -23,14 +23,6 @@ const Dashboard = () => {
   const todaysRevenue = sales
     .filter(sale => new Date(sale.sale_date).toDateString() === today)
     .reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
-
-  // Calculate expiring products (next 30 days)
-  const next30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const expiringProducts = productExpiries.filter(item => 
-    new Date(item.expiry_date) <= next30Days && 
-    new Date(item.expiry_date) >= new Date() &&
-    item.status === 'active'
-  ).length;
 
   // Calculate low stock items
   const lowStockItems = products.filter(product => 
@@ -60,13 +52,7 @@ const Dashboard = () => {
       title: "Low Stock Items",
       value: lowStockItems,
       icon: <CreditCard className="h-5 w-5 text-warning" />,
-      onClick: () => navigate("/products/low-stock"),
-    },
-    {
-      title: "Expiring Products",
-      value: expiringProducts,
-      icon: <Calendar className="h-5 w-5 text-orange-500" />,
-      onClick: () => navigate("/expiry"),
+      onClick: () => navigate("/products"),
     },
   ];
 
@@ -146,7 +132,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid - matching the layout from your image */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <CardStat
             key={index}
