@@ -28,22 +28,17 @@ export function EstimatePrintHeader() {
         </div>
         
         {/* Contact Details - Right aligned */}
-        <div className="text-right text-xs text-gray-600 space-y-1 flex-shrink-0 min-w-[200px]">
-          {details.phone && <p>Mobile: {details.phone}</p>}
+        <div className="text-right text-xs text-gray-600 space-y-1 flex-shrink-0 min-w-[300px]">
+          {address.street && <p>{address.street}</p>}
+          {address.city && (
+            <p>
+              {address.city}
+              {address.state && `, ${address.state}`}
+            </p>
+          )}
+          {details.phone && <p>Phone no.: {details.phone}</p>}
           {details.email && <p>Email: {details.email}</p>}
           {details.taxId && <p>GSTIN: {details.taxId}</p>}
-          {address.street && (
-            <div className="mt-2">
-              <p>{address.street}</p>
-              {address.aptSuite && <p>{address.aptSuite}</p>}
-              <p>
-                {address.city}
-                {address.state && `, ${address.state}`}
-                {address.postalCode && ` ${address.postalCode}`}
-              </p>
-              {address.country && <p>{address.country}</p>}
-            </div>
-          )}
         </div>
       </div>
       
@@ -52,7 +47,7 @@ export function EstimatePrintHeader() {
       
       {/* ESTIMATE title - centered */}
       <div className="text-center mb-4">
-        <h2 className="text-xl font-bold text-blue-600">ESTIMATE</h2>
+        <h2 className="text-xl font-bold">Tax Invoice</h2>
       </div>
     </div>
   );

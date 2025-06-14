@@ -1,3 +1,4 @@
+
 import React from 'react';
 import useCompanyStore from '@/store/slices/companySlice';
 
@@ -11,8 +12,7 @@ export function EstimateTermsSection({ estimate }: EstimateTermsSectionProps) {
   };
 
   const subTotal = calculateSubTotal();
-  const taxAmount = subTotal * 0.18;
-  const grandTotal = subTotal + taxAmount;
+  const grandTotal = subTotal;
 
   // Convert number to words (simplified for Indian numbering)
   const numberToWords = (num: number): string => {
@@ -30,42 +30,77 @@ export function EstimateTermsSection({ estimate }: EstimateTermsSectionProps) {
     return 'Amount too large';
   };
 
-  const amountInWords = numberToWords(Math.floor(grandTotal)) + ' Rupees Only';
+  const amountInWords = numberToWords(Math.floor(grandTotal)) + ' Rupees only';
 
   return (
     <>
-      {/* Three-column summary section */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      {/* Two-column summary section */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
         {/* Amount in Words */}
         <div>
-          <h3 className="font-bold text-sm mb-2 text-blue-600">Estimate Amount In Words:</h3>
-          <div className="border border-gray-300 p-3 min-h-[80px] bg-gray-50">
+          <h3 className="font-bold text-sm mb-2 bg-blue-600 text-white p-2">Invoice Amount In Words</h3>
+          <div className="border border-gray-300 p-3 bg-gray-50">
             <p className="text-sm font-semibold">{amountInWords}</p>
           </div>
         </div>
         
+        {/* Amounts Summary */}
+        <div>
+          <h3 className="font-bold text-sm mb-2 bg-blue-600 text-white p-2">Amounts</h3>
+          <div className="border border-gray-300 p-3 bg-gray-50 space-y-2">
+            <div className="flex justify-between">
+              <span>Sub Total</span>
+              <span>₹ {subTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span>₹ {grandTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Received</span>
+              <span>₹ 0.00</span>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <span>Balance</span>
+              <span>₹ {grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Two-column terms and signature section */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
         {/* Terms & Conditions */}
         <div>
-          <h3 className="font-bold text-sm mb-2 text-blue-600">Terms & Conditions:</h3>
-          <div className="border border-gray-300 p-3 min-h-[80px] bg-gray-50">
+          <h3 className="font-bold text-sm mb-2 bg-blue-600 text-white p-2">Terms and Conditions</h3>
+          <div className="border border-gray-300 p-3 bg-gray-50">
             <div className="text-xs space-y-1">
-              <p>1. Goods once sold will not be taken back.</p>
-              <p>2. Interest @ 18% p.a. will be charged if the payment is not made within due date.</p>
-              <p>3. Subject to jurisdiction only.</p>
-              {estimate.terms && <p>4. {estimate.terms}</p>}
+              <p>Thanks for doing business with us!</p>
+              {estimate.terms && <p>{estimate.terms}</p>}
             </div>
           </div>
         </div>
         
         {/* Company Signature */}
-        <div>
-          <h3 className="font-bold text-sm mb-2 text-blue-600">For: {useCompanyStore.getState().details.companyName || 'Your Company Name'}</h3>
-          <div className="border border-gray-300 p-3 min-h-[80px] bg-gray-50 flex flex-col justify-end">
-            <div className="mt-8 text-center">
-              <div className="border-t border-gray-600 pt-2 mx-4">
-                <p className="text-xs font-semibold">Authorized Signatory</p>
-              </div>
+        <div className="text-center">
+          <h3 className="font-bold text-sm mb-2">For: {useCompanyStore.getState().details.companyName || 'Your Company Name'}</h3>
+          <div className="mt-16">
+            <div className="border-t border-gray-600 pt-2 mx-4">
+              <p className="text-sm font-semibold">Authorized Signatory</p>
             </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Bank Details if available */}
+      <div className="mb-6">
+        <h3 className="font-bold text-sm mb-2 bg-blue-600 text-white p-2">Bank Details</h3>
+        <div className="border border-gray-300 p-3 bg-gray-50">
+          <div className="text-xs space-y-1">
+            <p>Name: Please contact for bank details</p>
+            <p>Account No.: Available on request</p>
+            <p>IFSC code: Available on request</p>
+            <p>Account holder's name: {useCompanyStore.getState().details.companyName || 'Your Company Name'}</p>
           </div>
         </div>
       </div>
@@ -73,7 +108,7 @@ export function EstimateTermsSection({ estimate }: EstimateTermsSectionProps) {
       {/* Notes section if exists */}
       {estimate.notes && (
         <div className="mb-6">
-          <h3 className="font-bold text-sm mb-2 text-blue-600">Additional Notes:</h3>
+          <h3 className="font-bold text-sm mb-2 bg-blue-600 text-white p-2">Additional Notes</h3>
           <div className="border border-gray-300 p-3 bg-gray-50">
             <p className="text-sm">{estimate.notes}</p>
           </div>

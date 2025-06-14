@@ -119,70 +119,48 @@ export const generateReport = (
   const doc = new jsPDF();
   const { details, address, logo } = getCompanyInfo();
   
-  // Company Header Section
+  // Company Header Section - matching the new format
   let yPosition = 20;
   
-  // Add logo if available
-  if (logo.logoUrl) {
-    try {
-      // Note: In a real implementation, you'd need to convert the image to base64
-      // For now, we'll skip the logo in PDF but include space for it
-      yPosition += 20;
-    } catch (error) {
-      console.log('Could not add logo to PDF');
-    }
-  }
-  
-  // Company Name
+  // Company Name (centered)
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(details.companyName || 'Your Company Name', 20, yPosition);
-  yPosition += 10;
+  const companyName = details.companyName || 'Your Company Name';
+  const pageWidth = doc.internal.pageSize.width;
+  const textWidth = doc.getTextWidth(companyName);
+  doc.text(companyName, (pageWidth - textWidth) / 2, yPosition);
+  yPosition += 15;
   
-  // Company Contact Info
+  // Company Address and Contact (right aligned)
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   
+  const rightMargin = 190;
+  
+  if (address.street) {
+    doc.text(address.street, rightMargin, yPosition, { align: 'right' });
+    yPosition += 5;
+  }
+  
+  if (address.city) {
+    const cityLine = address.city + (address.state ? `, ${address.state}` : '');
+    doc.text(cityLine, rightMargin, yPosition, { align: 'right' });
+    yPosition += 5;
+  }
+  
   if (details.phone) {
-    doc.text(`Phone: ${details.phone}`, 20, yPosition);
+    doc.text(`Phone no.: ${details.phone}`, rightMargin, yPosition, { align: 'right' });
     yPosition += 5;
   }
   
   if (details.email) {
-    doc.text(`Email: ${details.email}`, 20, yPosition);
+    doc.text(`Email: ${details.email}`, rightMargin, yPosition, { align: 'right' });
     yPosition += 5;
   }
   
   if (details.taxId) {
-    doc.text(`GSTIN: ${details.taxId}`, 20, yPosition);
+    doc.text(`GSTIN: ${details.taxId}`, rightMargin, yPosition, { align: 'right' });
     yPosition += 5;
-  }
-  
-  // Company Address
-  if (address.street || address.city) {
-    const addressLine = [];
-    if (address.street) addressLine.push(address.street);
-    if (address.aptSuite) addressLine.push(address.aptSuite);
-    
-    if (addressLine.length > 0) {
-      doc.text(addressLine.join(', '), 20, yPosition);
-      yPosition += 5;
-    }
-    
-    const cityLine = [];
-    if (address.city) cityLine.push(address.city);
-    if (address.state) cityLine.push(address.state);
-    if (address.postalCode) cityLine.push(address.postalCode);
-    
-    if (cityLine.length > 0) {
-      doc.text(cityLine.join(', '), 20, yPosition);
-      yPosition += 5;
-    }
-    
-    if (address.country) {
-      doc.text(address.country, 20, yPosition);
-      yPosition += 5;
-    }
   }
   
   // Add separator line
@@ -191,11 +169,13 @@ export const generateReport = (
   doc.line(20, yPosition, 190, yPosition);
   yPosition += 15;
   
-  // Report Title and Date
+  // Report Title (centered)
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${reportType.toUpperCase()} Report`, 20, yPosition);
-  yPosition += 10;
+  const reportTitle = `${reportType.toUpperCase()} Report`;
+  const reportTitleWidth = doc.getTextWidth(reportTitle);
+  doc.text(reportTitle, (pageWidth - reportTitleWidth) / 2, yPosition);
+  yPosition += 15;
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
@@ -223,10 +203,18 @@ export const generateReport = (
     
     autoTable(doc, {
       startY: yPosition,
-      head: [['Product Name', 'Category', 'Stock', 'Price', 'Reorder Level']],
+      head: [['Item name', 'Category', 'Quantity', 'Price/ Unit', 'Reorder Level']],
       body: inventoryData,
       theme: 'grid',
-      styles: { fontSize: 10 }
+      styles: { 
+        fontSize: 10,
+        cellPadding: 3
+      },
+      headStyles: {
+        fillColor: [37, 99, 235], // Blue background
+        textColor: 255,
+        fontStyle: 'bold'
+      }
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 20;
@@ -240,7 +228,7 @@ export const generateReport = (
     yPosition += 10;
     
     const salesData = filteredSales.map(sale => [
-      format(new Date(sale.sale_date), 'yyyy-MM-dd'),
+      format(new Date(sale.sale_date), 'dd-MM-yyyy'),
       sale.product?.product_name || 'Unknown',
       sale.quantity_sold.toString(),
       `₹${sale.selling_price.toFixed(2)}`,
@@ -250,10 +238,18 @@ export const generateReport = (
     
     autoTable(doc, {
       startY: yPosition,
-      head: [['Date', 'Product', 'Quantity', 'Unit Price', 'Total', 'Client']],
+      head: [['Date', 'Item name', 'Quantity', 'Price/ Unit', 'Amount', 'Client']],
       body: salesData,
       theme: 'grid',
-      styles: { fontSize: 10 }
+      styles: { 
+        fontSize: 10,
+        cellPadding: 3
+      },
+      headStyles: {
+        fillColor: [37, 99, 235], // Blue background
+        textColor: 255,
+        fontStyle: 'bold'
+      }
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 20;
@@ -267,7 +263,7 @@ export const generateReport = (
     yPosition += 10;
     
     const paymentsData = filteredPayments.map(payment => [
-      format(new Date(payment.date), 'yyyy-MM-dd'),
+      format(new Date(payment.date), 'dd-MM-yyyy'),
       payment.clientName,
       `₹${payment.amount.toFixed(2)}`,
       payment.status,
@@ -280,7 +276,15 @@ export const generateReport = (
       head: [['Date', 'Client', 'Amount', 'Status', 'Method', 'Description']],
       body: paymentsData,
       theme: 'grid',
-      styles: { fontSize: 10 }
+      styles: { 
+        fontSize: 10,
+        cellPadding: 3
+      },
+      headStyles: {
+        fillColor: [37, 99, 235], // Blue background
+        textColor: 255,
+        fontStyle: 'bold'
+      }
     });
   }
   
