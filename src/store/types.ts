@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -197,6 +198,31 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
+export interface ProductExpiry {
+  id: string;
+  user_id: string;
+  product_id: number;
+  product_name: string;
+  expiry_date: string;
+  batch_number?: string;
+  quantity: number;
+  status: 'active' | 'expired' | 'disposed';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpiryState {
+  productExpiries: ProductExpiry[];
+  setProductExpiries: (expiries: ProductExpiry[]) => void;
+  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'status'>) => Promise<void>;
+  updateProductExpiryStatus: (id: string, status: 'active' | 'expired' | 'disposed') => Promise<void>;
+  deleteProductExpiry: (id: string) => Promise<void>;
+  loadProductExpiries: () => Promise<void>;
+}
+
+import { MeetingState } from './slices/meetingSlice';
+
 export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState, ExpiryState, MeetingState {
   // Additional state properties
   isSignedIn: boolean;
@@ -268,6 +294,9 @@ export interface AppState extends ProductState, SaleState, ClientState, PaymentS
   addCustomField: (field: any) => void;
   updateCustomField: (id: string, field: any) => void;
   removeCustomField: (id: string) => void;
+  
+  // Explicitly include loadProductExpiries in AppState
+  loadProductExpiries: () => Promise<void>;
 }
 
 // Add this helper function to check if a value is a valid user data row
@@ -282,27 +311,3 @@ export function isUserDataRow(value: any): boolean {
     'payments' in value
   );
 }
-
-export interface ProductExpiry {
-  id: string;
-  user_id: string;
-  product_id: number;
-  product_name: string;
-  expiry_date: string;
-  batch_number?: string;
-  quantity: number;
-  status: 'active' | 'expired' | 'disposed';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ExpiryState {
-  productExpiries: ProductExpiry[];
-  setProductExpiries: (expiries: ProductExpiry[]) => void;
-  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'status'>) => void;
-  updateProductExpiryStatus: (id: string, status: 'active' | 'expired' | 'disposed') => void;
-  deleteProductExpiry: (id: string) => void;
-}
-
-import { MeetingState } from './slices/meetingSlice';
