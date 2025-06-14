@@ -14,6 +14,7 @@ import Delivery from "@/pages/Delivery";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import Settings from "@/pages/Settings";
+import Expiry from "@/pages/Expiry";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -165,6 +166,14 @@ export const Router = () => {
           <ProtectedRoute>
             <MainLayout>
               <Delivery />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/expiry" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Expiry />
             </MainLayout>
           </ProtectedRoute>
         } />

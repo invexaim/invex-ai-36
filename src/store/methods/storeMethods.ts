@@ -1,127 +1,293 @@
-
 import { AppState } from '../types';
+import { supabase } from '@/lib/supabase';
+import { Product } from '@/types';
 
 export const createStoreMethods = (
-  set: any,
+  set: any, 
   get: any,
   setWithAutoSave: (fn: any) => void,
   slices: any,
   saveDataToSupabase: () => Promise<void>,
-  setupRealtimeUpdates: (userId: string) => (() => void)
+  setupRealtimeUpdates: (userId: string) => void
 ) => {
-  console.log("STORE METHODS: Creating store methods with slices:", Object.keys(slices));
-  console.log("STORE METHODS: Sale slice recordSale function:", typeof slices.saleSlice?.recordSale);
-  
-  return {
-    // Override set method for specific actions to trigger Supabase sync
-    setProducts: (products) => {
-      console.log("STORE: Setting products:", products.length);
-      setWithAutoSave({ products });
-    },
-    setSales: (sales) => {
-      console.log("STORE: Setting sales:", sales.length);
-      setWithAutoSave({ sales });
-    },
-    setClients: (clients) => {
-      console.log("STORE: Setting clients:", clients.length);
-      setWithAutoSave({ clients });
-    },
-    setPayments: (payments) => {
-      console.log("STORE: Setting payments:", payments.length);
-      setWithAutoSave({ payments });
-    },
-    setPendingSalePayment: (sale) => {
-      console.log("STORE METHODS: Setting pending sale payment:", sale);
-      set({ pendingSalePayment: sale });
-    },
-    setPendingEstimateForSale: (estimate) => {
-      console.log("STORE METHODS: Setting pending estimate for sale:", estimate);
-      set({ pendingEstimateForSale: estimate });
-    },
-    
-    // Initialize required state properties
-    isSignedIn: false,
-    setIsSignedIn: (isSignedIn) => set({ isSignedIn }),
-    isLoading: false,
-    setIsLoading: (isLoading) => set({ isLoading }),
-    pendingSalePayment: null,
-    pendingEstimateForSale: null,
-    
-    // Expose the saveDataToSupabase function
-    saveDataToSupabase,
-    
-    // PRIMARY recordSale function with comprehensive error handling
-    recordSale: (...args) => {
-      console.log("STORE METHODS: recordSale called with args:", args);
+  const recordSale = async (
+    productName: string, 
+    quantitySold: number, 
+    sellingPrice: number,
+    clientName: string
+  ) => {
+    try {
+      console.log("STORE METHODS: Recording sale:", { productName, quantitySold, sellingPrice, clientName });
       
-      // Validate slices availability
-      if (!slices) {
-        console.error("STORE METHODS: No slices available");
-        return null;
+      // Input validation
+      if (!productName || typeof productName !== 'string' || productName.trim() === '') {
+        console.error("STORE METHODS: Invalid product name");
+        return;
+      }
+      if (!quantitySold || typeof quantitySold !== 'number' || quantitySold <= 0) {
+        console.error("STORE METHODS: Invalid quantity sold");
+        return;
+      }
+      if (!sellingPrice || typeof sellingPrice !== 'number' || sellingPrice <= 0) {
+        console.error("STORE METHODS: Invalid selling price");
+        return;
+      }
+      if (!clientName || typeof clientName !== 'string' || clientName.trim() === '') {
+        console.error("STORE METHODS: Invalid client name");
+        return;
       }
       
-      if (!slices.saleSlice) {
-        console.error("STORE METHODS: Sale slice not available");
-        console.error("STORE METHODS: Available slices:", Object.keys(slices));
-        return null;
+      // Find the product by name
+      const product = get().products.find((p: Product) => p.product_name === productName);
+      if (!product) {
+        console.error("STORE METHODS: Product not found:", productName);
+        return;
       }
       
-      if (typeof slices.saleSlice.recordSale !== 'function') {
-        console.error("STORE METHODS: Sale slice recordSale function not available");
-        console.error("STORE METHODS: Sale slice contents:", Object.keys(slices.saleSlice));
-        return null;
+      // Check if there are enough units in stock
+      const availableUnits = parseInt(product.units as string);
+      if (availableUnits < quantitySold) {
+        console.error("STORE METHODS: Not enough units in stock");
+        return;
       }
       
-      try {
-        console.log("STORE METHODS: Calling sale slice recordSale function");
-        const result = slices.saleSlice.recordSale(...args);
-        console.log("STORE METHODS: recordSale result:", result);
-        
-        if (result && result.sale_id) {
-          console.log("STORE METHODS: Sale recorded successfully with ID:", result.sale_id);
-          return result;
-        } else if (result === null) {
-          console.error("STORE METHODS: recordSale returned null");
-          return null;
+      // Calculate the new number of units
+      const newUnits = availableUnits - quantitySold;
+      
+      // Update the product units
+      set((state: AppState) => ({
+        products: state.products.map(p =>
+          p.product_id === product.product_id ? { ...p, units: newUnits.toString() } : p
+        )
+      }));
+      
+      // Create a new sale object
+      const newSale = {
+        sale_id: Date.now().toString(), // Generate a unique ID
+        product_id: product.product_id,
+        product_name: productName,
+        quantity_sold: quantitySold,
+        selling_price: sellingPrice,
+        sale_date: new Date().toISOString(),
+        client_name: clientName
+      };
+      
+      // Add the new sale to the sales array
+      set((state: AppState) => ({
+        sales: [...state.sales, newSale]
+      }));
+      
+      // Update client purchase history
+      slices.saleSlice.updateClientPurchase(clientName, sellingPrice * quantitySold, productName, quantitySold);
+      
+      console.log("STORE METHODS: Sale recorded successfully");
+      
+      // Save data to Supabase
+      await saveDataToSupabase();
+      
+    } catch (error) {
+      console.error("STORE METHODS: Error recording sale:", error);
+    }
+  };
+
+  const addSale = async (sale: any) => {
+    try {
+      console.log("STORE METHODS: Adding sale:", sale);
+      
+      // Input validation
+      if (!sale) {
+        console.error("STORE METHODS: Invalid sale data");
+        return;
+      }
+      if (!sale.product_id || typeof sale.product_id !== 'number') {
+        console.error("STORE METHODS: Invalid product ID");
+        return;
+      }
+      if (!sale.quantity_sold || typeof sale.quantity_sold !== 'number' || sale.quantity_sold <= 0) {
+        console.error("STORE METHODS: Invalid quantity sold");
+        return;
+      }
+      if (!sale.selling_price || typeof sale.selling_price !== 'number' || sale.selling_price <= 0) {
+        console.error("STORE METHODS: Invalid selling price");
+        return;
+      }
+      if (!sale.client_name || typeof sale.client_name !== 'string' || sale.client_name.trim() === '') {
+        console.error("STORE METHODS: Invalid client name");
+        return;
+      }
+      
+      // Find the product by ID
+      const product = get().products.find((p: Product) => p.product_id === sale.product_id);
+      if (!product) {
+        console.error("STORE METHODS: Product not found:", sale.product_id);
+        return;
+      }
+      
+      // Create a new sale object
+      const newSale = {
+        sale_id: Date.now().toString(), // Generate a unique ID
+        product_id: sale.product_id,
+        product_name: product.product_name,
+        quantity_sold: sale.quantity_sold,
+        selling_price: sale.selling_price,
+        sale_date: new Date().toISOString(),
+        client_name: sale.client_name
+      };
+      
+      // Add the new sale to the sales array
+      set((state: AppState) => ({
+        sales: [...state.sales, newSale]
+      }));
+      
+      // Update client purchase history
+      slices.saleSlice.updateClientPurchase(sale.client_name, sale.selling_price * sale.quantity_sold, product.product_name, sale.quantity_sold);
+      
+      console.log("STORE METHODS: Sale added successfully");
+      
+      // Save data to Supabase
+      await saveDataToSupabase();
+      
+    } catch (error) {
+      console.error("STORE METHODS: Error adding sale:", error);
+    }
+  };
+
+  const syncDataWithSupabase = async () => {
+    try {
+      console.log("STORE METHODS: Starting data sync with Supabase");
+      const currentUser = get().currentUser;
+      
+      if (!currentUser) {
+        console.log("STORE METHODS: No current user, skipping sync");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_data')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("STORE METHODS: Error fetching user data:", error);
+        throw error;
+      }
+
+      if (data) {
+        console.log("STORE METHODS: Found user data, updating store");
+        set((state: AppState) => ({
+          products: data.products || [],
+          sales: data.sales || [],
+          clients: data.clients || [],
+          payments: data.payments || []
+        }));
+      } else {
+        console.log("STORE METHODS: No user data found, initializing empty data");
+        set((state: AppState) => ({
+          products: [],
+          sales: [],
+          clients: [],
+          payments: []
+        }));
+      }
+
+      // Sync product expiries separately
+      const { data: expiryData, error: expiryError } = await supabase
+        .from('product_expiry')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      if (expiryError) {
+        console.error("STORE METHODS: Error fetching expiry data:", expiryError);
+      } else {
+        console.log("STORE METHODS: Synced expiry data:", expiryData?.length || 0, "records");
+        set((state: AppState) => ({
+          productExpiries: expiryData || []
+        }));
+      }
+
+    } catch (error) {
+      console.error("STORE METHODS: Error in syncDataWithSupabase:", error);
+      throw error;
+    }
+  };
+
+  const saveDataToSupabase = async () => {
+    try {
+      console.log("STORE METHODS: Starting data save to Supabase");
+      const currentUser = get().currentUser;
+      
+      if (!currentUser) {
+        console.error("STORE METHODS: No current user, cannot save data");
+        return;
+      }
+
+      const state = get();
+      const userData = {
+        user_id: currentUser.id,
+        products: state.products,
+        sales: state.sales,
+        clients: state.clients,
+        payments: state.payments,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('user_data')
+        .upsert(userData, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error("STORE METHODS: Error saving user data:", error);
+        throw error;
+      }
+
+      // Save product expiries
+      if (state.productExpiries && state.productExpiries.length > 0) {
+        const expiryData = state.productExpiries.map(expiry => ({
+          ...expiry,
+          user_id: currentUser.id
+        }));
+
+        const { error: expiryError } = await supabase
+          .from('product_expiry')
+          .upsert(expiryData, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
+
+        if (expiryError) {
+          console.error("STORE METHODS: Error saving expiry data:", expiryError);
         } else {
-          console.error("STORE METHODS: recordSale returned unexpected result:", result);
-          return null;
+          console.log("STORE METHODS: Saved expiry data successfully");
         }
-      } catch (error) {
-        console.error("STORE METHODS: Error in recordSale wrapper:", error);
-        return null;
       }
-    },
-    
-    // Keep addSale for backward compatibility
-    addSale: (...args) => {
-      console.log("STORE METHODS: addSale called (redirecting to recordSale)");
-      const storeMethods = get();
-      return storeMethods.recordSale(...args);
-    },
-    
-    // Override syncDataWithSupabase to support silent option
-    syncDataWithSupabase: async (options: { silent?: boolean } = {}) => {
-      return slices.userSlice.syncDataWithSupabase(options);
-    },
-    
-    // Add debug function to clear processed transactions
-    clearProcessedTransactions: () => {
-      console.log("STORE: Clearing processed transactions");
-      if (slices.clientSlice?.clearProcessedTransactions) {
-        slices.clientSlice.clearProcessedTransactions();
-      }
-    },
-    
-    // Add function to recalculate client totals
-    recalculateClientTotals: (clientId: number) => {
-      console.log("STORE: Recalculating client totals for:", clientId);
-      if (slices.clientSlice?.recalculateClientTotals) {
-        slices.clientSlice.recalculateClientTotals(clientId);
-      }
-    },
-    
-    // Setup realtime updates
-    setupRealtimeUpdates
+
+      console.log("STORE METHODS: Data saved to Supabase successfully");
+    } catch (error) {
+      console.error("STORE METHODS: Error in saveDataToSupabase:", error);
+      throw error;
+    }
+  };
+
+  const clearLocalData = async () => {
+    console.log("STORE METHODS: Clearing all local data");
+    set((state: AppState) => ({
+      products: [],
+      sales: [],
+      clients: [],
+      payments: [],
+      productExpiries: []
+    }));
+  };
+
+  return {
+    recordSale,
+    addSale,
+    syncDataWithSupabase,
+    saveDataToSupabase,
+    clearLocalData
   };
 };

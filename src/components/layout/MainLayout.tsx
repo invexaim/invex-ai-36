@@ -14,7 +14,8 @@ import {
   Users,
   BarChart3,
   FileText,
-  Truck
+  Truck,
+  Calendar
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -38,6 +39,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { icon: <BarChart3 className="w-5 h-5" />, label: "Stock", href: "/stock" },
     { icon: <FileText className="w-5 h-5" />, label: "Estimates", href: "/estimates" },
     { icon: <Truck className="w-5 h-5" />, label: "Delivery", href: "/delivery" },
+    { icon: <Calendar className="w-5 h-5" />, label: "Expiry", href: "/expiry" },
   ];
 
   useEffect(() => {

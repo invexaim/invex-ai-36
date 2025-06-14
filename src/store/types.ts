@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -200,21 +199,17 @@ export interface UserState {
 
 import { MeetingState } from './slices/meetingSlice';
 
-export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState, MeetingState {
-  // Additional state properties
-  isSignedIn: boolean;
-  setIsSignedIn: (isSignedIn: boolean) => void;
-  isLoading: boolean;
-  setIsLoading: (isLoading: boolean) => void;
-  pendingSalePayment: Sale | null;
-  setPendingSalePayment: (sale: Sale | null) => void;
-  // Add pending estimate for sales
-  pendingEstimateForSale: PendingEstimateData | null;
-  setPendingEstimateForSale: (estimate: PendingEstimateData | null) => void;
-  saveDataToSupabase: () => Promise<void>;
-  setupRealtimeUpdates: (userId: string) => () => void;
-  addSale: (saleData: any) => Sale | null;
-  
+export interface AppState extends ProductState, ClientState, SaleState, PaymentState, UserState, CompanyState, MeetingState {
+  // Expiry state
+  productExpiries: ProductExpiry[];
+  setProductExpiries: (expiries: ProductExpiry[]) => void;
+  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'created_at' | 'updated_at'>) => ProductExpiry;
+  updateProductExpiry: (id: string, updates: Partial<ProductExpiry>) => void;
+  deleteProductExpiry: (id: string) => void;
+  loadProductExpiries: () => Promise<void>;
+  getExpiringProducts: (daysAhead?: number) => ProductExpiry[];
+  getExpiredProducts: () => ProductExpiry[];
+
   // Company state
   companyName: string;
   setCompanyName: (name: string) => void;

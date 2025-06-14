@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Package, Users, CreditCard, TrendingUp } from "lucide-react";
+import { Package, Users, CreditCard, TrendingUp, Calendar } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/LineChart";
@@ -15,7 +14,9 @@ const Dashboard = () => {
     products, 
     clients, 
     sales, 
-    payments
+    payments,
+    productExpiries,
+    getExpiringProducts
   } = useAppStore();
 
   // Calculate today's revenue
@@ -28,6 +29,9 @@ const Dashboard = () => {
   const lowStockItems = products.filter(product => 
     parseInt(product.units as string) < product.reorder_level
   ).length;
+
+  // Calculate expiring soon items
+  const expiringSoonItems = getExpiringProducts(7).length;
 
   const stats = [
     {
@@ -49,10 +53,10 @@ const Dashboard = () => {
       onClick: () => navigate("/sales"),
     },
     {
-      title: "Low Stock Items",
-      value: lowStockItems,
-      icon: <CreditCard className="h-5 w-5 text-warning" />,
-      onClick: () => navigate("/products"),
+      title: "Expiring Soon",
+      value: expiringSoonItems,
+      icon: <Calendar className="h-5 w-5 text-warning" />,
+      onClick: () => navigate("/expiry"),
     },
   ];
 
@@ -131,7 +135,7 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Stats Grid - matching the layout from your image */}
+      {/* Stats Grid - updated with expiry card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <CardStat
@@ -144,6 +148,25 @@ const Dashboard = () => {
           />
         ))}
       </div>
+
+      {/* Expiry Alert Section */}
+      {expiringSoonItems > 0 && (
+        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="h-5 w-5 text-warning" />
+            <h3 className="font-semibold text-warning">Expiry Alert</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            You have {expiringSoonItems} product{expiringSoonItems > 1 ? 's' : ''} expiring within the next 7 days. 
+            <button 
+              onClick={() => navigate("/expiry")} 
+              className="ml-1 text-warning hover:underline font-medium"
+            >
+              View details
+            </button>
+          </p>
+        </div>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

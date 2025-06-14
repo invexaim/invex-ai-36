@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -85,6 +84,7 @@ export interface Payment {
   transactionId?: string; // Add transaction ID for deduplication
 }
 
+// Product Expiry Interface
 export interface ProductExpiry {
   id: string;
   user_id: string;
