@@ -1,5 +1,5 @@
 
-import { Search, Trash2, RefreshCw } from "lucide-react";
+import { Search, Trash2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,8 @@ export const ProductsTable = ({
   const { deleteProduct } = useAppStore();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showRestockDialog, setShowRestockDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const filteredProducts = products.filter((product) => {
     return product.product_name
@@ -36,9 +38,25 @@ export const ProductsTable = ({
       .includes(searchTerm.toLowerCase());
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
   const handleRestock = (product: Product) => {
     setSelectedProduct(product);
     setShowRestockDialog(true);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generateReferenceNumber = (productId: number, productName: string) => {
+    const prefix = productName.substring(0, 3).toUpperCase();
+    const paddedId = productId.toString().padStart(4, '0');
+    return `${prefix}${paddedId}`;
   };
 
   return (
@@ -62,6 +80,8 @@ export const ProductsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>S.No</TableHead>
+              <TableHead>Ref No</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Stock</TableHead>
@@ -71,9 +91,15 @@ export const ProductsTable = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
+            {currentProducts.length > 0 ? (
+              currentProducts.map((product, index) => (
                 <TableRow key={product.product_id}>
+                  <TableCell className="font-medium">
+                    {startIndex + index + 1}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {generateReferenceNumber(product.product_id, product.product_name)}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {product.product_name}
                   </TableCell>
@@ -120,7 +146,7 @@ export const ProductsTable = ({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-4">
+                <TableCell colSpan={8} className="text-center py-4">
                   {products.length === 0 
                     ? "No products available. Add some products or import from CSV."
                     : "No products found matching your search."}
@@ -130,6 +156,52 @@ export const ProductsTable = ({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
       
       <RestockProductDialog
         open={showRestockDialog}
