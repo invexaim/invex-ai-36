@@ -129,6 +129,20 @@ export interface StockPredictionInput {
   price: number;
 }
 
+export interface ProductExpiry {
+  id: string;
+  user_id: string;
+  product_id: number;
+  product_name: string;
+  expiry_date: string;
+  batch_number?: string;
+  quantity: number;
+  status: 'active' | 'expired' | 'disposed';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProductState {
   products: Product[];
   setProducts: (products: Product[]) => void;

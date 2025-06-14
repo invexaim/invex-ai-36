@@ -1,3 +1,4 @@
+
 import { AppState } from './types';
 import { createPersistedStore } from './createStore';
 import { createStoreConfiguration } from './config/storeConfig';
@@ -13,8 +14,8 @@ const useAppStore = createPersistedStore<AppState>(
     // Integrate all slices
     const slices = integrateSlices(set, get, store, saveDataToSupabase, setWithAutoSave);
     
-    // Create store methods
-    const storeMethods = createStoreMethods(set, get, setWithAutoSave, slices, saveDataToSupabase, setupRealtimeUpdates);
+    // Create store methods (without passing saveDataToSupabase as parameter since it's defined internally)
+    const storeMethods = createStoreMethods(set, get, setWithAutoSave, slices, setupRealtimeUpdates);
     
     // Combine all slices and methods - ENSURE storeMethods override slice methods
     const combinedStore = {

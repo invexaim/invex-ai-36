@@ -1,5 +1,6 @@
+
 import { AppState } from '../types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
 export const createStoreMethods = (
@@ -7,7 +8,6 @@ export const createStoreMethods = (
   get: any,
   setWithAutoSave: (fn: any) => void,
   slices: any,
-  saveDataToSupabase: () => Promise<void>,
   setupRealtimeUpdates: (userId: string) => void
 ) => {
   const recordSale = async (
