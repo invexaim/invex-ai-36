@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RecordSaleForm from "./RecordSaleForm";
+import useAppStore from "@/store/appStore";
 
 interface SalesHeaderProps {
   productsExist: boolean;
@@ -12,12 +13,20 @@ interface SalesHeaderProps {
 }
 
 const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: SalesHeaderProps) => {
+  const { setPendingEstimateForSale } = useAppStore();
+
   const handleRecordSale = () => {
+    console.log("SALES HEADER: Opening regular sale dialog");
+    // Clear any pending estimate data when opening regular sale
+    setPendingEstimateForSale(null);
     setIsRecordSaleOpen(true);
   };
 
   const handleCloseDialog = () => {
+    console.log("SALES HEADER: Closing sale dialog");
     setIsRecordSaleOpen(false);
+    // Clear pending estimate when closing dialog
+    setPendingEstimateForSale(null);
   };
 
   return (

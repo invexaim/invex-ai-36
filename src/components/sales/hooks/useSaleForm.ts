@@ -36,11 +36,15 @@ export const useSaleForm = () => {
     clientName: false
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentEstimateItem, setCurrentEstimateItem] = useState(0);
 
-  // Pre-populate form with estimate data
+  // Initialize form - ONLY pre-populate if there's a pending estimate
   useEffect(() => {
+    console.log("SALE FORM: Form initialization effect", { 
+      hasPendingEstimate: !!pendingEstimateForSale,
+      pendingEstimateData: pendingEstimateForSale 
+    });
+
     if (pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0) {
       const currentItem = pendingEstimateForSale.items[currentEstimateItem];
       console.log("SALE FORM: Pre-populating with estimate data:", {
@@ -49,15 +53,32 @@ export const useSaleForm = () => {
         totalItems: pendingEstimateForSale.items.length
       });
       
+      // Find product info to get proper product_id
+      const product = products.find(p => 
+        p.product_id === currentItem.product_id || 
+        p.product_name === currentItem.name ||
+        p.product_name === currentItem.product_name
+      );
+      
       setNewSaleData({
-        product_id: currentItem.product_id || 0,
+        product_id: product?.product_id || currentItem.product_id || 0,
         quantity_sold: currentItem.quantity || 1,
         selling_price: currentItem.price || 0,
         clientId: 0,
         clientName: pendingEstimateForSale.clientName || "",
       });
+    } else {
+      // Reset to empty form for regular sales
+      console.log("SALE FORM: Resetting to empty form for regular sale");
+      setNewSaleData({
+        product_id: 0,
+        quantity_sold: 1,
+        selling_price: 0,
+        clientId: 0,
+        clientName: "",
+      });
     }
-  }, [pendingEstimateForSale, currentEstimateItem]);
+  }, [pendingEstimateForSale, currentEstimateItem, products]);
 
   const validateForm = () => {
     // For estimates, skip product and client validation since they're pre-filled
@@ -146,8 +167,6 @@ export const useSaleForm = () => {
   return {
     newSaleData,
     formErrors,
-    isSubmitting,
-    setIsSubmitting,
     validateForm,
     handleProductChange,
     handleClientChange,

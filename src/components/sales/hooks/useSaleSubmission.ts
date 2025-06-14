@@ -47,7 +47,8 @@ export const useSaleSubmission = ({
   const handleAddSale = async () => {
     console.log("RECORD SALE FORM: Starting sale recording process", {
       isFromEstimate,
-      saleData: newSaleData
+      saleData: newSaleData,
+      estimateInfo
     });
     
     if (isSubmitting) {
@@ -124,14 +125,6 @@ export const useSaleSubmission = ({
           return;
         }
         
-        // Validate setPendingSalePayment function
-        if (typeof setPendingSalePayment !== 'function') {
-          console.error("RECORD SALE FORM: setPendingSalePayment is not a function");
-          toast.error("Cannot proceed to payment. Please try again.");
-          setIsSubmitting(false);
-          return;
-        }
-        
         // Store the sale details for the payment page with estimate info
         const saleWithEstimateInfo = {
           ...result.sale,
@@ -144,13 +137,14 @@ export const useSaleSubmission = ({
         console.log("RECORD SALE FORM: Pending sale payment set with estimate info");
         
         // Clear the pending estimate since we're done with it
-        if (shouldCompleteEstimate) {
-          setPendingEstimateForSale(null);
-        }
+        console.log("RECORD SALE FORM: Clearing pending estimate data");
+        setPendingEstimateForSale(null);
         
         // Show success message
         if (shouldCompleteEstimate) {
           toast.success("All estimate items recorded! Redirecting to payments...");
+        } else if (isFromEstimate) {
+          toast.success("Estimate sale recorded! Redirecting to payments...");
         } else {
           toast.success("Sale recorded successfully! Redirecting to payments...");
         }
