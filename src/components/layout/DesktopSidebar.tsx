@@ -1,3 +1,4 @@
+
 import { Moon, Sun, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
@@ -10,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
   currentPath: string;
@@ -17,6 +19,7 @@ interface DesktopSidebarProps {
   toggleTheme: () => void;
   onLogout: () => void;
 }
+
 const DesktopSidebar = ({
   sidebarItems,
   currentPath,
@@ -32,6 +35,7 @@ const DesktopSidebar = ({
   } = useAppStore();
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
   const [tempCompanyName, setTempCompanyName] = useState(companyName);
+
   const handleLogout = async () => {
     try {
       console.log("Desktop logout triggered");
@@ -41,9 +45,7 @@ const DesktopSidebar = ({
       console.log("Data saved to Supabase before logout");
 
       // Then sign out using AuthService
-      const {
-        error
-      } = await AuthService.signOut();
+      const { error } = await AuthService.signOut();
       if (error) {
         console.error("Error signing out:", error);
         throw error;
@@ -56,16 +58,27 @@ const DesktopSidebar = ({
       toast.error("Failed to log out. Please try again.");
     }
   };
+
   const handleSaveCompanyName = () => {
     setCompanyName(tempCompanyName);
     setIsCompanyDialogOpen(false);
   };
-  return <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border hidden md:flex flex-col">
+
+  return (
+    <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border hidden md:flex flex-col">
       <div className="px-4 py-6 border-b">
         <h1 className="text-xl font-semibold">Invex AI</h1>
       </div>
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-        {sidebarItems.map(item => <SidebarItem key={item.href} icon={item.icon} label={item.label} href={item.href} isActive={currentPath === item.href} />)}
+        {sidebarItems.map(item => (
+          <SidebarItem 
+            key={item.href} 
+            icon={item.icon} 
+            label={item.label} 
+            href={item.href} 
+            isActive={currentPath === item.href} 
+          />
+        ))}
         
         {/* Settings navigation item */}
         <SidebarItem 
@@ -86,6 +99,8 @@ const DesktopSidebar = ({
           {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
       </div>
-    </aside>;
+    </aside>
+  );
 };
+
 export default DesktopSidebar;

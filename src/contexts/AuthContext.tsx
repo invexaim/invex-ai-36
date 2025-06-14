@@ -23,7 +23,6 @@ export function useAuth() {
   return context;
 }
 
-// Export the same hook with different name for compatibility
 export function useAuthContext() {
   return useAuth();
 }
@@ -37,9 +36,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const { setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries } = useAppStore();
+  const { 
+    setupRealtimeUpdates, 
+    syncDataWithSupabase, 
+    setProducts, 
+    setSales, 
+    setClients, 
+    setPayments, 
+    setMeetings, 
+    setProductExpiries,
+    loadProductExpiries
+  } = useAppStore();
 
-  // Function to clear all user data when switching users
   const clearUserData = () => {
     console.log('AUTH: Clearing all user data for user switch');
     setProducts([]);
@@ -53,7 +61,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let isMounted = true;
 
-    // Get initial session
     const initializeAuth = async () => {
       try {
         const { session: initialSession } = await AuthService.getSession();
@@ -64,12 +71,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           if (initialSession?.user) {
             console.log('AUTH: User authenticated, setting up realtime updates');
-            // Clear any existing data first
             clearUserData();
-            // Then sync data for this user
             setTimeout(async () => {
               try {
                 await syncDataWithSupabase();
+                await loadProductExpiries();
                 setupRealtimeUpdates(initialSession.user.id);
               } catch (error) {
                 console.error('AUTH: Error syncing data on init:', error);
@@ -89,7 +95,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initializeAuth();
 
-    // Listen for auth changes
     const subscription = AuthService.onAuthStateChange((user) => {
       console.log('AUTH: Auth state change:', user?.id);
       
@@ -102,13 +107,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (user && newUserId !== previousUserId) {
           console.log('AUTH: New user signed in, clearing data and syncing');
-          // Clear data immediately when a different user signs in
           clearUserData();
           
-          // Sync data for the new user after a short delay
           setTimeout(async () => {
             try {
               await syncDataWithSupabase();
+              await loadProductExpiries();
               setupRealtimeUpdates(user.id);
             } catch (error) {
               console.error('AUTH: Error syncing data for new user:', error);
@@ -125,11 +129,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, loadProductExpiries, session?.user?.id]);
 
   const signOut = async () => {
     try {
-      // Clear data before signing out
       clearUserData();
       await AuthService.signOut();
       setUser(null);

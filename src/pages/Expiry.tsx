@@ -1,11 +1,19 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import ExpiryHeader from "@/components/expiry/ExpiryHeader";
 import ExpiryStats from "@/components/expiry/ExpiryStats";
 import ExpiryTable from "@/components/expiry/ExpiryTable";
+import useAppStore from "@/store/appStore";
 
 const Expiry = () => {
+  const { loadProductExpiries } = useAppStore();
+
+  useEffect(() => {
+    // Load expiry data when component mounts
+    loadProductExpiries();
+  }, [loadProductExpiries]);
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb Navigation */}
