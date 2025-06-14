@@ -69,8 +69,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Then sync data for this user
             setTimeout(async () => {
               try {
-                await syncDataWithSupabase({ silent: true });
-                setupRealtimeUpdates();
+                await syncDataWithSupabase();
+                setupRealtimeUpdates(initialSession.user.id);
               } catch (error) {
                 console.error('AUTH: Error syncing data on init:', error);
               }
@@ -108,8 +108,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Sync data for the new user after a short delay
           setTimeout(async () => {
             try {
-              await syncDataWithSupabase({ silent: true });
-              setupRealtimeUpdates();
+              await syncDataWithSupabase();
+              setupRealtimeUpdates(user.id);
             } catch (error) {
               console.error('AUTH: Error syncing data for new user:', error);
             }
