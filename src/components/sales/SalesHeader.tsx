@@ -21,12 +21,6 @@ const SalesHeader = ({
   isFromEstimate = false 
 }: SalesHeaderProps) => {
 
-  const handleDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      onCloseDialog();
-    }
-  };
-
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -59,7 +53,7 @@ const SalesHeader = ({
         </Card>
       )}
 
-      <Dialog open={isRecordSaleOpen} onOpenChange={handleDialogOpenChange}>
+      <Dialog open={isRecordSaleOpen} onOpenChange={(open) => !open && onCloseDialog()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>

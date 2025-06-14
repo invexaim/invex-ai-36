@@ -10,23 +10,19 @@ const Sales = () => {
   const [isRecordSaleOpen, setIsRecordSaleOpen] = useState(false);
   const [isFromEstimate, setIsFromEstimate] = useState(false);
 
-  // Handle estimate-based sale navigation
+  // Handle estimate navigation
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const fromEstimate = urlParams.get('fromEstimate') === 'true';
     
     if (pendingEstimateForSale && fromEstimate) {
-      console.log("SALES PAGE: Opening estimate-based sale dialog");
+      console.log("SALES PAGE: Opening estimate-based sale");
       setIsFromEstimate(true);
       setIsRecordSaleOpen(true);
       // Clear URL parameter
       window.history.replaceState({}, '', '/sales');
-    } else if (pendingEstimateForSale && !fromEstimate) {
-      // Clear stale estimate data if not coming from estimates
-      console.log("SALES PAGE: Clearing stale estimate data");
-      setPendingEstimateForSale(null);
     }
-  }, [pendingEstimateForSale, setPendingEstimateForSale]);
+  }, [pendingEstimateForSale]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -34,7 +30,6 @@ const Sales = () => {
 
   const handleCloseDialog = () => {
     setIsRecordSaleOpen(false);
-    // Only clear estimate data if it was an estimate-based sale
     if (isFromEstimate) {
       setPendingEstimateForSale(null);
     }
@@ -42,8 +37,7 @@ const Sales = () => {
   };
 
   const handleOpenRegularSale = () => {
-    console.log("SALES PAGE: Opening regular sale dialog");
-    // Clear any pending estimate data
+    console.log("SALES PAGE: Opening regular sale");
     setPendingEstimateForSale(null);
     setIsFromEstimate(false);
     setIsRecordSaleOpen(true);
