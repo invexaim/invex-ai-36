@@ -10,17 +10,16 @@ const Sales = () => {
   const [isRecordSaleOpen, setIsRecordSaleOpen] = useState(false);
   const [isFromEstimate, setIsFromEstimate] = useState(false);
 
-  // Only auto-open if explicitly coming from estimate (with flag)
+  // Handle estimate-based sale navigation
   useEffect(() => {
-    // Check if we have estimate data AND it's a fresh navigation from estimates
     const urlParams = new URLSearchParams(window.location.search);
     const fromEstimate = urlParams.get('fromEstimate') === 'true';
     
     if (pendingEstimateForSale && fromEstimate) {
-      console.log("SALES PAGE: Auto-opening dialog for estimate-based sale");
+      console.log("SALES PAGE: Opening estimate-based sale dialog");
       setIsFromEstimate(true);
       setIsRecordSaleOpen(true);
-      // Clear the URL parameter
+      // Clear URL parameter
       window.history.replaceState({}, '', '/sales');
     } else if (pendingEstimateForSale && !fromEstimate) {
       // Clear stale estimate data if not coming from estimates
@@ -35,11 +34,19 @@ const Sales = () => {
 
   const handleCloseDialog = () => {
     setIsRecordSaleOpen(false);
-    setIsFromEstimate(false);
-    // Clear estimate data when closing dialog if it was from estimate
+    // Only clear estimate data if it was an estimate-based sale
     if (isFromEstimate) {
       setPendingEstimateForSale(null);
     }
+    setIsFromEstimate(false);
+  };
+
+  const handleOpenRegularSale = () => {
+    console.log("SALES PAGE: Opening regular sale dialog");
+    // Clear any pending estimate data
+    setPendingEstimateForSale(null);
+    setIsFromEstimate(false);
+    setIsRecordSaleOpen(true);
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -55,7 +62,7 @@ const Sales = () => {
       <SalesHeader 
         productsExist={products.length > 0} 
         isRecordSaleOpen={isRecordSaleOpen}
-        setIsRecordSaleOpen={setIsRecordSaleOpen}
+        onOpenRegularSale={handleOpenRegularSale}
         onCloseDialog={handleCloseDialog}
         isFromEstimate={isFromEstimate}
       />

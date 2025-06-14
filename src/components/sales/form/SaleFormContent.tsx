@@ -53,7 +53,7 @@ const SaleFormContent = ({
 }: SaleFormContentProps) => {
   return (
     <>
-      {/* Show estimate item display only when actually from estimate */}
+      {/* Estimate-based sales: Show estimate item display */}
       {isFromEstimate && estimateInfo ? (
         <EstimateItemDisplay
           estimateInfo={estimateInfo}
@@ -61,7 +61,7 @@ const SaleFormContent = ({
           products={products || []}
         />
       ) : (
-        // Always show product selector for regular sales
+        /* Regular sales: Show product selector */
         <ProductSelector
           products={products || []}
           selectedProductId={newSaleData.product_id}
@@ -71,7 +71,7 @@ const SaleFormContent = ({
         />
       )}
       
-      {/* Always show client selector for regular sales, hide only for estimates */}
+      {/* Regular sales: Show client selector (hidden for estimate sales) */}
       {!isFromEstimate && (
         <ClientSelector
           clients={clients || []}
@@ -84,6 +84,7 @@ const SaleFormContent = ({
         />
       )}
       
+      {/* Both types: Show quantity and price fields */}
       <SaleDetailsForm
         quantity={newSaleData.quantity_sold}
         price={newSaleData.selling_price}

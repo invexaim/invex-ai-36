@@ -17,6 +17,7 @@ import {
 interface EstimateItem {
   id: number;
   name: string;
+  product_id?: number; // Add product_id to track actual product
   quantity: number;
   price: number;
   total: number;
@@ -44,12 +45,21 @@ export function EstimateItemsSection({ items, setItems }: EstimateItemsSectionPr
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
         
-        // Auto-fill price when product is selected
+        // Auto-fill price and product_id when product is selected
         if (field === 'name' && value !== 'custom') {
           const selectedProduct = products.find(p => p.product_name === value);
           if (selectedProduct) {
             updatedItem.price = selectedProduct.price;
+            updatedItem.product_id = selectedProduct.product_id;
+          } else {
+            // Clear product_id for custom items
+            updatedItem.product_id = undefined;
           }
+        }
+        
+        // Clear product_id if switching to custom
+        if (field === 'name' && value === 'custom') {
+          updatedItem.product_id = undefined;
         }
         
         // Recalculate total if quantity or price changed
