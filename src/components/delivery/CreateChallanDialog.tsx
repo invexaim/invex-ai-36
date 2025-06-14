@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -44,6 +43,7 @@ interface CreateChallanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChallanCreated?: (challanData: any) => void;
+  editData?: any;
 }
 
 interface ChallanForm {
@@ -66,6 +66,7 @@ export function CreateChallanDialog({
   open,
   onOpenChange,
   onChallanCreated,
+  editData,
 }: CreateChallanDialogProps) {
   const [items, setItems] = useState<ChallanItem[]>([
     { id: 1, productId: 0, name: "", quantity: 1 },
@@ -84,6 +85,30 @@ export function CreateChallanDialog({
       vehicleNo: "",
     },
   });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editData && open) {
+      form.setValue("clientName", editData.clientName || "");
+      form.setValue("date", editData.date ? new Date(editData.date) : new Date());
+      form.setValue("deliveryAddress", editData.deliveryAddress || "");
+      form.setValue("notes", editData.notes || "");
+      form.setValue("vehicleNo", editData.vehicleNo || "");
+      
+      if (editData.items && editData.items.length > 0) {
+        setItems(editData.items.map((item: any, index: number) => ({
+          id: index + 1,
+          productId: item.productId || 0,
+          name: item.name || "",
+          quantity: item.quantity || 1,
+        })));
+      }
+    } else if (!editData && open) {
+      // Reset form when creating new challan
+      form.reset();
+      setItems([{ id: 1, productId: 0, name: "", quantity: 1 }]);
+    }
+  }, [editData, open, form]);
   
   const addItem = () => {
     const newId = items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1;
@@ -113,13 +138,13 @@ export function CreateChallanDialog({
     const challanData = {
       ...data,
       items: items,
-      status: "delivered",
-      challanNo: `DC-${Date.now().toString().slice(-6)}`,
-      createdAt: new Date().toISOString(),
+      status: editData ? editData.status : "delivered",
+      challanNo: editData ? editData.challanNo : `DC-${Date.now().toString().slice(-6)}`,
+      createdAt: editData ? editData.createdAt : new Date().toISOString(),
     };
     
-    console.log("Creating delivery challan:", challanData);
-    toast.success("Delivery challan created successfully");
+    console.log(editData ? "Updating delivery challan:" : "Creating delivery challan:", challanData);
+    toast.success(editData ? "Delivery challan updated successfully" : "Delivery challan created successfully");
     
     // Call the callback function if provided
     if (onChallanCreated) {
@@ -137,7 +162,9 @@ export function CreateChallanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Create New Delivery Challan</DialogTitle>
+          <DialogTitle>
+            {editData ? "Edit Delivery Challan" : "Create New Delivery Challan"}
+          </DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="h-[70vh] pr-4">
@@ -341,7 +368,9 @@ export function CreateChallanDialog({
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Delivery Challan</Button>
+                <Button type="submit">
+                  {editData ? "Update Delivery Challan" : "Create Delivery Challan"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>

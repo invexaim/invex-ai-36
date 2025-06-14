@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Truck, PlusCircle, Download, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
+import { Truck, PlusCircle, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import useAppStore from '@/store/appStore';
@@ -35,6 +34,7 @@ const Delivery = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedChallan, setSelectedChallan] = useState<DeliveryChallan | null>(null);
+  const [editingChallan, setEditingChallan] = useState<DeliveryChallan | null>(null);
   const { products, companyName } = useAppStore();
 
   // Load challans from localStorage
@@ -76,6 +76,48 @@ const Delivery = () => {
     setChallans(updatedChallans);
     
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+  };
+
+  const handleUpdateChallan = (challanData: any) => {
+    const itemsCount = challanData.items ? challanData.items.length : 0;
+    
+    const updatedChallan = {
+      ...editingChallan,
+      clientName: challanData.clientName,
+      date: challanData.date,
+      vehicleNo: challanData.vehicleNo,
+      deliveryAddress: challanData.deliveryAddress,
+      items: challanData.items,
+      itemsCount: itemsCount,
+      notes: challanData.notes,
+      status: challanData.status || editingChallan?.status || "pending",
+    };
+    
+    const updatedChallans = challans.map(challan => 
+      challan.id === editingChallan?.id ? updatedChallan : challan
+    );
+    
+    setChallans(updatedChallans);
+    localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+    setEditingChallan(null);
+  };
+
+  const handleChallanAction = (challanData: any) => {
+    if (editingChallan) {
+      handleUpdateChallan(challanData);
+    } else {
+      handleCreateChallan(challanData);
+    }
+  };
+
+  const handleEditChallan = (challan: DeliveryChallan) => {
+    setEditingChallan(challan);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingChallan(null);
   };
 
   const deleteChallan = (id: string) => {
@@ -169,8 +211,12 @@ const Delivery = () => {
                       >
                         <Printer className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditChallan(challan)}
+                      >
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon">
                         <CheckCircle2 className="h-4 w-4" />
@@ -203,11 +249,12 @@ const Delivery = () => {
         </ul>
       </div>
       
-      {/* Create Challan Dialog */}
+      {/* Create/Edit Challan Dialog */}
       <CreateChallanDialog 
         open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen}
-        onChallanCreated={handleCreateChallan}
+        onOpenChange={handleDialogClose}
+        onChallanCreated={handleChallanAction}
+        editData={editingChallan}
       />
       
       {/* Print Dialog */}
