@@ -24,8 +24,27 @@ export const createSaleSlice = (
     try {
       console.log("SALE SLICE: Starting recordSale with data:", saleData);
       
+      // Validate input data
+      if (!saleData) {
+        console.error("SALE SLICE: No sale data provided");
+        toast.error("No sale data provided");
+        return null;
+      }
+      
+      if (!saleData.product_id || !saleData.quantity_sold || !saleData.selling_price) {
+        console.error("SALE SLICE: Missing required sale data", saleData);
+        toast.error("Missing required sale information");
+        return null;
+      }
+      
       const products = getProducts();
       console.log("SALE SLICE: Available products:", products.length);
+      
+      if (!products || products.length === 0) {
+        console.error("SALE SLICE: No products available");
+        toast.error("No products available");
+        return null;
+      }
       
       // Find the product
       const product = products.find(p => p.product_id === saleData.product_id);
@@ -40,7 +59,7 @@ export const createSaleSlice = (
       
       // Check stock availability
       const currentUnits = parseInt(product.units as string);
-      if (currentUnits < saleData.quantity_sold) {
+      if (isNaN(currentUnits) || currentUnits < saleData.quantity_sold) {
         console.error("SALE SLICE: Insufficient stock", { 
           available: currentUnits, 
           requested: saleData.quantity_sold 
@@ -53,8 +72,15 @@ export const createSaleSlice = (
       const transactionId = `sale-${Date.now()}-${saleData.product_id}-${Math.random().toString(36).substr(2, 9)}`;
       console.log("SALE SLICE: Generated transaction ID:", transactionId);
       
-      // Create new sale OUTSIDE the set callback to ensure proper scope
-      const currentSales = get().sales;
+      // Get current state to create new sale ID
+      const currentState = get();
+      if (!currentState || !Array.isArray(currentState.sales)) {
+        console.error("SALE SLICE: Invalid current state", currentState);
+        toast.error("Invalid application state");
+        return null;
+      }
+      
+      const currentSales = currentState.sales;
       const newSaleId = currentSales.length > 0 ? Math.max(...currentSales.map(s => s.sale_id)) + 1 : 1;
       
       const newSale: Sale = {
@@ -79,7 +105,8 @@ export const createSaleSlice = (
       });
       
       // Update the state
-      set((state: SaleState) => {
+      const updateResult = set((state: SaleState) => {
+        console.log("SALE SLICE: Updating state with new sale");
         const clientInfo = saleData.clientName ? ` to ${saleData.clientName}` : '';
         toast.success(`Sale recorded: ${saleData.quantity_sold} ${product.product_name}(s)${clientInfo}`);
         
@@ -87,6 +114,8 @@ export const createSaleSlice = (
           sales: [newSale, ...state.sales]
         };
       });
+      
+      console.log("SALE SLICE: State update result:", updateResult);
       
       // Update product stock
       const newUnits = Math.max(0, currentUnits - saleData.quantity_sold);
@@ -102,6 +131,13 @@ export const createSaleSlice = (
         quantitySold: saleData.quantity_sold
       });
       
+      // Check if updateProduct function exists
+      if (typeof updateProduct !== 'function') {
+        console.error("SALE SLICE: updateProduct is not a function");
+        toast.error("Cannot update product stock");
+        return null;
+      }
+      
       updateProduct(updatedProduct);
       
       // Update client purchase if client name exists
@@ -114,13 +150,18 @@ export const createSaleSlice = (
           transactionId
         });
         
-        updateClientPurchase(
-          saleData.clientName.trim(), 
-          saleData.selling_price, 
-          product.product_name, 
-          saleData.quantity_sold,
-          transactionId
-        );
+        // Check if updateClientPurchase function exists
+        if (typeof updateClientPurchase !== 'function') {
+          console.error("SALE SLICE: updateClientPurchase is not a function");
+        } else {
+          updateClientPurchase(
+            saleData.clientName.trim(), 
+            saleData.selling_price, 
+            product.product_name, 
+            saleData.quantity_sold,
+            transactionId
+          );
+        }
       } else {
         console.log("SALE SLICE: No client specified, skipping client update");
       }
@@ -130,6 +171,7 @@ export const createSaleSlice = (
       
     } catch (error) {
       console.error("SALE SLICE: Error in recordSale:", error);
+      console.error("SALE SLICE: Error stack:", error instanceof Error ? error.stack : 'No stack trace');
       toast.error(`Failed to record sale: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }

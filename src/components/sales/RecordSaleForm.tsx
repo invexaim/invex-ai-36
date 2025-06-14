@@ -54,6 +54,13 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       return;
     }
 
+    // Check if recordSale function exists
+    if (typeof recordSale !== 'function') {
+      console.error("SALE FORM: recordSale is not a function");
+      toast.error("Sale recording function is not available");
+      return;
+    }
+
     // Validate the form first
     if (!validateForm()) {
       console.log("SALE FORM: Form validation failed");
@@ -70,7 +77,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     }
 
     const availableStock = parseInt(selectedProduct.units as string);
-    if (availableStock < newSaleData.quantity_sold) {
+    if (isNaN(availableStock) || availableStock < newSaleData.quantity_sold) {
       console.log("SALE FORM: Insufficient stock", { 
         available: availableStock, 
         requested: newSaleData.quantity_sold 
@@ -100,7 +107,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       
       console.log("SALE FORM: recordSale result:", recordedSale);
       
-      if (recordedSale) {
+      if (recordedSale && recordedSale.sale_id) {
         console.log("SALE FORM: Sale recorded successfully", recordedSale);
         
         // Store the sale details for the payment page
@@ -120,11 +127,12 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         }, 100);
         
       } else {
-        console.error("SALE FORM: recordSale returned null or undefined");
+        console.error("SALE FORM: recordSale returned invalid result:", recordedSale);
         toast.error("Failed to record sale. Please try again.");
       }
     } catch (error) {
       console.error("SALE FORM: Error recording sale:", error);
+      console.error("SALE FORM: Error stack:", error instanceof Error ? error.stack : 'No stack trace');
       toast.error(`Error recording sale: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
