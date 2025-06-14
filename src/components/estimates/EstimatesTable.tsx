@@ -209,18 +209,32 @@ export function EstimatesTable({
       </Card>
 
       <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Approve Estimate</AlertDialogTitle>
-            <AlertDialogDescription>
-              Do you want to approve this estimate and proceed to record a new sale with the estimated products?
-              <br />
-              <br />
-              <strong>Estimate:</strong> {selectedEstimate?.referenceNo}
-              <br />
-              <strong>Client:</strong> {selectedEstimate?.clientName}
-              <br />
-              <strong>Amount:</strong> ₹{selectedEstimate?.totalAmount.toLocaleString()}
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>Do you want to approve this estimate and proceed to record a new sale with the estimated products?</p>
+                
+                <div className="space-y-2 text-sm">
+                  <div><strong>Estimate:</strong> {selectedEstimate?.referenceNo}</div>
+                  <div><strong>Client:</strong> {selectedEstimate?.clientName}</div>
+                  <div><strong>Amount:</strong> ₹{selectedEstimate?.totalAmount.toLocaleString()}</div>
+                  
+                  {selectedEstimate?.items && selectedEstimate.items.length > 0 && (
+                    <div>
+                      <strong>Products:</strong>
+                      <ul className="mt-1 space-y-1 ml-4">
+                        {selectedEstimate.items.map((item, index) => (
+                          <li key={index} className="text-xs text-gray-600">
+                            • {item.name} x {item.quantity} @ ₹{item.price} = ₹{(item.quantity * item.price).toLocaleString()}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
