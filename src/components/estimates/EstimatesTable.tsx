@@ -58,7 +58,7 @@ export function EstimatesTable({
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const navigate = useNavigate();
-  const { setPendingEstimateForSale } = useAppStore();
+  const { setPendingEstimateForSale, products } = useAppStore();
 
   function getStatusColor(status: string) {
     switch (status) {
@@ -88,13 +88,34 @@ export function EstimatesTable({
       onUpdateEstimateStatus(selectedEstimate.id, "accepted");
     }
 
+    // Enhance estimate items with complete product information
+    const enhancedItems = selectedEstimate.items?.map(item => {
+      // Find the product in the products store to get complete information
+      const product = products.find(p => 
+        p.product_id === item.product_id || 
+        p.product_name === item.name ||
+        p.product_name === item.product_name
+      );
+
+      return {
+        ...item,
+        product_id: product?.product_id || item.product_id,
+        product_name: product?.product_name || item.name || item.product_name,
+        name: product?.product_name || item.name || item.product_name,
+        quantity: item.quantity || 1,
+        price: item.price || item.selling_price || 0
+      };
+    }) || [];
+
+    console.log("Enhanced estimate items with product info:", enhancedItems);
+
     // Convert estimate to pending estimate format for sales
     const estimateData = {
       id: selectedEstimate.id,
       clientName: selectedEstimate.clientName,
       referenceNo: selectedEstimate.referenceNo,
       totalAmount: selectedEstimate.totalAmount,
-      items: selectedEstimate.items || [],
+      items: enhancedItems,
       notes: selectedEstimate.notes,
       terms: selectedEstimate.terms
     };
@@ -225,11 +246,20 @@ export function EstimatesTable({
                     <div>
                       <strong>Products:</strong>
                       <ul className="mt-1 space-y-1 ml-4">
-                        {selectedEstimate.items.map((item, index) => (
-                          <li key={index} className="text-xs text-gray-600">
-                            • {item.name} x {item.quantity} @ ₹{item.price} = ₹{(item.quantity * item.price).toLocaleString()}
-                          </li>
-                        ))}
+                        {selectedEstimate.items.map((item, index) => {
+                          const product = products.find(p => 
+                            p.product_id === item.product_id || 
+                            p.product_name === item.name ||
+                            p.product_name === item.product_name
+                          );
+                          const productName = product?.product_name || item.name || item.product_name || 'Unknown Product';
+                          
+                          return (
+                            <li key={index} className="text-xs text-gray-600">
+                              • {productName} x {item.quantity} @ ₹{item.price} = ₹{(item.quantity * item.price).toLocaleString()}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
