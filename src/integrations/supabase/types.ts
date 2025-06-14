@@ -9,103 +9,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      product_expiry: {
-        Row: {
-          batch_number: string | null
-          created_at: string
-          expiry_date: string
-          id: string
-          notes: string | null
-          product_id: number
-          product_name: string
-          quantity: number
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          batch_number?: string | null
-          created_at?: string
-          expiry_date: string
-          id?: string
-          notes?: string | null
-          product_id: number
-          product_name: string
-          quantity?: number
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          batch_number?: string | null
-          created_at?: string
-          expiry_date?: string
-          id?: string
-          notes?: string | null
-          product_id?: number
-          product_name?: string
-          quantity?: number
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_data: {
-        Row: {
-          clients: Json | null
-          created_at: string | null
-          id: string
-          payments: Json | null
-          products: Json | null
-          sales: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          clients?: Json | null
-          created_at?: string | null
-          id?: string
-          payments?: Json | null
-          products?: Json | null
-          sales?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          clients?: Json | null
-          created_at?: string | null
-          id?: string
-          payments?: Json | null
-          products?: Json | null
-          sales?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_data: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          clients: Json | null
-          created_at: string | null
-          id: string
-          payments: Json | null
-          products: Json | null
-          sales: Json | null
-          updated_at: string | null
-          user_id: string
-        }[]
-      }
-      user_owns_data: {
-        Args: { data_user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
