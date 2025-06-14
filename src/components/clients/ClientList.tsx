@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Search, Trash2, Users, Plus, Eye } from "lucide-react";
+import { RefreshCw, Search, Trash2, Users, Plus, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,15 +28,34 @@ interface ClientListProps {
 
 export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: ClientListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentClients = filteredClients.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generateReferenceNumber = (clientId: number, clientName: string) => {
+    const prefix = clientName ? clientName.substring(0, 3).toUpperCase() : "CLI";
+    const paddedId = clientId.toString().padStart(4, '0');
+    return `${prefix}${paddedId}`;
+  };
 
   const getRecentPurchases = (client: Client) => {
     if (!client.purchaseHistory || client.purchaseHistory.length === 0) {
@@ -81,6 +100,8 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>S.No</TableHead>
+                <TableHead>Ref No</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -92,9 +113,15 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
+              {currentClients.length > 0 ? (
+                currentClients.map((client, index) => (
                   <TableRow key={client.id}>
+                    <TableCell className="font-medium">
+                      {startIndex + index + 1}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {generateReferenceNumber(client.id, client.name)}
+                    </TableCell>
                     <TableCell className="font-medium">
                       <Link 
                         to={`/clients/${client.id}`}
@@ -159,13 +186,59 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
+                  <TableCell colSpan={10} className="text-center py-4">
                     No clients found matching your search.
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredClients.length)} of {filteredClients.length} clients
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center smooth-scroll">
