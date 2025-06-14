@@ -50,10 +50,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   const isFromEstimate = !!pendingEstimateForSale;
 
   const handleAddSale = async () => {
-    console.log("RECORD SALE FORM: Starting sale recording process", {
-      isFromEstimate,
-      saleData: newSaleData
-    });
+    console.log("RECORD SALE FORM: Starting sale recording process");
     
     if (isSubmitting) {
       console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
@@ -68,23 +65,17 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       return;
     }
 
-    // For estimates, ensure we have valid product data
+    // Validate the form (skip product/client validation for estimates)
+    if (!isFromEstimate && !validateForm()) {
+      console.log("RECORD SALE FORM: Form validation failed");
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    // For estimates, validate only quantity and price
     if (isFromEstimate) {
-      if (!newSaleData.product_id) {
-        console.error("RECORD SALE FORM: No product ID from estimate");
-        toast.error("Product information missing from estimate");
-        return;
-      }
-      
       if (newSaleData.quantity_sold <= 0 || newSaleData.selling_price <= 0) {
         toast.error("Please enter valid quantity and price");
-        return;
-      }
-    } else {
-      // For regular sales, validate the form normally
-      if (!validateForm()) {
-        console.log("RECORD SALE FORM: Form validation failed");
-        toast.error("Please fill in all required fields correctly");
         return;
       }
     }

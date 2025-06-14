@@ -19,7 +19,7 @@ interface FormErrors {
 }
 
 export const useSaleForm = () => {
-  const { pendingEstimateForSale, products } = useAppStore();
+  const { pendingEstimateForSale } = useAppStore();
   
   const [newSaleData, setNewSaleData] = useState<SaleFormData>({
     product_id: 0,
@@ -42,32 +42,23 @@ export const useSaleForm = () => {
   // Pre-populate form with estimate data
   useEffect(() => {
     if (pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0) {
-      const currentItem = pendingEstimateForSale.items[currentEstimateItem];
-      console.log("SALE FORM: Pre-populating with estimate data:", {
-        currentItem,
-        currentIndex: currentEstimateItem,
-        totalItems: pendingEstimateForSale.items.length
-      });
-      
+      const firstItem = pendingEstimateForSale.items[0];
       setNewSaleData({
-        product_id: currentItem.product_id || 0,
-        quantity_sold: currentItem.quantity || 1,
-        selling_price: currentItem.price || 0,
+        product_id: firstItem.product_id || 0,
+        quantity_sold: firstItem.quantity || 1,
+        selling_price: firstItem.price || 0,
         clientId: 0,
         clientName: pendingEstimateForSale.clientName || "",
       });
     }
-  }, [pendingEstimateForSale, currentEstimateItem]);
+  }, [pendingEstimateForSale]);
 
   const validateForm = () => {
-    // For estimates, skip product and client validation since they're pre-filled
-    const isFromEstimate = !!pendingEstimateForSale;
-    
     const errors: FormErrors = {
-      product_id: !isFromEstimate && !newSaleData.product_id,
+      product_id: !newSaleData.product_id,
       quantity_sold: newSaleData.quantity_sold <= 0,
       selling_price: newSaleData.selling_price <= 0,
-      clientName: !isFromEstimate && !newSaleData.clientName.trim()
+      clientName: !newSaleData.clientName.trim()
     };
     
     setFormErrors(errors);
@@ -138,8 +129,16 @@ export const useSaleForm = () => {
   const moveToNextEstimateItem = () => {
     if (pendingEstimateForSale?.items && currentEstimateItem < pendingEstimateForSale.items.length - 1) {
       const nextIndex = currentEstimateItem + 1;
+      const nextItem = pendingEstimateForSale.items[nextIndex];
+      
       setCurrentEstimateItem(nextIndex);
-      // The useEffect will handle updating the form data
+      setNewSaleData({
+        product_id: nextItem.product_id || 0,
+        quantity_sold: nextItem.quantity || 1,
+        selling_price: nextItem.price || 0,
+        clientId: newSaleData.clientId,
+        clientName: newSaleData.clientName,
+      });
     }
   };
 
