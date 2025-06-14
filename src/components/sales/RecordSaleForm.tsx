@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,9 +11,11 @@ import SaleDetailsForm from "./form/SaleDetailsForm";
 import FormActions from "./form/FormActions";
 import { useSaleForm } from "./hooks/useSaleForm";
 import { validateSaleData, processSaleSubmission } from "./utils/saleProcessor";
+
 interface RecordSaleFormProps {
   onClose: () => void;
 }
+
 const RecordSaleForm = ({
   onClose
 }: RecordSaleFormProps) => {
@@ -27,7 +30,9 @@ const RecordSaleForm = ({
     pendingEstimateForSale,
     setPendingEstimateForSale
   } = store;
+
   console.log("RECORD SALE FORM: Component mounted with estimate data:", pendingEstimateForSale);
+
   const {
     newSaleData,
     formErrors,
@@ -41,7 +46,9 @@ const RecordSaleForm = ({
     getEstimateItemsInfo,
     moveToNextEstimateItem
   } = useSaleForm();
+
   const estimateInfo = getEstimateItemsInfo();
+
   const handleAddSale = async () => {
     console.log("RECORD SALE FORM: Starting sale recording process");
     console.log("RECORD SALE FORM: Sale data:", newSaleData);
@@ -157,20 +164,71 @@ const RecordSaleForm = ({
       setIsSubmitting(false);
     }
   };
+
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
-  return <ScrollArea className="h-[80vh]">
+
+  return (
+    <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
         {/* Estimate Info Card - Only show if actually from estimate */}
-        {pendingEstimateForSale}
+        {pendingEstimateForSale && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Badge variant="secondary">From Estimate</Badge>
+                {pendingEstimateForSale.referenceNo}
+              </CardTitle>
+              <CardDescription>
+                Client: {pendingEstimateForSale.clientName} | Total: ₹{pendingEstimateForSale.totalAmount}
+                {estimateInfo && (
+                  <span className="ml-2">
+                    (Item {estimateInfo.currentIndex + 1} of {estimateInfo.totalItems})
+                  </span>
+                )}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
         
-        <ProductSelector products={products || []} selectedProductId={newSaleData.product_id} onProductChange={handleProductChange} error={formErrors.product_id} disabled={isSubmitting} />
+        <ProductSelector 
+          products={products || []} 
+          selectedProductId={newSaleData.product_id} 
+          onProductChange={handleProductChange} 
+          error={formErrors.product_id} 
+          disabled={isSubmitting} 
+        />
         
-        <ClientSelector clients={clients || []} selectedClientId={newSaleData.clientId} selectedClientName={newSaleData.clientName} onClientChange={handleClientChange} onAddClient={addClient} error={formErrors.clientName} disabled={isSubmitting} isFromEstimate={!!pendingEstimateForSale} />
+        <ClientSelector 
+          clients={clients || []} 
+          selectedClientId={newSaleData.clientId} 
+          selectedClientName={newSaleData.clientName} 
+          onClientChange={handleClientChange} 
+          onAddClient={addClient} 
+          error={formErrors.clientName} 
+          disabled={isSubmitting} 
+          isFromEstimate={!!pendingEstimateForSale} 
+        />
         
-        <SaleDetailsForm quantity={newSaleData.quantity_sold} price={newSaleData.selling_price} maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined} onQuantityChange={handleQuantityChange} onPriceChange={handlePriceChange} quantityError={formErrors.quantity_sold} priceError={formErrors.selling_price} disabled={isSubmitting} />
+        <SaleDetailsForm 
+          quantity={newSaleData.quantity_sold} 
+          price={newSaleData.selling_price} 
+          maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined} 
+          onQuantityChange={handleQuantityChange} 
+          onPriceChange={handlePriceChange} 
+          quantityError={formErrors.quantity_sold} 
+          priceError={formErrors.selling_price} 
+          disabled={isSubmitting} 
+        />
         
-        <FormActions onCancel={onClose} onSubmit={handleAddSale} isSubmitting={isSubmitting} submitText={estimateInfo && estimateInfo.hasMoreItems ? `Record Item ${estimateInfo.currentIndex + 1} & Continue` : "Record Sale & Proceed to Payment"} />
+        <FormActions 
+          onCancel={onClose} 
+          onSubmit={handleAddSale} 
+          isSubmitting={isSubmitting} 
+          submitText={estimateInfo && estimateInfo.hasMoreItems ? `Record Item ${estimateInfo.currentIndex + 1} & Continue` : "Record Sale & Proceed to Payment"} 
+        />
       </div>
-    </ScrollArea>;
+    </ScrollArea>
+  );
 };
+
 export default RecordSaleForm;
