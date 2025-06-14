@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { Sale, Product } from '@/types';
 import { toast } from 'sonner';
@@ -52,33 +53,33 @@ export const createSaleSlice = (
       const transactionId = `sale-${Date.now()}-${saleData.product_id}-${Math.random().toString(36).substr(2, 9)}`;
       console.log("SALE SLICE: Generated transaction ID:", transactionId);
       
-      // Create new sale
-      let newSale: Sale;
+      // Create new sale OUTSIDE the set callback to ensure proper scope
+      const currentSales = get().sales;
+      const newSaleId = currentSales.length > 0 ? Math.max(...currentSales.map(s => s.sale_id)) + 1 : 1;
       
+      const newSale: Sale = {
+        sale_id: newSaleId,
+        product_id: saleData.product_id,
+        quantity_sold: saleData.quantity_sold,
+        selling_price: saleData.selling_price,
+        sale_date: new Date().toISOString(),
+        product,
+        clientId: saleData.clientId,
+        clientName: saleData.clientName,
+        transactionId
+      };
+      
+      console.log("SALE SLICE: Created sale record:", {
+        saleId: newSale.sale_id,
+        transactionId,
+        clientName: saleData.clientName,
+        product: product.product_name,
+        quantity: saleData.quantity_sold,
+        price: saleData.selling_price
+      });
+      
+      // Update the state
       set((state: SaleState) => {
-        const newSaleId = state.sales.length > 0 ? Math.max(...state.sales.map(s => s.sale_id)) + 1 : 1;
-        
-        newSale = {
-          sale_id: newSaleId,
-          product_id: saleData.product_id,
-          quantity_sold: saleData.quantity_sold,
-          selling_price: saleData.selling_price,
-          sale_date: new Date().toISOString(),
-          product,
-          clientId: saleData.clientId,
-          clientName: saleData.clientName,
-          transactionId
-        };
-        
-        console.log("SALE SLICE: Created sale record:", {
-          saleId: newSale.sale_id,
-          transactionId,
-          clientName: saleData.clientName,
-          product: product.product_name,
-          quantity: saleData.quantity_sold,
-          price: saleData.selling_price
-        });
-        
         const clientInfo = saleData.clientName ? ` to ${saleData.clientName}` : '';
         toast.success(`Sale recorded: ${saleData.quantity_sold} ${product.product_name}(s)${clientInfo}`);
         

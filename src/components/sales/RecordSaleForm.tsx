@@ -54,7 +54,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       return;
     }
 
-    // Validate the form
+    // Validate the form first
     if (!validateForm()) {
       console.log("SALE FORM: Form validation failed");
       toast.error("Please fill in all required fields correctly");
@@ -71,7 +71,10 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
 
     const availableStock = parseInt(selectedProduct.units as string);
     if (availableStock < newSaleData.quantity_sold) {
-      console.log("SALE FORM: Insufficient stock", { available: availableStock, requested: newSaleData.quantity_sold });
+      console.log("SALE FORM: Insufficient stock", { 
+        available: availableStock, 
+        requested: newSaleData.quantity_sold 
+      });
       toast.error(`Insufficient stock. Available: ${availableStock}, Requested: ${newSaleData.quantity_sold}`);
       return;
     }
@@ -106,21 +109,19 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         // Show success message
         toast.success("Sale recorded successfully! Redirecting to payments...");
         
-        // Small delay to ensure state is updated
+        // Navigate to payments page immediately
+        console.log("SALE FORM: Navigating to payments page");
+        navigate("/payments");
+        
+        // Close dialog after a short delay to ensure navigation completes
         setTimeout(() => {
-          console.log("SALE FORM: Navigating to payments page");
-          navigate("/payments");
-          
-          // Close dialog after navigation
-          setTimeout(() => {
-            console.log("SALE FORM: Closing dialog");
-            onClose();
-          }, 100);
-        }, 500);
+          console.log("SALE FORM: Closing dialog");
+          onClose();
+        }, 100);
         
       } else {
         console.error("SALE FORM: recordSale returned null or undefined");
-        toast.error("Failed to record sale. Please check the console for details.");
+        toast.error("Failed to record sale. Please try again.");
       }
     } catch (error) {
       console.error("SALE FORM: Error recording sale:", error);
