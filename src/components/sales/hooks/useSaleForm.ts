@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 
@@ -18,11 +18,11 @@ interface FormErrors {
   clientName: boolean;
 }
 
-export const useSaleForm = () => {
+export const useSaleForm = (isFromEstimate: boolean = false) => {
   const { pendingEstimateForSale, products } = useAppStore();
   
-  // Only treat as estimate-based if there's actually pending estimate data
-  const isFromEstimate = !!(pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0);
+  // Use the passed prop instead of calculating from store to prevent conflicts
+  const shouldUseEstimate = isFromEstimate && !!(pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0);
   
   const [newSaleData, setNewSaleData] = useState<SaleFormData>({
     product_id: 0,
@@ -42,9 +42,9 @@ export const useSaleForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentEstimateItem, setCurrentEstimateItem] = useState(0);
 
-  // Only pre-populate form with estimate data if we're actually from an estimate
-  useEffect(() => {
-    if (isFromEstimate) {
+  // Memoize the form initialization to prevent flickering
+  const initializeForm = useCallback(() => {
+    if (shouldUseEstimate) {
       const currentItem = pendingEstimateForSale.items[currentEstimateItem];
       console.log("SALE FORM: Pre-populating with estimate data:", {
         currentItem,
@@ -71,7 +71,7 @@ export const useSaleForm = () => {
       });
     } else {
       // Reset to default values for regular sales
-      console.log("SALE FORM: Resetting form for regular sale");
+      console.log("SALE FORM: Initializing form for regular sale");
       setNewSaleData({
         product_id: 0,
         quantity_sold: 1,
@@ -80,14 +80,19 @@ export const useSaleForm = () => {
         clientName: "",
       });
     }
-  }, [pendingEstimateForSale, currentEstimateItem, isFromEstimate, products]);
+  }, [shouldUseEstimate, pendingEstimateForSale, currentEstimateItem, products]);
+
+  // Initialize form when component mounts or key dependencies change
+  useEffect(() => {
+    initializeForm();
+  }, [initializeForm]);
 
   const validateForm = () => {
     const errors: FormErrors = {
       product_id: !newSaleData.product_id,
       quantity_sold: newSaleData.quantity_sold <= 0,
       selling_price: newSaleData.selling_price <= 0,
-      clientName: !isFromEstimate && !newSaleData.clientName.trim() // Only require client for regular sales
+      clientName: !shouldUseEstimate && !newSaleData.clientName.trim() // Only require client for regular sales
     };
     
     setFormErrors(errors);
@@ -97,55 +102,55 @@ export const useSaleForm = () => {
 
   const handleProductChange = (productId: number, price: number) => {
     console.log("SALE FORM: Product changed", { productId, price });
-    setNewSaleData({
-      ...newSaleData,
+    setNewSaleData(prev => ({
+      ...prev,
       product_id: productId,
       selling_price: price,
-    });
-    setFormErrors({
-      ...formErrors,
+    }));
+    setFormErrors(prev => ({
+      ...prev,
       product_id: !productId
-    });
+    }));
   };
 
   const handleClientChange = (clientId: number, clientName: string) => {
     console.log("SALE FORM: Client changed", { clientId, clientName });
-    setNewSaleData({
-      ...newSaleData,
+    setNewSaleData(prev => ({
+      ...prev,
       clientId: clientId,
       clientName: clientName,
-    });
+    }));
     
-    setFormErrors({
-      ...formErrors,
+    setFormErrors(prev => ({
+      ...prev,
       clientName: !clientName.trim()
-    });
+    }));
   };
 
   const handleQuantityChange = (quantity: number) => {
-    setNewSaleData({
-      ...newSaleData,
+    setNewSaleData(prev => ({
+      ...prev,
       quantity_sold: quantity,
-    });
-    setFormErrors({
-      ...formErrors,
+    }));
+    setFormErrors(prev => ({
+      ...prev,
       quantity_sold: quantity <= 0
-    });
+    }));
   };
 
   const handlePriceChange = (price: number) => {
-    setNewSaleData({
-      ...newSaleData,
+    setNewSaleData(prev => ({
+      ...prev,
       selling_price: price,
-    });
-    setFormErrors({
-      ...formErrors,
+    }));
+    setFormErrors(prev => ({
+      ...prev,
       selling_price: price <= 0
-    });
+    }));
   };
 
   const getEstimateItemsInfo = () => {
-    if (!isFromEstimate) return null;
+    if (!shouldUseEstimate) return null;
     
     return {
       items: pendingEstimateForSale.items,
@@ -156,7 +161,7 @@ export const useSaleForm = () => {
   };
 
   const moveToNextEstimateItem = () => {
-    if (isFromEstimate && currentEstimateItem < pendingEstimateForSale.items.length - 1) {
+    if (shouldUseEstimate && currentEstimateItem < pendingEstimateForSale.items.length - 1) {
       const nextIndex = currentEstimateItem + 1;
       setCurrentEstimateItem(nextIndex);
       // The useEffect will handle updating the form data
@@ -175,6 +180,6 @@ export const useSaleForm = () => {
     handlePriceChange,
     getEstimateItemsInfo,
     moveToNextEstimateItem,
-    isFromEstimate
+    isFromEstimate: shouldUseEstimate
   };
 };

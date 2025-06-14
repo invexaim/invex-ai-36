@@ -10,19 +10,32 @@ interface SalesHeaderProps {
   productsExist: boolean;
   isRecordSaleOpen: boolean;
   setIsRecordSaleOpen: (open: boolean) => void;
+  onCloseDialog: () => void;
+  isFromEstimate?: boolean;
 }
 
-const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: SalesHeaderProps) => {
+const SalesHeader = ({ 
+  productsExist, 
+  isRecordSaleOpen, 
+  setIsRecordSaleOpen, 
+  onCloseDialog,
+  isFromEstimate = false 
+}: SalesHeaderProps) => {
   const { setPendingEstimateForSale } = useAppStore();
 
   const handleRecordSale = () => {
-    // Clear any pending estimate data when opening regular sales dialog
+    console.log("SALES HEADER: Opening regular sale dialog");
+    // Always clear any pending estimate data when opening regular sales dialog
     setPendingEstimateForSale(null);
     setIsRecordSaleOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsRecordSaleOpen(false);
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      onCloseDialog();
+    } else {
+      setIsRecordSaleOpen(open);
+    }
   };
 
   return (
@@ -57,12 +70,14 @@ const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: S
         </Card>
       )}
 
-      <Dialog open={isRecordSaleOpen} onOpenChange={setIsRecordSaleOpen}>
+      <Dialog open={isRecordSaleOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Record New Sale</DialogTitle>
+            <DialogTitle>
+              {isFromEstimate ? "Record Sale from Estimate" : "Record New Sale"}
+            </DialogTitle>
           </DialogHeader>
-          <RecordSaleForm onClose={handleCloseDialog} />
+          <RecordSaleForm onClose={onCloseDialog} isFromEstimate={isFromEstimate} />
         </DialogContent>
       </Dialog>
     </>

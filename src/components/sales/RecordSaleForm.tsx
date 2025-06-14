@@ -9,9 +9,10 @@ import { useSaleSubmission } from "./hooks/useSaleSubmission";
 
 interface RecordSaleFormProps {
   onClose: () => void;
+  isFromEstimate?: boolean;
 }
 
-const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
+const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps) => {
   const store = useAppStore();
   const { 
     products, 
@@ -23,7 +24,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     setPendingEstimateForSale 
   } = store;
   
-  console.log("RECORD SALE FORM: Component mounted with estimate data:", pendingEstimateForSale);
+  console.log("RECORD SALE FORM: Component mounted", { isFromEstimate, hasEstimate: !!pendingEstimateForSale });
   
   const {
     newSaleData,
@@ -35,15 +36,15 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     handlePriceChange,
     getEstimateItemsInfo,
     moveToNextEstimateItem,
-    isFromEstimate
-  } = useSaleForm();
+    isFromEstimate: shouldUseEstimate
+  } = useSaleForm(isFromEstimate);
 
   const estimateInfo = getEstimateItemsInfo();
 
   const { isSubmitting, handleAddSale } = useSaleSubmission({
     newSaleData,
     validateForm,
-    isFromEstimate,
+    isFromEstimate: shouldUseEstimate,
     estimateInfo,
     moveToNextEstimateItem,
     pendingEstimateForSale,
@@ -60,7 +61,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
         {/* Only show estimate info card when actually from estimate */}
-        {isFromEstimate && pendingEstimateForSale && (
+        {shouldUseEstimate && pendingEstimateForSale && (
           <EstimateInfoCard 
             pendingEstimateForSale={pendingEstimateForSale}
             estimateInfo={estimateInfo}
@@ -68,7 +69,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         )}
         
         <SaleFormContent
-          isFromEstimate={isFromEstimate}
+          isFromEstimate={shouldUseEstimate}
           estimateInfo={estimateInfo}
           selectedProduct={selectedProduct}
           products={products}
@@ -90,7 +91,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           submitText={
             estimateInfo && estimateInfo.hasMoreItems 
               ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`
-              : isFromEstimate
+              : shouldUseEstimate
               ? "Complete Estimate & Proceed to Payment"
               : "Record Sale & Proceed to Payment"
           }
