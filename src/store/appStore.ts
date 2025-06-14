@@ -1,3 +1,4 @@
+
 import { AppState } from './types';
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ const useAppStore = createPersistedStore<AppState>(
     
     const companySlice = createCompanySlice(set, get);
     
-    const expirySlice = createExpirySlice(set, get);
+    const expirySlice = createExpirySlice(set, get, store);
     
     // Create sale slice with direct reference to client update function
     // Pass the updateClientPurchase function with proper signature including transactionId
