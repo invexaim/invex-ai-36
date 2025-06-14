@@ -38,10 +38,11 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     handleQuantityChange,
     handlePriceChange,
     estimateInfo,
-    moveToNextItem
+    moveToNextItem,
+    isInitialized
   } = useSaleFormSimple(isFromEstimate);
 
-  // Check if form is ready
+  // Check if form is ready - fixed type error
   useEffect(() => {
     console.log("RECORD SALE FORM: Checking form readiness", {
       hasProducts: !!products && products.length > 0,
@@ -49,25 +50,39 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
       hasRecordSale: typeof recordSale === 'function',
       isFromEstimate,
       hasPendingEstimate: !!pendingEstimateForSale,
+      isInitialized,
       newSaleData
     });
 
-    const ready = products && 
-                  clients && 
-                  typeof recordSale === 'function' &&
-                  (!isFromEstimate || pendingEstimateForSale);
+    // Fix: Ensure we always pass a boolean to setIsFormReady
+    const hasProducts = products && products.length > 0;
+    const hasClients = !!clients;
+    const hasRecordSaleFunction = typeof recordSale === 'function';
+    const hasEstimateWhenNeeded = !isFromEstimate || !!pendingEstimateForSale;
+    
+    const ready = hasProducts && hasClients && hasRecordSaleFunction && hasEstimateWhenNeeded && isInitialized;
+    
+    console.log("RECORD SALE FORM: Form readiness check", {
+      hasProducts,
+      hasClients,
+      hasRecordSaleFunction,
+      hasEstimateWhenNeeded,
+      isInitialized,
+      ready
+    });
     
     setIsFormReady(ready);
     
     if (!ready) {
       console.warn("RECORD SALE FORM: Form not ready", {
-        missingProducts: !products || products.length === 0,
-        missingClients: !clients,
-        missingRecordSale: typeof recordSale !== 'function',
-        missingEstimate: isFromEstimate && !pendingEstimateForSale
+        missingProducts: !hasProducts,
+        missingClients: !hasClients,
+        missingRecordSale: !hasRecordSaleFunction,
+        missingEstimate: isFromEstimate && !pendingEstimateForSale,
+        notInitialized: !isInitialized
       });
     }
-  }, [products, clients, recordSale, isFromEstimate, pendingEstimateForSale, newSaleData]);
+  }, [products, clients, recordSale, isFromEstimate, pendingEstimateForSale, isInitialized, newSaleData]);
 
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
 
@@ -80,17 +95,20 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     });
     
     if (!isFormReady) {
+      console.error("RECORD SALE FORM: Form not ready for submission");
       toast.error("Form is not ready. Please wait or refresh the page.");
       return;
     }
     
     if (isSubmitting) {
+      console.warn("RECORD SALE FORM: Already submitting");
       toast.warning("Sale recording in progress...");
       return;
     }
 
     // Validate form data
     if (!validateForm()) {
+      console.log("RECORD SALE FORM: Form validation failed");
       toast.error("Please fill in all required fields");
       return;
     }
@@ -99,6 +117,10 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     if (selectedProduct) {
       const availableStock = parseInt(selectedProduct.units as string);
       if (availableStock < newSaleData.quantity_sold) {
+        console.warn("RECORD SALE FORM: Insufficient stock", {
+          available: availableStock,
+          required: newSaleData.quantity_sold
+        });
         toast.error(`Insufficient stock. Available: ${availableStock}, Required: ${newSaleData.quantity_sold}`);
         return;
       }
@@ -108,6 +130,12 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
     
     try {
       console.log("RECORD SALE FORM: Calling recordSale with data:", newSaleData);
+      
+      // Ensure recordSale function is available
+      if (typeof recordSale !== 'function') {
+        throw new Error("recordSale function not available");
+      }
+      
       const result = recordSale(newSaleData);
       console.log("RECORD SALE FORM: recordSale result:", result);
       
@@ -116,6 +144,7 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
         
         // Handle estimate flow
         if (estimateInfo && estimateInfo.hasMoreItems) {
+          console.log("RECORD SALE FORM: Moving to next estimate item");
           moveToNextItem();
           toast.success(`Item ${estimateInfo.currentIndex + 1} recorded! Continue with next item.`);
           setIsSubmitting(false);
@@ -130,13 +159,16 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
         };
         
         if (typeof setPendingSalePayment === 'function') {
+          console.log("RECORD SALE FORM: Setting pending sale payment");
           setPendingSalePayment(saleWithEstimateInfo);
         } else {
           console.error("RECORD SALE FORM: setPendingSalePayment not available");
+          throw new Error("Payment system not available");
         }
         
         // Clear estimate if complete
         if (isFromEstimate) {
+          console.log("RECORD SALE FORM: Clearing pending estimate");
           setPendingEstimateForSale(null);
         }
         
@@ -144,16 +176,17 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
         onClose();
         
         setTimeout(() => {
+          console.log("RECORD SALE FORM: Navigating to payments");
           navigate("/payments");
         }, 100);
         
       } else {
         console.error("RECORD SALE FORM: recordSale failed, result:", result);
-        toast.error("Failed to record sale. Please try again.");
+        throw new Error("Failed to record sale - invalid result");
       }
     } catch (error) {
       console.error("RECORD SALE FORM: Error during submission:", error);
-      toast.error("An error occurred while recording the sale");
+      toast.error(`Error recording sale: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -170,6 +203,12 @@ const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps
           )}
           {typeof recordSale !== 'function' && (
             <p className="text-sm text-red-600 mt-2">Sales system not ready</p>
+          )}
+          {isFromEstimate && !pendingEstimateForSale && (
+            <p className="text-sm text-red-600 mt-2">No estimate data available</p>
+          )}
+          {!isInitialized && (
+            <p className="text-sm text-yellow-600 mt-2">Initializing form...</p>
           )}
         </div>
       </div>
