@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, Package, Search, Trash2 } from "lucide-react";
+import { Calendar, Package, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import { toast } from "sonner";
 
@@ -14,6 +14,8 @@ const ExpiryTable = () => {
   const { productExpiries, updateProductExpiryStatus, deleteProductExpiry } = useAppStore();
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const today = new Date();
   const next7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -41,6 +43,12 @@ const ExpiryTable = () => {
     }
   };
 
+  const generateReferenceNumber = (expiryId: string, productName: string) => {
+    const prefix = productName.substring(0, 3).toUpperCase();
+    const shortId = expiryId.split('_')[1] || expiryId.slice(-6);
+    return `${prefix}${shortId}`;
+  };
+
   const filteredExpiries = productExpiries.filter(item => {
     const matchesSearch = item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (item.batch_number && item.batch_number.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -53,6 +61,16 @@ const ExpiryTable = () => {
     
     return matchesSearch;
   });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredExpiries.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentExpiries = filteredExpiries.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleDispose = (id: string) => {
     updateProductExpiryStatus(id, 'disposed');
@@ -99,61 +117,117 @@ const ExpiryTable = () => {
       </CardHeader>
       
       <CardContent>
-        {filteredExpiries.length === 0 ? (
+        {currentExpiries.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No expiry records found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Batch Number</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Expiry Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpiries.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.product_name}</TableCell>
-                    <TableCell>{item.batch_number || "-"}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{new Date(item.expiry_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{getStatusBadge(item)}</TableCell>
-                    <TableCell className="max-w-48 truncate" title={item.notes}>
-                      {item.notes || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {item.status === 'active' && (
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>S.No</TableHead>
+                    <TableHead>Ref No</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Batch Number</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentExpiries.map((item, index) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{startIndex + index + 1}</TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">
+                          {generateReferenceNumber(item.id, item.product_name)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{new Date(item.expiry_date).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">{item.product_name}</TableCell>
+                      <TableCell>{item.batch_number || "-"}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{getStatusBadge(item)}</TableCell>
+                      <TableCell className="max-w-48 truncate" title={item.notes}>
+                        {item.notes || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {item.status === 'active' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDispose(item.id)}
+                            >
+                              Mark as Disposed
+                            </Button>
+                          )}
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => handleDispose(item.id)}
+                            variant="destructive"
+                            onClick={() => handleDelete(item.id)}
                           >
-                            Mark as Disposed
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Custom Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredExpiries.length)} of {filteredExpiries.length} expiry records
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
