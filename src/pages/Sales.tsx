@@ -11,13 +11,7 @@ const Sales = () => {
 
   // Auto-open record sale dialog if there's a pending estimate
   useEffect(() => {
-    console.log("SALES PAGE: Effect triggered", { 
-      hasPendingEstimate: !!pendingEstimateForSale,
-      pendingEstimateData: pendingEstimateForSale 
-    });
-    
     if (pendingEstimateForSale) {
-      console.log("SALES PAGE: Opening dialog for pending estimate");
       setIsRecordSaleOpen(true);
     }
   }, [pendingEstimateForSale]);

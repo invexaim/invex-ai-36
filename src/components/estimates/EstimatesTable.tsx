@@ -58,7 +58,7 @@ export function EstimatesTable({
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const navigate = useNavigate();
-  const { setPendingEstimateForSale, products } = useAppStore();
+  const { setPendingEstimateForSale } = useAppStore();
 
   function getStatusColor(status: string) {
     switch (status) {
@@ -88,34 +88,13 @@ export function EstimatesTable({
       onUpdateEstimateStatus(selectedEstimate.id, "accepted");
     }
 
-    // Enhance estimate items with complete product information
-    const enhancedItems = selectedEstimate.items?.map(item => {
-      // Find the product in the products store to get complete information
-      const product = products.find(p => 
-        p.product_id === item.product_id || 
-        p.product_name === item.name ||
-        p.product_name === item.product_name
-      );
-
-      return {
-        ...item,
-        product_id: product?.product_id || item.product_id,
-        product_name: product?.product_name || item.name || item.product_name,
-        name: product?.product_name || item.name || item.product_name,
-        quantity: item.quantity || 1,
-        price: item.price || item.selling_price || 0
-      };
-    }) || [];
-
-    console.log("Enhanced estimate items with product info:", enhancedItems);
-
     // Convert estimate to pending estimate format for sales
     const estimateData = {
       id: selectedEstimate.id,
       clientName: selectedEstimate.clientName,
       referenceNo: selectedEstimate.referenceNo,
       totalAmount: selectedEstimate.totalAmount,
-      items: enhancedItems,
+      items: selectedEstimate.items || [],
       notes: selectedEstimate.notes,
       terms: selectedEstimate.terms
     };
@@ -230,41 +209,18 @@ export function EstimatesTable({
       </Card>
 
       <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Approve Estimate</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <p>Do you want to approve this estimate and proceed to record a new sale with the estimated products?</p>
-                
-                <div className="space-y-2 text-sm">
-                  <div><strong>Estimate:</strong> {selectedEstimate?.referenceNo}</div>
-                  <div><strong>Client:</strong> {selectedEstimate?.clientName}</div>
-                  <div><strong>Amount:</strong> ₹{selectedEstimate?.totalAmount.toLocaleString()}</div>
-                  
-                  {selectedEstimate?.items && selectedEstimate.items.length > 0 && (
-                    <div>
-                      <strong>Products:</strong>
-                      <ul className="mt-1 space-y-1 ml-4">
-                        {selectedEstimate.items.map((item, index) => {
-                          const product = products.find(p => 
-                            p.product_id === item.product_id || 
-                            p.product_name === item.name ||
-                            p.product_name === item.product_name
-                          );
-                          const productName = product?.product_name || item.name || item.product_name || 'Unknown Product';
-                          
-                          return (
-                            <li key={index} className="text-xs text-gray-600">
-                              • {productName} x {item.quantity} @ ₹{item.price} = ₹{(item.quantity * item.price).toLocaleString()}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <AlertDialogDescription>
+              Do you want to approve this estimate and proceed to record a new sale with the estimated products?
+              <br />
+              <br />
+              <strong>Estimate:</strong> {selectedEstimate?.referenceNo}
+              <br />
+              <strong>Client:</strong> {selectedEstimate?.clientName}
+              <br />
+              <strong>Amount:</strong> ₹{selectedEstimate?.totalAmount.toLocaleString()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
