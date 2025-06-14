@@ -76,12 +76,17 @@ export const createClientSlice = (set: any, get: any) => ({
       amount, 
       productName, 
       quantity,
-      alreadyProcessed: state.processedTransactions?.has(txId),
-      processedCount: state.processedTransactions?.size || 0
+      processedTransactionsType: typeof state.processedTransactions,
+      isSet: state.processedTransactions instanceof Set
     });
     
-    // ENHANCED: Check if this transaction has already been processed
-    if (state.processedTransactions?.has(txId)) {
+    // ENHANCED: Ensure processedTransactions is always a Set
+    const currentProcessedTransactions = state.processedTransactions instanceof Set 
+      ? state.processedTransactions 
+      : new Set<string>();
+    
+    // Check if this transaction has already been processed
+    if (currentProcessedTransactions.has(txId)) {
       console.log("CLIENT UPDATE: DUPLICATE DETECTED - transaction already processed:", txId);
       return { clients: state.clients };
     }
@@ -141,7 +146,7 @@ export const createClientSlice = (set: any, get: any) => ({
     });
     
     // ENHANCED: Mark transaction as processed with size limit
-    const newProcessedTransactions = new Set(state.processedTransactions || []);
+    const newProcessedTransactions = new Set(currentProcessedTransactions);
     
     // Prevent memory buildup by keeping only recent transactions (last 1000)
     if (newProcessedTransactions.size > 1000) {
