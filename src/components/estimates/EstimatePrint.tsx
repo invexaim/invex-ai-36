@@ -8,20 +8,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import useCompanyStore from '@/store/slices/companySlice';
 
 interface EstimatePrintProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   estimate: any;
-  companyName: string;
 }
 
 export function EstimatePrint({ 
   open, 
   onOpenChange, 
-  estimate, 
-  companyName 
+  estimate
 }: EstimatePrintProps) {
+  
+  const { details, address, logo } = useCompanyStore();
   
   const handlePrint = () => {
     window.print();
@@ -41,10 +42,45 @@ export function EstimatePrint({
         </DialogHeader>
         
         <div className="print-content bg-white" id="estimate-print">
-          {/* Header with Company Name */}
-          <div className="text-center mb-8 pb-4 border-b-2 border-gray-800">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">{companyName || 'Your Company Name'}</h1>
-            <h2 className="text-xl font-semibold text-gray-600">ESTIMATE</h2>
+          {/* Header with Company Logo and Details */}
+          <div className="flex items-start justify-between mb-8 pb-6 border-b-2 border-gray-800">
+            <div className="flex items-start gap-6">
+              {logo.logoUrl && (
+                <div className="flex-shrink-0">
+                  <img 
+                    src={logo.logoUrl} 
+                    alt="Company Logo" 
+                    className="h-20 w-20 object-contain"
+                  />
+                </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                  {details.companyName || 'Your Company Name'}
+                </h1>
+                {address.street && (
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>{address.street}</p>
+                    {address.aptSuite && <p>{address.aptSuite}</p>}
+                    <p>
+                      {address.city}
+                      {address.state && `, ${address.state}`}
+                      {address.postalCode && ` ${address.postalCode}`}
+                    </p>
+                    {address.country && <p>{address.country}</p>}
+                  </div>
+                )}
+                {details.email && (
+                  <p className="text-sm text-gray-600 mt-2">Email: {details.email}</p>
+                )}
+                {details.phone && (
+                  <p className="text-sm text-gray-600">Phone: {details.phone}</p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold text-blue-600">ESTIMATE</h2>
+            </div>
           </div>
           
           {/* Estimate Information Section */}
@@ -135,11 +171,12 @@ export function EstimatePrint({
         <style>{`
           @media print {
             @page {
-              margin: 15mm;
-              size: A4;
+              margin: 0 !important;
+              size: A4 !important;
             }
             
-            * {
+            /* Hide browser headers and footers */
+            html {
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
             }
@@ -149,8 +186,10 @@ export function EstimatePrint({
               line-height: 1.4 !important;
               color: black !important;
               background: white !important;
+              margin: 15mm !important;
             }
             
+            /* Hide everything except the print content */
             body * {
               visibility: hidden !important;
             }
@@ -161,7 +200,7 @@ export function EstimatePrint({
             }
             
             #estimate-print {
-              position: static !important;
+              position: absolute !important;
               left: 0 !important;
               top: 0 !important;
               width: 100% !important;
@@ -174,6 +213,15 @@ export function EstimatePrint({
               transform: none !important;
             }
             
+            /* Hide browser print headers and footers completely */
+            @page {
+              margin: 15mm !important;
+              @top-left { content: '' !important; }
+              @top-right { content: '' !important; }
+              @bottom-left { content: '' !important; }
+              @bottom-right { content: '' !important; }
+            }
+            
             #estimate-print h1 {
               font-size: 24px !important;
               margin-bottom: 8px !important;
@@ -182,7 +230,7 @@ export function EstimatePrint({
             
             #estimate-print h2 {
               font-size: 18px !important;
-              color: black !important;
+              color: #2563eb !important;
             }
             
             #estimate-print h3 {
@@ -261,6 +309,10 @@ export function EstimatePrint({
               padding-top: 32px !important;
             }
             
+            #estimate-print .pb-6 {
+              padding-bottom: 24px !important;
+            }
+            
             #estimate-print .p-4 {
               padding: 16px !important;
             }
@@ -279,6 +331,36 @@ export function EstimatePrint({
             
             #estimate-print .font-semibold {
               font-weight: 600 !important;
+            }
+            
+            #estimate-print .flex {
+              display: flex !important;
+            }
+            
+            #estimate-print .items-start {
+              align-items: flex-start !important;
+            }
+            
+            #estimate-print .justify-between {
+              justify-content: space-between !important;
+            }
+            
+            #estimate-print .justify-end {
+              justify-content: flex-end !important;
+            }
+            
+            #estimate-print .gap-6 {
+              gap: 24px !important;
+            }
+            
+            #estimate-print .flex-shrink-0 {
+              flex-shrink: 0 !important;
+            }
+            
+            #estimate-print img {
+              max-width: 80px !important;
+              max-height: 80px !important;
+              object-fit: contain !important;
             }
           }
         `}</style>

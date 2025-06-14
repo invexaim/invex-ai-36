@@ -35,7 +35,7 @@ const Estimates = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
-  const { products, companyName } = useAppStore();
+  const { products } = useAppStore();
 
   // Load estimates from localStorage
   useEffect(() => {
@@ -216,7 +216,6 @@ const Estimates = () => {
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
           estimate={selectedEstimate}
-          companyName={companyName}
         />
       )}
     </div>
