@@ -53,7 +53,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           if (initialSession?.user) {
             console.log('AUTH: User authenticated, setting up realtime updates');
-            setupRealtimeUpdates();
+            setupRealtimeUpdates(initialSession.user.id);
           }
         }
       } catch (error) {
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (user) {
           console.log('AUTH: User signed in, setting up realtime updates');
-          setupRealtimeUpdates();
+          setupRealtimeUpdates(user.id);
         } else {
           console.log('AUTH: User signed out, cleaning up');
         }
