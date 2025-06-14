@@ -28,7 +28,10 @@ export const createExpirySlice: StateCreator<
 
   addProductExpiry: async (expiryData) => {
     const currentUser = get().currentUser;
+    console.log('EXPIRY: Adding product expiry, currentUser:', currentUser?.id || 'null');
+    
     if (!currentUser) {
+      console.error('EXPIRY: No current user found in store');
       toast.error("Please sign in to add expiry dates");
       return;
     }
@@ -45,6 +48,8 @@ export const createExpirySlice: StateCreator<
         notes: expiryData.notes,
       };
 
+      console.log('EXPIRY: Inserting new expiry:', newExpiry);
+
       const { data, error } = await supabase
         .from('product_expiry')
         .insert([newExpiry])
@@ -52,8 +57,8 @@ export const createExpirySlice: StateCreator<
         .single();
 
       if (error) {
-        console.error('Error adding product expiry:', error);
-        toast.error("Failed to add expiry date");
+        console.error('EXPIRY: Error adding product expiry:', error);
+        toast.error(`Failed to add expiry date: ${error.message}`);
         return;
       }
 
@@ -62,10 +67,10 @@ export const createExpirySlice: StateCreator<
         productExpiries: [...state.productExpiries, data],
       }));
 
-      console.log("Added new product expiry:", data);
+      console.log("EXPIRY: Added new product expiry:", data);
       toast.success("Product expiry date added successfully");
     } catch (error) {
-      console.error('Error adding product expiry:', error);
+      console.error('EXPIRY: Error adding product expiry:', error);
       toast.error("Failed to add expiry date");
     }
   },
@@ -145,8 +150,10 @@ export const createExpirySlice: StateCreator<
 
   loadProductExpiries: async () => {
     const currentUser = get().currentUser;
+    console.log('EXPIRY: Loading product expiries, currentUser:', currentUser?.id || 'null');
+    
     if (!currentUser) {
-      console.log("No current user, skipping expiry data load");
+      console.log("EXPIRY: No current user, skipping expiry data load");
       return;
     }
 
@@ -158,15 +165,15 @@ export const createExpirySlice: StateCreator<
         .order('expiry_date', { ascending: true });
 
       if (error) {
-        console.error('Error loading expiry data:', error);
+        console.error('EXPIRY: Error loading expiry data:', error);
         toast.error("Failed to load expiry data");
         return;
       }
 
       set({ productExpiries: data || [] });
-      console.log("Loaded expiry data:", data?.length || 0, "records");
+      console.log("EXPIRY: Loaded expiry data:", data?.length || 0, "records");
     } catch (error) {
-      console.error('Error loading expiry data:', error);
+      console.error('EXPIRY: Error loading expiry data:', error);
       toast.error("Failed to load expiry data");
     }
   },

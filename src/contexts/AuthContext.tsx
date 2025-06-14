@@ -45,7 +45,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setPayments, 
     setMeetings, 
     setProductExpiries,
-    loadProductExpiries
+    loadProductExpiries,
+    setCurrentUser // Add this import from the store
   } = useAppStore();
 
   const clearUserData = () => {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setPayments([]);
     setMeetings([]);
     setProductExpiries([]);
+    setCurrentUser(null); // Clear current user in store
   };
 
   useEffect(() => {
@@ -69,8 +71,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setSession(initialSession);
           setUser(initialSession?.user || null);
           
+          // Update store's currentUser
           if (initialSession?.user) {
-            console.log('AUTH: User authenticated, setting up realtime updates');
+            console.log('AUTH: User authenticated, updating store currentUser');
+            setCurrentUser(initialSession.user);
             clearUserData();
             setTimeout(async () => {
               try {
@@ -81,6 +85,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 console.error('AUTH: Error syncing data on init:', error);
               }
             }, 100);
+          } else {
+            setCurrentUser(null);
           }
         }
       } catch (error) {
@@ -105,9 +111,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(user);
         setSession(user ? { user } as Session : null);
         
+        // Update store's currentUser
+        setCurrentUser(user);
+        console.log('AUTH: Updated store currentUser:', user?.id || 'null');
+        
         if (user && newUserId !== previousUserId) {
           console.log('AUTH: New user signed in, clearing data and syncing');
           clearUserData();
+          setCurrentUser(user); // Set again after clearing
           
           setTimeout(async () => {
             try {
@@ -129,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, loadProductExpiries, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, loadProductExpiries, setCurrentUser, session?.user?.id]);
 
   const signOut = async () => {
     try {
