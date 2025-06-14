@@ -23,11 +23,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Session management utilities
+// Enhanced session management utilities
 const SESSION_KEYS = {
   INITIAL_LOAD_COMPLETE: 'invex_initial_load_complete',
   LAST_SYNC_TIMESTAMP: 'invex_last_sync_timestamp',
-  WELCOME_SHOWN: 'invex_welcome_shown'
+  WELCOME_SHOWN: 'invex_welcome_shown',
+  LAST_AUTH_CHANGE: 'invex_last_auth_change'
 };
 
 const hasInitialLoadCompleted = () => {
@@ -47,16 +48,47 @@ const updateLastSyncTimestamp = () => {
   sessionStorage.setItem(SESSION_KEYS.LAST_SYNC_TIMESTAMP, Date.now().toString());
 };
 
+const getLastAuthChange = (): number => {
+  const timestamp = sessionStorage.getItem(SESSION_KEYS.LAST_AUTH_CHANGE);
+  return timestamp ? parseInt(timestamp, 10) : 0;
+};
+
+const updateLastAuthChange = () => {
+  sessionStorage.setItem(SESSION_KEYS.LAST_AUTH_CHANGE, Date.now().toString());
+};
+
 const clearSessionFlags = () => {
   Object.values(SESSION_KEYS).forEach(key => {
     sessionStorage.removeItem(key);
   });
 };
 
+// Enhanced detection of genuine login vs session refresh
+const isGenuineAuthChange = (currentUser: User | null, wasSignedIn: boolean): boolean => {
+  const lastAuthChange = getLastAuthChange();
+  const timeSinceLastAuth = Date.now() - lastAuthChange;
+  
+  // If more than 5 minutes since last auth change, consider it genuine
+  if (timeSinceLastAuth > 300000) {
+    console.log("AUTH: Genuine auth change detected - significant time gap");
+    return true;
+  }
+  
+  // If user state actually changed (null to user or user to null), it's genuine
+  if ((!wasSignedIn && currentUser) || (wasSignedIn && !currentUser)) {
+    console.log("AUTH: Genuine auth change detected - user state changed");
+    return true;
+  }
+  
+  console.log("AUTH: Session refresh detected - not a genuine auth change");
+  return false;
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [wasSignedIn, setWasSignedIn] = useState(false);
   
   const setCurrentUser = useAppStore(state => state.setCurrentUser);
   const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
@@ -64,17 +96,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const setupRealtimeUpdates = useAppStore(state => state.setupRealtimeUpdates);
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
 
-  // Enhanced sync function with silent option
-  const performDataSync = async (userId: string, options: { silent?: boolean; isInitialLoad?: boolean } = {}) => {
-    const { silent = false, isInitialLoad = false } = options;
+  // Enhanced sync function with better conflict handling
+  const performDataSync = async (userId: string, options: { silent?: boolean; isInitialLoad?: boolean; force?: boolean } = {}) => {
+    const { silent = false, isInitialLoad = false, force = false } = options;
     
     try {
-      console.log("AUTH: Starting data sync:", { userId, silent, isInitialLoad });
+      console.log("AUTH: Starting data sync:", { userId, silent, isInitialLoad, force });
       
-      // Disable auto sync by default - only sync on explicit user action
+      // Keep auto sync disabled by default to prevent aggressive syncing
       setAutoSync(false);
       
-      await syncDataWithSupabase();
+      // Check if sync is actually needed
+      if (!force) {
+        const lastSyncTime = getLastSyncTimestamp();
+        const timeSinceLastSync = Date.now() - lastSyncTime;
+        
+        // Only sync if it's been more than 10 minutes since last sync (increased from 5 minutes)
+        if (timeSinceLastSync < 600000 && !isInitialLoad) {
+          console.log("AUTH: Skipping sync - recent sync detected", Math.round(timeSinceLastSync / 60000), "minutes ago");
+          return;
+        }
+      }
+      
+      await syncDataWithSupabase({ silent });
       
       // Update sync timestamp
       updateLastSyncTimestamp();
@@ -86,18 +130,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (isInitialLoad) {
           const welcomeShown = sessionStorage.getItem(SESSION_KEYS.WELCOME_SHOWN);
           if (!welcomeShown) {
-            toast.success("Welcome! Your data has been loaded");
+            toast.success("Welcome! Your data has been loaded", { duration: 3000 });
             sessionStorage.setItem(SESSION_KEYS.WELCOME_SHOWN, 'true');
           }
         } else {
-          toast.success("Your data has been updated");
+          // Reduced frequency of sync notifications
+          toast.success("Your data has been updated", { duration: 2000 });
         }
       }
       
     } catch (error) {
       console.error("AUTH: Error syncing data:", error);
       if (!silent) {
-        toast.error("Failed to load your data. Please refresh the page.");
+        toast.error("Failed to load your data. Please refresh the page.", { duration: 5000 });
       }
       throw error;
     }
@@ -116,12 +161,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         setUser(currentUser);
         setCurrentUser(currentUser);
+        setWasSignedIn(!!currentUser);
         
         if (currentUser) {
           const hasCompletedInitialLoad = hasInitialLoadCompleted();
           const lastSyncTime = getLastSyncTimestamp();
           const timeSinceLastSync = Date.now() - lastSyncTime;
-          const shouldSyncData = !hasCompletedInitialLoad || timeSinceLastSync > 300000; // 5 minutes
+          const shouldSyncData = !hasCompletedInitialLoad || timeSinceLastSync > 600000; // 10 minutes (increased)
           
           if (shouldSyncData) {
             console.log("AUTH: Performing initial data sync");
@@ -152,28 +198,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     checkSession();
 
-    // Set up auth state listener after checking session
+    // Set up auth state listener with enhanced change detection
     const subscription = AuthService.onAuthStateChange(async (currentUser) => {
       console.log("AUTH: Auth state changed:", currentUser ? "User signed in" : "User signed out");
+      
+      // Check if this is a genuine auth change or just a session refresh
+      const isGenuine = isGenuineAuthChange(currentUser, wasSignedIn);
       
       setUser(currentUser);
       setCurrentUser(currentUser);
       
       if (currentUser) {
-        // Check if this is a genuine new login or just a session refresh
-        const hasCompletedInitialLoad = hasInitialLoadCompleted();
-        const lastSyncTime = getLastSyncTimestamp();
-        const timeSinceLastSync = Date.now() - lastSyncTime;
+        setWasSignedIn(true);
         
-        // Only sync if it's been more than 30 seconds since last sync (indicates new login)
-        const shouldSyncForNewLogin = !hasCompletedInitialLoad || timeSinceLastSync > 30000;
-        
-        if (shouldSyncForNewLogin) {
+        // Only sync for genuine login events, not session refreshes
+        if (isGenuine) {
+          updateLastAuthChange();
+          
+          const hasCompletedInitialLoad = hasInitialLoadCompleted();
+          
           try {
-            console.log("AUTH: New login detected, syncing data");
+            console.log("AUTH: Genuine login detected, syncing data");
             await performDataSync(currentUser.id, { 
               silent: false, 
-              isInitialLoad: !hasCompletedInitialLoad 
+              isInitialLoad: !hasCompletedInitialLoad,
+              force: true // Force sync for genuine logins
             });
             markInitialLoadComplete();
           } catch (error) {
@@ -192,14 +241,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           realtimeCleanup = cleanup;
         }
       } else {
-        // When user logs out, clear local data and session flags
-        console.log("AUTH: User signed out, clearing local data");
-        if (realtimeCleanup) {
-          realtimeCleanup();
-          realtimeCleanup = null;
+        setWasSignedIn(false);
+        
+        // Only clear data for genuine logout events
+        if (isGenuine) {
+          updateLastAuthChange();
+          console.log("AUTH: Genuine logout detected, clearing local data");
+          if (realtimeCleanup) {
+            realtimeCleanup();
+            realtimeCleanup = null;
+          }
+          clearLocalData();
+          clearSessionFlags();
+        } else {
+          console.log("AUTH: Session state change, not clearing data");
         }
-        clearLocalData();
-        clearSessionFlags();
       }
     });
 
@@ -209,7 +265,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         realtimeCleanup();
       }
     };
-  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates]);
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates, wasSignedIn]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, authChecked }}>
