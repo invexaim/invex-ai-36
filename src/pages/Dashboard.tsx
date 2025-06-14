@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Package, Users, CreditCard, TrendingUp, Calendar } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
@@ -94,7 +93,7 @@ const Dashboard = () => {
     return last7Days;
   };
 
-  // Prepare Revenue by Category data
+  // Updated: Prepare Revenue by Category data - show ALL categories with sales
   const prepareRevenueByCategory = () => {
     const categoryRevenue = new Map();
     
@@ -106,9 +105,10 @@ const Dashboard = () => {
       categoryRevenue.set(category, (categoryRevenue.get(category) || 0) + revenue);
     });
     
+    // Return ALL categories with sales (not just top 5), sorted by revenue
     return Array.from(categoryRevenue.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
+      .filter(([name, sales]) => sales > 0) // Only include categories with actual sales
+      .sort((a, b) => b[1] - a[1]) // Sort by revenue (highest first)
       .map(([name, sales]) => ({ name, sales }));
   };
 
