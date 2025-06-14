@@ -43,9 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSales, 
     setClients, 
     setPayments, 
-    setMeetings, 
-    setProductExpiries,
-    loadProductExpiries,
+    setMeetings,
     setCurrentUser // Add this import from the store
   } = useAppStore();
 
@@ -56,7 +54,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setClients([]);
     setPayments([]);
     setMeetings([]);
-    setProductExpiries([]);
     setCurrentUser(null); // Clear current user in store
   };
 
@@ -79,7 +76,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setTimeout(async () => {
               try {
                 await syncDataWithSupabase();
-                await loadProductExpiries();
                 setupRealtimeUpdates(initialSession.user.id);
               } catch (error) {
                 console.error('AUTH: Error syncing data on init:', error);
@@ -123,7 +119,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setTimeout(async () => {
             try {
               await syncDataWithSupabase();
-              await loadProductExpiries();
               setupRealtimeUpdates(user.id);
             } catch (error) {
               console.error('AUTH: Error syncing data for new user:', error);
@@ -140,7 +135,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, loadProductExpiries, setCurrentUser, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setCurrentUser, session?.user?.id]);
 
   const signOut = async () => {
     try {

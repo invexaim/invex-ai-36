@@ -32,9 +32,6 @@ const useAppStore = createPersistedStore<AppState>(
       ...slices.userSlice,
       // Company slice
       ...slices.companySlice,
-      // Expiry slice - explicitly include all expiry methods
-      ...slices.expirySlice,
-      loadProductExpiries: slices.expirySlice.loadProductExpiries,
       // Meeting slice
       ...slices.meetingSlice,
       // Store methods - these OVERRIDE any slice methods with same names
@@ -45,7 +42,6 @@ const useAppStore = createPersistedStore<AppState>(
     };
     
     console.log("APP STORE: Final store recordSale type:", typeof combinedStore.recordSale);
-    console.log("APP STORE: Final store loadProductExpiries type:", typeof combinedStore.loadProductExpiries);
     return combinedStore;
   }
 );
