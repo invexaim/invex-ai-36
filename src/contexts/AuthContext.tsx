@@ -43,7 +43,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSales, 
     setClients, 
     setPayments, 
-    setMeetings,
     setCurrentUser // Add this import from the store
   } = useAppStore();
 
@@ -53,7 +52,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSales([]);
     setClients([]);
     setPayments([]);
-    setMeetings([]);
     setCurrentUser(null); // Clear current user in store
   };
 
@@ -135,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setCurrentUser, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setCurrentUser, session?.user?.id]);
 
   const signOut = async () => {
     try {

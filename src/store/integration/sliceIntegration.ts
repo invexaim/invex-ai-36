@@ -1,3 +1,4 @@
+
 import { AppState } from '../types';
 import { createProductSlice } from '../slices/productSlice';
 import { createSaleSlice } from '../slices/saleSlice';
@@ -5,7 +6,6 @@ import { createClientSlice } from '../slices/clientSlice';
 import { createPaymentSlice } from '../slices/paymentSlice';
 import { createUserSlice } from '../slices/userSlice';
 import { createCompanySlice } from '../slices/companySlice';
-import { createExpirySlice } from '../slices/expirySlice';
 import { createMeetingSlice } from '../slices/meetingSlice';
 
 export const integrateSlices = (
@@ -30,9 +30,6 @@ export const integrateSlices = (
   
   const companySlice = createCompanySlice(set, get);
   console.log("SLICE INTEGRATION: Company slice created");
-  
-  const expirySlice = createExpirySlice(set, get, store);
-  console.log("SLICE INTEGRATION: Expiry slice created");
   
   // Create sale slice with enhanced error handling and dependencies
   const saleSlice = createSaleSlice(
@@ -140,7 +137,6 @@ export const integrateSlices = (
     productSlice,
     clientSlice,
     companySlice,
-    expirySlice,
     saleSlice,
     paymentSlice,
     meetingSlice
