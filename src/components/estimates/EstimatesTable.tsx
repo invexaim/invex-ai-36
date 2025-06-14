@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,8 +57,11 @@ export function EstimatesTable({
 }: EstimatesTableProps) {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { setPendingEstimateForSale } = useAppStore();
+
+  const itemsPerPage = 10;
 
   function getStatusColor(status: string) {
     switch (status) {
@@ -134,14 +137,25 @@ export function EstimatesTable({
     return bNum - aNum; // Descending order
   });
 
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedEstimates.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentEstimates = sortedEstimates.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <>
       <Card className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>S.No</TableHead>
               <TableHead>Reference No.</TableHead>
+              <TableHead>Date</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Total Amount</TableHead>
               <TableHead>Status</TableHead>
@@ -149,12 +163,19 @@ export function EstimatesTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedEstimates.map((estimate) => (
+            {currentEstimates.map((estimate, index) => (
               <TableRow key={estimate.id}>
+                <TableCell>
+                  {startIndex + index + 1}
+                </TableCell>
+                <TableCell>
+                  <div className="font-mono text-sm">
+                    {estimate.referenceNo}
+                  </div>
+                </TableCell>
                 <TableCell>
                   {new Date(estimate.date).toLocaleDateString()}
                 </TableCell>
-                <TableCell>{estimate.referenceNo}</TableCell>
                 <TableCell>{estimate.clientName}</TableCell>
                 <TableCell>₹{estimate.totalAmount.toLocaleString()}</TableCell>
                 <TableCell>
@@ -207,6 +228,52 @@ export function EstimatesTable({
           </TableBody>
         </Table>
       </Card>
+
+      {/* Custom Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1} to {Math.min(endIndex, sortedEstimates.length)} of {sortedEstimates.length} estimates
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
         <AlertDialogContent>
