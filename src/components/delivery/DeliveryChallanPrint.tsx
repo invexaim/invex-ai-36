@@ -191,6 +191,36 @@ export function DeliveryChallanPrint({
               transform: none !important;
             }
             
+            /* Hide browser print headers and footers */
+            @page {
+              margin: 15mm;
+              size: A4;
+              /* Remove default browser headers/footers */
+              @top-left { content: ""; }
+              @top-center { content: ""; }
+              @top-right { content: ""; }
+              @bottom-left { content: ""; }
+              @bottom-center { content: ""; }
+              @bottom-right { content: ""; }
+            }
+            
+            /* Additional styles to ensure clean printing */
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            
+            /* Hide any browser-generated content */
+            body::before,
+            body::after,
+            html::before,
+            html::after {
+              content: none !important;
+              display: none !important;
+            }
+            
             #challan-print h1 {
               font-size: 24px !important;
               margin-bottom: 8px !important;
