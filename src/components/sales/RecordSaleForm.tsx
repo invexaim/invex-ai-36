@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { PlusCircle } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 interface RecordSaleFormProps {
   onClose: () => void;
@@ -15,6 +17,7 @@ interface RecordSaleFormProps {
 const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   const navigate = useNavigate();
   const { products, clients, recordSale, setPendingSalePayment, addClient } = useAppStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSaleData, setNewSaleData] = useState({
     product_id: 0,
     quantity_sold: 1,
@@ -55,32 +58,63 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     return !Object.values(errors).some(error => error);
   };
 
-  const handleAddSale = () => {
-    // Validate the form
-    if (!validateForm()) {
+  const handleAddSale = async () => {
+    // Prevent double submissions
+    if (isSubmitting) {
       return;
     }
 
-    // Record the sale using our store function
-    const recordedSale = recordSale(newSaleData);
-    
-    if (recordedSale) {
-      // Store the sale details for the payment page
-      setPendingSalePayment(recordedSale);
-      
-      // Navigate to payments page
-      navigate("/payments");
+    // Validate the form
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields");
+      return;
     }
+
+    setIsSubmitting(true);
     
-    // Reset form and close dialog
-    setNewSaleData({
-      product_id: 0,
-      quantity_sold: 1,
-      selling_price: 0,
-      clientId: 0,
-      clientName: "",
-    });
-    onClose();
+    try {
+      console.log("SALE FORM: Starting sale recording process", newSaleData);
+      
+      // Record the sale using our store function
+      const recordedSale = recordSale(newSaleData);
+      
+      if (recordedSale) {
+        console.log("SALE FORM: Sale recorded successfully", recordedSale);
+        
+        // Store the sale details for the payment page
+        setPendingSalePayment(recordedSale);
+        
+        // Show success message
+        toast.success("Sale recorded! Redirecting to payments...");
+        
+        // Reset form state
+        setNewSaleData({
+          product_id: 0,
+          quantity_sold: 1,
+          selling_price: 0,
+          clientId: 0,
+          clientName: "",
+        });
+        
+        // Navigate to payments page BEFORE closing dialog
+        console.log("SALE FORM: Navigating to payments page");
+        navigate("/payments");
+        
+        // Close dialog AFTER navigation
+        setTimeout(() => {
+          onClose();
+        }, 100);
+        
+      } else {
+        console.error("SALE FORM: Failed to record sale - recordSale returned null");
+        toast.error("Failed to record sale. Please try again.");
+      }
+    } catch (error) {
+      console.error("SALE FORM: Error recording sale:", error);
+      toast.error("An error occurred while recording the sale");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const validateClientForm = () => {
@@ -155,6 +189,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
               });
             }}
             value={newSaleData.product_id || ""}
+            disabled={isSubmitting}
           >
             <option value="">Select a product</option>
             {products.map((product) => (
@@ -207,6 +242,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
                 }
               }}
               value={newSaleData.clientId || ""}
+              disabled={isSubmitting}
             >
               <option value="">Select a client</option>
               {clients.map((client) => (
@@ -225,6 +261,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
               variant="outline" 
               size="icon"
               onClick={() => setShowNewClientForm(!showNewClientForm)}
+              disabled={isSubmitting}
             >
               <PlusCircle className="h-4 w-4" />
             </Button>
@@ -249,6 +286,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
                   }}
                   placeholder="Client name"
                   className={newClientErrors.name ? "border-red-500" : ""}
+                  disabled={isSubmitting}
                 />
                 {newClientErrors.name && (
                   <p className="text-xs text-red-500">Client name is required</p>
@@ -262,6 +300,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
                   value={newClientData.email}
                   onChange={(e) => setNewClientData({...newClientData, email: e.target.value})}
                   placeholder="Email address"
+                  disabled={isSubmitting}
                 />
               </div>
               <div>
@@ -271,12 +310,14 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
                   value={newClientData.phone}
                   onChange={(e) => setNewClientData({...newClientData, phone: e.target.value})}
                   placeholder="Phone number"
+                  disabled={isSubmitting}
                 />
               </div>
               <Button 
                 type="button" 
                 onClick={handleAddNewClient}
                 className="w-full"
+                disabled={isSubmitting}
               >
                 Save Client
               </Button>
@@ -304,6 +345,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
               });
             }}
             className={formErrors.quantity_sold ? "border-red-500" : ""}
+            disabled={isSubmitting}
           />
           {formErrors.quantity_sold && (
             <p className="text-xs text-red-500">Quantity must be greater than 0</p>
@@ -330,6 +372,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
                 });
               }}
               className={formErrors.selling_price ? "border-red-500" : ""}
+              disabled={isSubmitting}
             />
             <span className="absolute right-3 top-2.5 text-muted-foreground">
               INR
@@ -340,14 +383,19 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           )}
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button 
             type="submit" 
             onClick={handleAddSale}
+            disabled={isSubmitting}
           >
-            Record Sale
+            {isSubmitting ? "Recording Sale..." : "Record Sale"}
           </Button>
         </div>
       </div>
