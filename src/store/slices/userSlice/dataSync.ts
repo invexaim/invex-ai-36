@@ -68,14 +68,8 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch", { 
-      expectedUserId: userId, 
-      actualUserId: user?.id 
-    });
-    toast.error("Authentication error - please log in again");
-    // Clear potentially stale data
-    localStorage.removeItem('invex_data_backup');
-    sessionStorage.removeItem('invex_data_backup');
+    console.error("DATASYNC: User not authenticated or ID mismatch");
+    toast.error("Authentication required to save data");
     throw new Error("Authentication required");
   }
   
@@ -86,8 +80,7 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       sales: [...(state.sales || [])],
       clients: [...(state.clients || [])],
       payments: [...(state.payments || [])],
-      timestamp: Date.now(),
-      userId: userId // Include userId in backup for verification
+      timestamp: Date.now()
     };
     
     // Save backup to sessionStorage for recovery
@@ -97,7 +90,7 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       console.warn("DATASYNC: Could not save backup to sessionStorage");
     }
     
-    // Get current data to save - ensure user_id is explicitly set
+    // Get current data to save
     const userData = {
       user_id: userId,
       products: state.products || [],
@@ -107,7 +100,7 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       updated_at: new Date().toISOString()
     };
     
-    console.log("DATASYNC: Saving data for user ID:", userId, {
+    console.log("DATASYNC: Saving data:", {
       productsCount: userData.products.length,
       salesCount: userData.sales.length,
       clientsCount: userData.clients.length,
@@ -133,7 +126,7 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       toast.error("Failed to save your changes - data backed up locally");
       throw error;
     } else {
-      console.log("DATASYNC: Data successfully saved to Supabase for user:", userId);
+      console.log("DATASYNC: Data successfully saved to Supabase");
       // Clear backup after successful save
       sessionStorage.removeItem('invex_data_backup');
     }
@@ -147,18 +140,12 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
 export async function fetchUserDataFromSupabase(userId: string, options: { skipConflictCheck?: boolean } = {}) {
   console.log("DATASYNC: Starting data sync for user:", userId);
   
-  // Check if user is authenticated and matches expected userId
+  // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch", { 
-      expectedUserId: userId, 
-      actualUserId: user?.id 
-    });
+    console.error("DATASYNC: User not authenticated or ID mismatch");
     if (!options.skipConflictCheck) {
-      toast.error("Authentication error - please log in again");
-      // Clear potentially stale data
-      localStorage.removeItem('invex_data_backup');
-      sessionStorage.removeItem('invex_data_backup');
+      toast.error("Authentication required to load data");
     }
     throw new Error("Authentication required");
   }
@@ -170,22 +157,13 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       const backup = sessionStorage.getItem('invex_data_backup');
       if (backup) {
         localBackup = JSON.parse(backup);
-        // Verify backup belongs to current user
-        if (localBackup.userId && localBackup.userId !== userId) {
-          console.warn("DATASYNC: Local backup belongs to different user, clearing");
-          sessionStorage.removeItem('invex_data_backup');
-          localBackup = null;
-        } else {
-          console.log("DATASYNC: Found local backup data for user:", userId);
-        }
+        console.log("DATASYNC: Found local backup data");
       }
     } catch (e) {
       console.warn("DATASYNC: Could not parse local backup");
-      sessionStorage.removeItem('invex_data_backup');
     }
     
     // Try to fetch existing data from Supabase using RLS-protected query
-    console.log("DATASYNC: Fetching data for authenticated user:", userId);
     const { data, error } = await supabase
       .from('user_data')
       .select('*')
@@ -194,7 +172,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
     
     if (error) {
       if (error.code === 'PGRST116') {
-        console.log("DATASYNC: No existing data found for user:", userId);
+        console.log("DATASYNC: No existing data found for user");
         
         // If we have local backup, offer to restore it
         if (localBackup && !options.skipConflictCheck) {
@@ -203,7 +181,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
           );
           
           if (shouldRestore) {
-            console.log("DATASYNC: Restoring from local backup for user:", userId);
+            console.log("DATASYNC: Restoring from local backup");
             return {
               products: localBackup.products || [],
               sales: localBackup.sales || [],
@@ -215,7 +193,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
         
         return null;
       } else {
-        console.error('DATASYNC: Error fetching data for user:', userId, error);
+        console.error('DATASYNC: Error fetching data:', error);
         if (!options.skipConflictCheck) {
           toast.error("Failed to load your data");
         }
@@ -224,17 +202,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
     } 
     
     if (data) {
-      // Verify data belongs to current user (extra safety check)
-      if (data.user_id !== userId) {
-        console.error('DATASYNC: Data user_id mismatch!', { 
-          dataUserId: data.user_id, 
-          expectedUserId: userId 
-        });
-        toast.error("Data access error - please log in again");
-        throw new Error("Data access violation");
-      }
-      
-      console.log('DATASYNC: Found existing data for user:', userId, {
+      console.log('DATASYNC: Found existing data for user:', {
         productsCount: Array.isArray(data.products) ? data.products.length : 0,
         salesCount: Array.isArray(data.sales) ? data.sales.length : 0,
         clientsCount: Array.isArray(data.clients) ? data.clients.length : 0,
@@ -246,7 +214,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
         const conflicts = detectConflicts(localBackup, data);
         
         if (conflicts.length > 0) {
-          console.log("DATASYNC: Detected conflicts between local and remote data for user:", userId);
+          console.log("DATASYNC: Detected conflicts between local and remote data");
           
           const shouldResolveConflicts = confirm(
             `Found differences between your local data and server data. ` +
@@ -281,7 +249,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
     
     return null;
   } catch (error) {
-    console.error('DATASYNC: Error fetching data from Supabase for user:', userId, error);
+    console.error('DATASYNC: Error fetching data from Supabase:', error);
     if (!options.skipConflictCheck) {
       toast.error("Error loading your data");
     }
@@ -295,11 +263,8 @@ export async function createEmptyUserData(userId: string) {
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch for createEmptyUserData", { 
-      expectedUserId: userId, 
-      actualUserId: user?.id 
-    });
-    toast.error("Authentication error - please log in again");
+    console.error("DATASYNC: User not authenticated or ID mismatch");
+    toast.error("Authentication required to initialize data");
     throw new Error("Authentication required");
   }
   
@@ -312,17 +277,16 @@ export async function createEmptyUserData(userId: string) {
       payments: []
     };
     
-    console.log("DATASYNC: Creating empty data for user:", userId);
     const { error } = await supabase
       .from('user_data')
       .insert(userData as any);
       
     if (error) {
-      console.error('DATASYNC: Error inserting empty data to Supabase for user:', userId, error);
+      console.error('DATASYNC: Error inserting empty data to Supabase:', error);
       toast.error("Failed to initialize your data");
       throw error;
     } else {
-      console.log("DATASYNC: Successfully created empty data record in Supabase for user:", userId);
+      console.log("DATASYNC: Successfully created empty data record in Supabase");
       return {
         products: [],
         sales: [],
@@ -331,7 +295,7 @@ export async function createEmptyUserData(userId: string) {
       };
     }
   } catch (error) {
-    console.error('DATASYNC: Error creating empty user data for user:', userId, error);
+    console.error('DATASYNC: Error creating empty user data:', error);
     toast.error("Failed to initialize your data");
     throw error;
   }
@@ -375,28 +339,20 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
         filter: `user_id=eq.${userId}`
       },
       (payload) => {
-        console.log("DATASYNC: Received realtime update for user:", userId, {
+        console.log("DATASYNC: Received realtime update:", {
+          userId,
           updateTime: payload.new?.updated_at,
           hasNewData: !!payload.new
         });
         
         if (payload.new) {
-          // Verify the update is for the correct user (extra safety)
-          if (payload.new.user_id !== userId) {
-            console.error("DATASYNC: Received update for wrong user!", {
-              expectedUserId: userId,
-              receivedUserId: payload.new.user_id
-            });
-            return;
-          }
-          
           // Enhanced time checking for realtime updates
           const updateTime = new Date(payload.new.updated_at).getTime();
           const now = Date.now();
           const isRecentUpdate = (now - updateTime) < 300000; // Within last 5 minutes (increased)
           
           if (isRecentUpdate) {
-            console.log("DATASYNC: Processing update from another device for user:", userId);
+            console.log("DATASYNC: Processing update from another device");
             
             // Enhanced update processing with better filtering
             const timeSinceUpdate = now - updateTime;
@@ -405,7 +361,7 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
             // The callback will update the store with the new data
             dataUpdateCallback(payload.new);
           } else {
-            console.log("DATASYNC: Ignoring stale update for user:", userId, {
+            console.log("DATASYNC: Ignoring stale update", {
               updateTime: new Date(updateTime).toISOString(),
               now: new Date(now).toISOString(),
               ageMinutes: Math.round((now - updateTime) / 60000)
@@ -419,13 +375,13 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
       if (status === "SUBSCRIBED") {
         console.log("DATASYNC: Successfully subscribed to realtime updates for user:", userId);
       } else if (status === "CHANNEL_ERROR") {
-        console.error("DATASYNC: Error subscribing to realtime updates for user:", userId);
+        console.error("DATASYNC: Error subscribing to realtime updates");
         // Mark subscription as failed
         activeSubscriptions.delete(subscriptionKey);
         // Enhanced retry logic with exponential backoff
         const retryDelay = Math.min(30000, 5000 * Math.pow(2, activeSubscriptions.size)); // Max 30 seconds
         setTimeout(() => {
-          console.log("DATASYNC: Attempting to resubscribe to realtime updates after", retryDelay / 1000, "seconds for user:", userId);
+          console.log("DATASYNC: Attempting to resubscribe to realtime updates after", retryDelay / 1000, "seconds");
           if (!activeSubscriptions.has(subscriptionKey)) {
             setupRealtimeSubscription(userId, dataUpdateCallback);
           }
