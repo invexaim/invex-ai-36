@@ -44,7 +44,7 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
     }
     
     const recent = client.purchaseHistory.slice(0, 3);
-    return recent.map(p => `${p.quantity}x ${p.productName}`).join(", ");
+    return recent.map(p => p.productName).join(", ");
   };
 
   return (
@@ -121,7 +121,7 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
                               {client.purchaseHistory && client.purchaseHistory.length > 0 ? (
                                 client.purchaseHistory.slice(0, 5).map((purchase, index) => (
                                   <div key={index} className="text-xs">
-                                    <span className="font-medium">{purchase.quantity}x {purchase.productName}</span>
+                                    <span className="font-medium">{purchase.productName}</span>
                                     <span className="text-muted-foreground ml-2">
                                       ₹{purchase.amount} - {new Date(purchase.purchaseDate).toLocaleDateString()}
                                     </span>
