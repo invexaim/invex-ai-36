@@ -37,7 +37,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const { setupRealtimeUpdates } = useAppStore();
+  const { setupRealtimeUpdates, clearLocalData } = useAppStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -52,12 +52,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(initialSession?.user || null);
           
           if (initialSession?.user) {
-            console.log('AUTH: User authenticated, setting up realtime updates');
+            console.log('AUTH: User authenticated:', initialSession.user.id, 'setting up realtime updates');
             setupRealtimeUpdates(initialSession.user.id);
+          } else {
+            console.log('AUTH: No user session found');
+            // Clear any stale data when no user is authenticated
+            clearLocalData();
           }
         }
       } catch (error) {
         console.error('AUTH: Error getting initial session:', error);
+        if (isMounted) {
+          // Clear stale data on auth error
+          clearLocalData();
+        }
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -73,11 +81,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('AUTH: Auth state change:', user?.id);
       
       if (isMounted) {
+        // Clear data when user changes or signs out
+        if (!user || (session?.user && session.user.id !== user.id)) {
+          console.log('AUTH: User changed or signed out, clearing local data');
+          clearLocalData();
+        }
+        
         setUser(user);
         setSession(user ? { user } as Session : null);
         
         if (user) {
-          console.log('AUTH: User signed in, setting up realtime updates');
+          console.log('AUTH: User signed in:', user.id, 'setting up realtime updates');
           setupRealtimeUpdates(user.id);
         } else {
           console.log('AUTH: User signed out, cleaning up');
@@ -89,10 +103,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates]);
+  }, [setupRealtimeUpdates, clearLocalData, session?.user]);
 
   const signOut = async () => {
     try {
+      console.log('AUTH: Signing out user:', user?.id);
+      // Clear local data before signing out
+      clearLocalData();
+      
       await AuthService.signOut();
       setUser(null);
       setSession(null);
