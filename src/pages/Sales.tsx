@@ -69,8 +69,18 @@ const Sales = () => {
       return;
     }
     
+    if (!products || products.length === 0) {
+      console.error("SALES PAGE: No products available");
+      toast.error("No products available. Please add products first.");
+      return;
+    }
+    
+    // Clear any pending estimate data for regular sales
     setPendingEstimateForSale(null);
     setIsFromEstimate(false);
+    
+    // Force open the dialog
+    console.log("SALES PAGE: Force opening dialog");
     setIsRecordSaleOpen(true);
   };
 

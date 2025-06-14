@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useAppStore from "@/store/appStore";
 
 export const useFormReadiness = (isFromEstimate: boolean, isInitialized: boolean) => {
   const { products, clients, recordSale, pendingEstimateForSale } = useAppStore();
   const [isFormReady, setIsFormReady] = useState(false);
+  const previousReadyState = useRef(false);
 
   useEffect(() => {
     console.log("FORM READINESS: Checking form readiness", {
@@ -23,16 +24,21 @@ export const useFormReadiness = (isFromEstimate: boolean, isInitialized: boolean
     
     const ready = hasProducts && hasClients && hasRecordSaleFunction && hasEstimateWhenNeeded && isInitialized;
     
-    console.log("FORM READINESS: Form readiness result", {
-      hasProducts,
-      hasClients,
-      hasRecordSaleFunction,
-      hasEstimateWhenNeeded,
-      isInitialized,
-      ready
-    });
-    
-    setIsFormReady(ready);
+    // Only update state if readiness actually changed to prevent flickering
+    if (ready !== previousReadyState.current) {
+      console.log("FORM READINESS: Form readiness changed", {
+        from: previousReadyState.current,
+        to: ready,
+        hasProducts,
+        hasClients,
+        hasRecordSaleFunction,
+        hasEstimateWhenNeeded,
+        isInitialized
+      });
+      
+      previousReadyState.current = ready;
+      setIsFormReady(ready);
+    }
     
     if (!ready) {
       console.warn("FORM READINESS: Form not ready", {

@@ -21,6 +21,13 @@ const SalesHeader = ({
   isFromEstimate = false 
 }: SalesHeaderProps) => {
 
+  const handleDialogOpenChange = (open: boolean) => {
+    console.log("SALES HEADER: Dialog open change:", { open, currentState: isRecordSaleOpen });
+    if (!open) {
+      onCloseDialog();
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -53,14 +60,16 @@ const SalesHeader = ({
         </Card>
       )}
 
-      <Dialog open={isRecordSaleOpen} onOpenChange={(open) => !open && onCloseDialog()}>
+      <Dialog open={isRecordSaleOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {isFromEstimate ? "Record Sale from Estimate" : "Record New Sale"}
             </DialogTitle>
           </DialogHeader>
-          <RecordSaleForm onClose={onCloseDialog} isFromEstimate={isFromEstimate} />
+          {isRecordSaleOpen && (
+            <RecordSaleForm onClose={onCloseDialog} isFromEstimate={isFromEstimate} />
+          )}
         </DialogContent>
       </Dialog>
     </>
