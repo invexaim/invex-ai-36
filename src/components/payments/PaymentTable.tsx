@@ -1,5 +1,5 @@
 
-import { Search, RefreshCw, Trash2 } from "lucide-react";
+import { Search, RefreshCw, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { Payment } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -22,14 +22,33 @@ interface PaymentTableProps {
 
 const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const filteredPayments = payments.filter((payment) =>
     payment.clientName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPayments = filteredPayments.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generateReferenceNumber = (paymentId: number, clientName: string) => {
+    const prefix = clientName ? clientName.substring(0, 3).toUpperCase() : "PAY";
+    const paddedId = paymentId.toString().padStart(4, '0');
+    return `${prefix}${paddedId}`;
+  };
 
   if (payments.length === 0) {
     return (
@@ -70,6 +89,8 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>S.No</TableHead>
+              <TableHead>Ref No</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Description</TableHead>
@@ -80,9 +101,15 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPayments.length > 0 ? (
-              filteredPayments.map((payment) => (
+            {currentPayments.length > 0 ? (
+              currentPayments.map((payment, index) => (
                 <TableRow key={payment.id}>
+                  <TableCell className="font-medium">
+                    {startIndex + index + 1}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {generateReferenceNumber(payment.id, payment.clientName)}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {new Date(payment.date).toLocaleDateString()}
                   </TableCell>
@@ -117,7 +144,7 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+                <TableCell colSpan={9} className="text-center py-4">
                   No payments found matching your search.
                 </TableCell>
               </TableRow>
@@ -125,6 +152,52 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1} to {Math.min(endIndex, filteredPayments.length)} of {filteredPayments.length} payments
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
