@@ -208,6 +208,39 @@ export const AddProductDialog = ({
                 </Button>
               </div>
             </div>
+
+            {/* Expiry Date Field - moved between category and price */}
+            <div className="space-y-2">
+              <Label>Expiry Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryData.expiry_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryData.expiry_date ? (
+                      format(expiryData.expiry_date, "PPP")
+                    ) : (
+                      <span>Pick expiry date (optional)</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiryData.expiry_date}
+                    onSelect={handleExpiryDateChange}
+                    disabled={(date) => date <= new Date()}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="price">Price (₹)</Label>
@@ -247,39 +280,6 @@ export const AddProductDialog = ({
                 onChange={handleChange}
                 placeholder="Enter reorder level"
               />
-            </div>
-
-            {/* Expiry Date Field - now a normal field */}
-            <div className="space-y-2">
-              <Label>Expiry Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !expiryData.expiry_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiryData.expiry_date ? (
-                      format(expiryData.expiry_date, "PPP")
-                    ) : (
-                      <span>Pick expiry date (optional)</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expiryData.expiry_date}
-                    onSelect={handleExpiryDateChange}
-                    disabled={(date) => date <= new Date()}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
             </div>
 
             {/* Additional expiry fields - shown only when expiry date is selected */}
