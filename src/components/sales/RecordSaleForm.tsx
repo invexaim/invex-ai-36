@@ -19,11 +19,12 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   const store = useAppStore();
   const { products, clients, recordSale, setPendingSalePayment, addClient } = store;
   
-  console.log("RECORD SALE FORM: Store functions available:", {
+  console.log("RECORD SALE FORM: Component mounted with store functions:", {
     recordSale: typeof recordSale,
     setPendingSalePayment: typeof setPendingSalePayment,
-    productsCount: products.length,
-    clientsCount: clients.length
+    productsCount: products?.length || 0,
+    clientsCount: clients?.length || 0,
+    storeKeys: Object.keys(store).filter(key => typeof store[key] === 'function')
   });
   
   const {
@@ -39,69 +40,103 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   } = useSaleForm();
 
   const handleAddSale = async () => {
-    console.log("RECORD SALE FORM: Starting sale recording with data:", newSaleData);
-    console.log("RECORD SALE FORM: recordSale function:", typeof recordSale);
+    console.log("RECORD SALE FORM: Starting sale recording process");
+    console.log("RECORD SALE FORM: Sale data:", newSaleData);
+    console.log("RECORD SALE FORM: recordSale function type:", typeof recordSale);
     
     // Prevent double submissions
     if (isSubmitting) {
       console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
+      toast.warning("Sale recording in progress, please wait...");
       return;
     }
 
-    // Validate the form first
+    // Validate basic requirements
+    if (!recordSale) {
+      console.error("RECORD SALE FORM: recordSale function is not available");
+      toast.error("Sale recording system is not available. Please refresh the page and try again.");
+      return;
+    }
+
+    if (typeof recordSale !== 'function') {
+      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
+      toast.error("Sale recording function is invalid. Please refresh the page and try again.");
+      return;
+    }
+
+    // Validate the form
     if (!validateForm()) {
       console.log("RECORD SALE FORM: Form validation failed");
       toast.error("Please fill in all required fields correctly");
       return;
     }
 
-    // Check if recordSale function is available
-    if (typeof recordSale !== 'function') {
-      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
-      console.error("RECORD SALE FORM: Store object:", store);
-      toast.error("Sale recording function is not available. Please refresh the page and try again.");
+    // Validate products availability
+    if (!products || products.length === 0) {
+      console.error("RECORD SALE FORM: No products available");
+      toast.error("No products available. Please add products first.");
       return;
     }
 
     // Validate sale data and stock
     const validation = validateSaleData(newSaleData, products, recordSale);
     if (!validation.isValid) {
-      console.log("RECORD SALE FORM: Validation failed");
+      console.log("RECORD SALE FORM: Sale data validation failed");
       return;
     }
 
+    console.log("RECORD SALE FORM: All validations passed, proceeding with sale recording");
     setIsSubmitting(true);
     
-    const result = await processSaleSubmission(newSaleData, recordSale);
-    
-    if (result.success && result.sale) {
-      // Store the sale details for the payment page
-      setPendingSalePayment(result.sale);
+    try {
+      const result = await processSaleSubmission(newSaleData, recordSale);
       
-      // Show success message
-      toast.success("Sale recorded successfully! Redirecting to payments...");
-      
-      // Navigate to payments page immediately
-      console.log("RECORD SALE FORM: Navigating to payments page");
-      navigate("/payments");
-      
-      // Close dialog after a short delay to ensure navigation completes
-      setTimeout(() => {
-        console.log("RECORD SALE FORM: Closing dialog");
+      if (result.success && result.sale) {
+        console.log("RECORD SALE FORM: Sale recorded successfully:", result.sale);
+        
+        // Validate setPendingSalePayment function
+        if (typeof setPendingSalePayment !== 'function') {
+          console.error("RECORD SALE FORM: setPendingSalePayment is not a function");
+          toast.error("Cannot proceed to payment. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Store the sale details for the payment page
+        setPendingSalePayment(result.sale);
+        console.log("RECORD SALE FORM: Pending sale payment set");
+        
+        // Show success message
+        toast.success("Sale recorded successfully! Redirecting to payments...");
+        
+        // Close dialog first
         onClose();
-      }, 100);
+        
+        // Navigate to payments page with a slight delay to ensure dialog closes
+        setTimeout(() => {
+          console.log("RECORD SALE FORM: Navigating to payments page");
+          navigate("/payments");
+        }, 100);
+        
+      } else {
+        console.error("RECORD SALE FORM: Sale recording failed:", result);
+        toast.error("Failed to record sale. Please check the details and try again.");
+      }
+    } catch (error) {
+      console.error("RECORD SALE FORM: Unexpected error during sale submission:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
-  const selectedProduct = products.find(p => p.product_id === newSaleData.product_id);
+  const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
 
   return (
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
         <ProductSelector
-          products={products}
+          products={products || []}
           selectedProductId={newSaleData.product_id}
           onProductChange={handleProductChange}
           error={formErrors.product_id}
@@ -109,7 +144,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         />
         
         <ClientSelector
-          clients={clients}
+          clients={clients || []}
           selectedClientId={newSaleData.clientId}
           selectedClientName={newSaleData.clientName}
           onClientChange={handleClientChange}

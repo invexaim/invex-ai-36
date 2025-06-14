@@ -15,48 +15,76 @@ export const integrateSlices = (
   saveDataToSupabase: () => Promise<void>,
   setWithAutoSave: (fn: any) => void
 ) => {
+  console.log("SLICE INTEGRATION: Starting slice integration");
+  
   // Initialize user slice with the proper save function
   const userSlice = createUserSlice(set, get, saveDataToSupabase);
+  console.log("SLICE INTEGRATION: User slice created");
   
   // Create individual slices with cross-slice access
   const productSlice = createProductSlice(set, get);
-  const clientSlice = createClientSlice(set, get);
-  const companySlice = createCompanySlice(set, get);
-  const expirySlice = createExpirySlice(set, get, store);
+  console.log("SLICE INTEGRATION: Product slice created");
   
-  // ENHANCED: Create sale slice with improved transaction tracking
+  const clientSlice = createClientSlice(set, get);
+  console.log("SLICE INTEGRATION: Client slice created");
+  
+  const companySlice = createCompanySlice(set, get);
+  console.log("SLICE INTEGRATION: Company slice created");
+  
+  const expirySlice = createExpirySlice(set, get, store);
+  console.log("SLICE INTEGRATION: Expiry slice created");
+  
+  // Create sale slice with enhanced error handling and dependencies
   const saleSlice = createSaleSlice(
     set, 
     get, 
-    // Give sale slice access to products
-    () => get().products,
-    // Method to update a product from the sale slice
-    (updatedProduct) => {
-      set((state: AppState) => ({
-        products: state.products.map(p => 
-          p.product_id === updatedProduct.product_id ? updatedProduct : p
-        )
-      }));
+    // Enhanced getProducts function with validation
+    () => {
+      const state = get();
+      const products = state.products || [];
+      console.log("SLICE INTEGRATION: getProducts called, returning:", products.length, "products");
+      return products;
     },
-    // ENHANCED: Pass the client update function with better validation
+    // Enhanced updateProduct function with validation
+    (updatedProduct) => {
+      console.log("SLICE INTEGRATION: updateProduct called for:", updatedProduct.product_id);
+      if (!updatedProduct || !updatedProduct.product_id) {
+        console.error("SLICE INTEGRATION: Invalid product update data");
+        return;
+      }
+      
+      set((state: AppState) => {
+        const updatedProducts = state.products.map(p => 
+          p.product_id === updatedProduct.product_id ? updatedProduct : p
+        );
+        console.log("SLICE INTEGRATION: Product updated successfully");
+        return { products: updatedProducts };
+      });
+    },
+    // Enhanced client update function with comprehensive validation
     (clientName: string, amount: number, productName: string, quantity: number, transactionId?: string) => {
-      // Validate inputs before proceeding
+      // Comprehensive input validation
       if (!clientName || !clientName.trim()) {
-        console.log("STORE: Skipping client update - no client name");
+        console.error("SLICE INTEGRATION: Invalid client name for update");
         return;
       }
       
       if (typeof amount !== 'number' || amount <= 0) {
-        console.log("STORE: Skipping client update - invalid amount:", amount);
+        console.error("SLICE INTEGRATION: Invalid amount for client update:", amount);
         return;
       }
       
       if (typeof quantity !== 'number' || quantity <= 0) {
-        console.log("STORE: Skipping client update - invalid quantity:", quantity);
+        console.error("SLICE INTEGRATION: Invalid quantity for client update:", quantity);
         return;
       }
       
-      console.log("STORE: Routing client update with transaction ID:", { 
+      if (!productName || !productName.trim()) {
+        console.error("SLICE INTEGRATION: Invalid product name for client update");
+        return;
+      }
+      
+      console.log("SLICE INTEGRATION: Updating client purchase:", { 
         clientName: clientName.trim(), 
         amount, 
         productName, 
@@ -64,36 +92,47 @@ export const integrateSlices = (
         transactionId 
       });
       
-      clientSlice.updateClientPurchase(clientName.trim(), amount, productName, quantity, transactionId);
+      try {
+        clientSlice.updateClientPurchase(clientName.trim(), amount, productName, quantity, transactionId);
+        console.log("SLICE INTEGRATION: Client purchase updated successfully");
+      } catch (error) {
+        console.error("SLICE INTEGRATION: Error updating client purchase:", error);
+      }
     }
   );
+  console.log("SLICE INTEGRATION: Sale slice created with recordSale type:", typeof saleSlice.recordSale);
   
-  // ENHANCED: Payment slice with better transaction management
+  // Enhanced payment slice with better transaction management
   const paymentSlice = createPaymentSlice(
     set, 
     get,
-    // Give payment slice access to update client - but don't double count sales
+    // Payment client update with validation
     (clientName: string, amount: number) => {
       // Validate inputs
       if (!clientName || !clientName.trim() || typeof amount !== 'number' || amount <= 0) {
-        console.log("STORE: Skipping payment client update - invalid inputs");
+        console.error("SLICE INTEGRATION: Invalid payment client update inputs");
         return;
       }
       
       // Generate unique transaction ID for payments
       const transactionId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      console.log("STORE: Processing payment with transaction ID:", { 
+      console.log("SLICE INTEGRATION: Processing payment with transaction ID:", { 
         clientName: clientName.trim(), 
         amount, 
         transactionId 
       });
       
-      // Only update for actual payments, not sales
-      clientSlice.updateClientPurchase(clientName.trim(), amount, "Payment", 1, transactionId);
+      try {
+        clientSlice.updateClientPurchase(clientName.trim(), amount, "Payment", 1, transactionId);
+        console.log("SLICE INTEGRATION: Payment client update completed");
+      } catch (error) {
+        console.error("SLICE INTEGRATION: Error in payment client update:", error);
+      }
     }
   );
+  console.log("SLICE INTEGRATION: Payment slice created");
 
-  return {
+  const result = {
     userSlice,
     productSlice,
     clientSlice,
@@ -102,4 +141,7 @@ export const integrateSlices = (
     saleSlice,
     paymentSlice
   };
+  
+  console.log("SLICE INTEGRATION: All slices integrated successfully");
+  return result;
 };

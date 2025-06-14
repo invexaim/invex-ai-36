@@ -30,6 +30,7 @@ export const createStoreMethods = (
       setWithAutoSave({ payments });
     },
     setPendingSalePayment: (sale) => {
+      console.log("STORE METHODS: Setting pending sale payment:", sale);
       set({ pendingSalePayment: sale });
     },
     
@@ -43,17 +44,47 @@ export const createStoreMethods = (
     // Expose the saveDataToSupabase function
     saveDataToSupabase,
     
-    // ENSURE recordSale is the primary function - with proper error handling
+    // PRIMARY recordSale function with comprehensive error handling
     recordSale: (...args) => {
       console.log("STORE METHODS: recordSale called with args:", args);
-      if (!slices.saleSlice || typeof slices.saleSlice.recordSale !== 'function') {
-        console.error("STORE METHODS: Sale slice recordSale function not available");
-        console.error("STORE METHODS: Available slices:", Object.keys(slices));
-        console.error("STORE METHODS: Sale slice contents:", slices.saleSlice);
+      
+      // Validate slices availability
+      if (!slices) {
+        console.error("STORE METHODS: No slices available");
         return null;
       }
-      console.log("STORE METHODS: Calling sale slice recordSale function");
-      return slices.saleSlice.recordSale(...args);
+      
+      if (!slices.saleSlice) {
+        console.error("STORE METHODS: Sale slice not available");
+        console.error("STORE METHODS: Available slices:", Object.keys(slices));
+        return null;
+      }
+      
+      if (typeof slices.saleSlice.recordSale !== 'function') {
+        console.error("STORE METHODS: Sale slice recordSale function not available");
+        console.error("STORE METHODS: Sale slice contents:", Object.keys(slices.saleSlice));
+        return null;
+      }
+      
+      try {
+        console.log("STORE METHODS: Calling sale slice recordSale function");
+        const result = slices.saleSlice.recordSale(...args);
+        console.log("STORE METHODS: recordSale result:", result);
+        
+        if (result && result.sale_id) {
+          console.log("STORE METHODS: Sale recorded successfully with ID:", result.sale_id);
+          return result;
+        } else if (result === null) {
+          console.error("STORE METHODS: recordSale returned null");
+          return null;
+        } else {
+          console.error("STORE METHODS: recordSale returned unexpected result:", result);
+          return null;
+        }
+      } catch (error) {
+        console.error("STORE METHODS: Error in recordSale wrapper:", error);
+        return null;
+      }
     },
     
     // Keep addSale for backward compatibility
@@ -68,18 +99,18 @@ export const createStoreMethods = (
       return slices.userSlice.syncDataWithSupabase(options);
     },
     
-    // ENHANCED: Add debug function to clear processed transactions
+    // Add debug function to clear processed transactions
     clearProcessedTransactions: () => {
       console.log("STORE: Clearing processed transactions");
-      if (slices.clientSlice.clearProcessedTransactions) {
+      if (slices.clientSlice?.clearProcessedTransactions) {
         slices.clientSlice.clearProcessedTransactions();
       }
     },
     
-    // ENHANCED: Add function to recalculate client totals
+    // Add function to recalculate client totals
     recalculateClientTotals: (clientId: number) => {
       console.log("STORE: Recalculating client totals for:", clientId);
-      if (slices.clientSlice.recalculateClientTotals) {
+      if (slices.clientSlice?.recalculateClientTotals) {
         slices.clientSlice.recalculateClientTotals(clientId);
       }
     },

@@ -17,11 +17,11 @@ const useAppStore = createPersistedStore<AppState>(
     // Create store methods
     const storeMethods = createStoreMethods(set, get, setWithAutoSave, slices, saveDataToSupabase, setupRealtimeUpdates);
     
-    // Combine all slices and methods
-    return {
+    // Combine all slices and methods - ENSURE storeMethods override slice methods
+    const combinedStore = {
       // Product slice
       ...slices.productSlice,
-      // Sale slice
+      // Sale slice - but recordSale will be overridden by storeMethods
       ...slices.saleSlice,
       // Client slice
       ...slices.clientSlice,
@@ -34,9 +34,15 @@ const useAppStore = createPersistedStore<AppState>(
       ...slices.companySlice,
       // Expiry slice
       ...slices.expirySlice,
-      // Store methods
-      ...storeMethods
+      // Store methods - these OVERRIDE any slice methods with same names
+      ...storeMethods,
+      // EXPLICITLY ensure recordSale is from storeMethods
+      recordSale: storeMethods.recordSale,
+      addSale: storeMethods.addSale
     };
+    
+    console.log("APP STORE: Final store recordSale type:", typeof combinedStore.recordSale);
+    return combinedStore;
   }
 );
 
