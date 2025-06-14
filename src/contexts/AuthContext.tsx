@@ -8,6 +8,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  authChecked: boolean;
+  isLoading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -21,6 +23,11 @@ export function useAuth() {
   return context;
 }
 
+// Export the same hook with different name for compatibility
+export function useAuthContext() {
+  return useAuth();
+}
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -29,7 +36,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { markInitialLoadComplete, setupRealtimeUpdates } = useAppStore();
+  const [authChecked, setAuthChecked] = useState(false);
+  const { setupRealtimeUpdates } = useAppStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -53,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } finally {
         if (isMounted) {
           setLoading(false);
-          markInitialLoadComplete();
+          setAuthChecked(true);
         }
       }
     };
@@ -61,19 +69,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initializeAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = AuthService.onAuthStateChange((event, session) => {
-      console.log('AUTH: Auth state change:', event, session?.user?.id);
+    const subscription = AuthService.onAuthStateChange((user) => {
+      console.log('AUTH: Auth state change:', user?.id);
       
       if (isMounted) {
-        setSession(session);
-        setUser(session?.user || null);
+        setUser(user);
+        setSession(user ? { user } as Session : null);
         
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (user) {
           console.log('AUTH: User signed in, setting up realtime updates');
           setupRealtimeUpdates();
-        } else if (event === 'SIGNED_OUT') {
+        } else {
           console.log('AUTH: User signed out, cleaning up');
-          // Clear any user-specific data here if needed
         }
       }
     });
@@ -82,7 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [markInitialLoadComplete, setupRealtimeUpdates]);
+  }, [setupRealtimeUpdates]);
 
   const signOut = async () => {
     try {
@@ -98,6 +105,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     session,
     loading,
+    authChecked,
+    isLoading: loading,
     signOut,
   };
 
