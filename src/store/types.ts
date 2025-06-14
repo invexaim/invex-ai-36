@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -196,6 +195,59 @@ export interface AppState extends ProductState, SaleState, ClientState, PaymentS
   // Company state
   companyName: string;
   setCompanyName: (name: string) => void;
+  
+  // Expanded company state
+  details: {
+    companyName: string;
+    registrationNumber: string;
+    taxId: string;
+    email: string;
+    phone: string;
+    website: string;
+  };
+  address: {
+    street: string;
+    aptSuite: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  logo: {
+    logoUrl: string;
+    logoFile?: File;
+  };
+  defaults: {
+    currency: string;
+    taxRate: number;
+    paymentTerms: string;
+    invoicePrefix: string;
+    estimatePrefix: string;
+    defaultNote: string;
+  };
+  documents: {
+    invoiceTemplate: string;
+    estimateTemplate: string;
+    termsAndConditions: string;
+    footerText: string;
+  };
+  customFields: Array<{
+    id: string;
+    name: string;
+    type: 'text' | 'number' | 'date' | 'dropdown';
+    options?: string[];
+    required: boolean;
+  }>;
+  
+  // Company actions
+  updateDetails: (details: any) => void;
+  updateAddress: (address: any) => void;
+  updateLogo: (logo: any) => void;
+  updateDefaults: (defaults: any) => void;
+  updateDocuments: (documents: any) => void;
+  addCustomField: (field: any) => void;
+  updateCustomField: (id: string, field: any) => void;
+  removeCustomField: (id: string) => void;
 }
 
 // Add this helper function to check if a value is a valid user data row

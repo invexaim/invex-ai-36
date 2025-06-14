@@ -1,4 +1,3 @@
-
 import { Moon, Sun, Menu, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -96,39 +95,15 @@ const MobileNavigation = ({
                 </div>
               ))}
               
-              {/* Company Settings below Delivery */}
-              <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
-                <DialogTrigger asChild>
-                  <div className="flex items-center space-x-3 px-4 py-3 rounded-md transition-all hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer">
-                    <Settings className="w-5 h-5" />
-                    <span className="font-medium">Company Settings</span>
-                  </div>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Company Settings</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label htmlFor="company-name">Company Name</Label>
-                      <Input
-                        id="company-name"
-                        value={tempCompanyName}
-                        onChange={(e) => setTempCompanyName(e.target.value)}
-                        placeholder="Enter your company name"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSaveCompanyName}>
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {/* Settings navigation item */}
+              <div onClick={handleItemClick}>
+                <SidebarItem 
+                  icon={<Settings className="w-5 h-5" />} 
+                  label="Settings" 
+                  href="/settings" 
+                  isActive={currentPath === '/settings'} 
+                />
+              </div>
             </nav>
             <div className="p-4 border-t">
               <Button onClick={handleLogout} className="flex items-center justify-start w-full text-destructive" variant="ghost">

@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -14,6 +13,7 @@ import Estimates from "@/pages/Estimates";
 import Delivery from "@/pages/Delivery";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
+import Settings from "@/pages/Settings";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -26,6 +26,25 @@ export const Router = () => {
 
   // Protected route component
   const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+    // Add check for authChecked to ensure we've at least attempted to check auth status
+    if (isLoading || !authChecked) {
+      return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    }
+    
+    // If not loading and no user, redirect to auth page
+    if (!user) {
+      console.log("No authenticated user, redirecting to /auth");
+      return <Navigate to="/auth" replace />;
+    }
+    
+    // Otherwise render children
+    return <>{children}</>;
+  };
+
+  // AuthGuard component
+  const AuthGuard = ({ children }: ReactNode) => {
+    const { user, isLoading, authChecked } = useAuthContext();
+    
     // Add check for authChecked to ensure we've at least attempted to check auth status
     if (isLoading || !authChecked) {
       return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -147,6 +166,17 @@ export const Router = () => {
             </MainLayout>
           </ProtectedRoute>
         } />
+        
+        <Route
+          path="/settings"
+          element={
+            <AuthGuard>
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            </AuthGuard>
+          }
+        />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
