@@ -51,7 +51,7 @@ export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, o
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const navigate = useNavigate();
-  const { setPendingSalePayment } = useAppStore();
+  const { setPendingEstimateForSale } = useAppStore();
 
   function getStatusColor(status: string) {
     switch (status) {
@@ -74,18 +74,19 @@ export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, o
   const handleApprovalConfirm = () => {
     if (!selectedEstimate) return;
 
-    // Convert estimate to sale format
-    const saleData = {
+    // Convert estimate to pending estimate format for sales
+    const estimateData = {
       id: selectedEstimate.id,
       clientName: selectedEstimate.clientName,
-      items: selectedEstimate.items || [],
-      totalAmount: selectedEstimate.totalAmount,
       referenceNo: selectedEstimate.referenceNo,
-      estimateApproved: true
+      totalAmount: selectedEstimate.totalAmount,
+      items: selectedEstimate.items || [],
+      notes: selectedEstimate.notes,
+      terms: selectedEstimate.terms
     };
 
-    // Set the pending sale data
-    setPendingSalePayment(saleData);
+    // Set the pending estimate data
+    setPendingEstimateForSale(estimateData);
     
     toast.success("Estimate approved! Redirecting to record sale...");
     

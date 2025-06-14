@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -158,6 +159,17 @@ export interface ClientState {
   clearProcessedTransactions?: () => void;
 }
 
+// Add interface for pending estimate data
+export interface PendingEstimateData {
+  id: string;
+  clientName: string;
+  referenceNo: string;
+  totalAmount: number;
+  items: any[];
+  notes?: string;
+  terms?: string;
+}
+
 export interface PaymentState {
   payments: Payment[];
   setPayments: (payments: Payment[]) => void;
@@ -165,6 +177,9 @@ export interface PaymentState {
   deletePayment: (paymentId: number) => void;
   pendingSalePayment: Sale | null;
   setPendingSalePayment: (sale: Sale | null) => void;
+  // Add pending estimate for sales
+  pendingEstimateForSale: PendingEstimateData | null;
+  setPendingEstimateForSale: (estimate: PendingEstimateData | null) => void;
 }
 
 export interface UserState {
@@ -188,6 +203,9 @@ export interface AppState extends ProductState, SaleState, ClientState, PaymentS
   setIsLoading: (isLoading: boolean) => void;
   pendingSalePayment: Sale | null;
   setPendingSalePayment: (sale: Sale | null) => void;
+  // Add pending estimate for sales
+  pendingEstimateForSale: PendingEstimateData | null;
+  setPendingEstimateForSale: (estimate: PendingEstimateData | null) => void;
   saveDataToSupabase: () => Promise<void>;
   setupRealtimeUpdates: (userId: string) => () => void;
   addSale: (saleData: any) => Sale | null;
