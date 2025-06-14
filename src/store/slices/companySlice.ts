@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { toast } from 'sonner';
 
@@ -23,6 +22,8 @@ interface CompanyAddress {
 interface CompanyLogo {
   logoUrl: string;
   logoFile?: File;
+  signatureUrl: string;
+  signatureFile?: File;
 }
 
 interface CompanyDefaults {
@@ -93,6 +94,7 @@ const defaultAddress: CompanyAddress = {
 
 const defaultLogo: CompanyLogo = {
   logoUrl: '',
+  signatureUrl: '',
 };
 
 const defaultDefaults: CompanyDefaults = {
