@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { Payment, Sale } from '@/types';
 import { toast } from 'sonner';
-import { PaymentState } from '../types';
+import { PaymentState, PendingEstimateData } from '../types';
 
 export const createPaymentSlice = (
   set: any, 
@@ -11,10 +11,13 @@ export const createPaymentSlice = (
 ) => ({
   payments: [],
   pendingSalePayment: null,
+  pendingEstimateForSale: null,
   
   setPayments: (payments: Payment[]) => set({ payments }),
   
   setPendingSalePayment: (sale: Sale | null) => set({ pendingSalePayment: sale }),
+  
+  setPendingEstimateForSale: (estimate: PendingEstimateData | null) => set({ pendingEstimateForSale: estimate }),
   
   addPayment: (paymentData) => set((state: PaymentState) => {
     const newPayment: Payment = {
