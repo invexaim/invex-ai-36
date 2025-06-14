@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
+import UserProfile from "./UserProfile";
 import { SidebarItemType } from "./types";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
@@ -140,8 +141,13 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      {/* Desktop Header */}
+      <header className="hidden md:flex fixed top-0 right-0 left-64 h-16 border-b border-border bg-background z-10 items-center justify-end">
+        <UserProfile />
+      </header>
+
       {/* Main content */}
-      <main className="flex-1 flex flex-col h-screen overflow-auto pt-16 md:pt-0 md:pl-64">
+      <main className="flex-1 flex flex-col h-screen overflow-auto pt-16 md:pt-16 md:pl-64">
         <div className="p-4 md:p-6">{children}</div>
       </main>
 

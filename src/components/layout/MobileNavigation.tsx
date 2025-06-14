@@ -1,7 +1,9 @@
+
 import { Moon, Sun, Menu, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SidebarItem from "./SidebarItem";
+import UserProfile from "./UserProfile";
 import { SidebarItemType } from "./types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -117,9 +119,12 @@ const MobileNavigation = ({
         </Sheet>
         <h1 className="text-xl font-semibold ml-3">Invex AI</h1>
       </div>
-      <Button onClick={toggleTheme} variant="outline" size="icon">
-        {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button onClick={toggleTheme} variant="outline" size="icon">
+          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+        </Button>
+        <UserProfile />
+      </div>
     </div>
   );
 };
