@@ -8,18 +8,16 @@ import RecordSaleForm from "./RecordSaleForm";
 interface SalesHeaderProps {
   productsExist: boolean;
   isRecordSaleOpen: boolean;
-  setIsRecordSaleOpen: (open: boolean) => void;
+  onOpenRecordSale: () => void;
+  onCloseRecordSale: () => void;
 }
 
-const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: SalesHeaderProps) => {
-  const handleRecordSale = () => {
-    setIsRecordSaleOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsRecordSaleOpen(false);
-  };
-
+const SalesHeader = ({ 
+  productsExist, 
+  isRecordSaleOpen, 
+  onOpenRecordSale, 
+  onCloseRecordSale 
+}: SalesHeaderProps) => {
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -29,7 +27,7 @@ const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: S
         </div>
         
         {productsExist && (
-          <Button onClick={handleRecordSale} className="flex items-center gap-2">
+          <Button onClick={onOpenRecordSale} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Record Sale
           </Button>
@@ -52,12 +50,12 @@ const SalesHeader = ({ productsExist, isRecordSaleOpen, setIsRecordSaleOpen }: S
         </Card>
       )}
 
-      <Dialog open={isRecordSaleOpen} onOpenChange={setIsRecordSaleOpen}>
+      <Dialog open={isRecordSaleOpen} onOpenChange={onCloseRecordSale}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Record New Sale</DialogTitle>
           </DialogHeader>
-          <RecordSaleForm onClose={handleCloseDialog} />
+          <RecordSaleForm onClose={onCloseRecordSale} />
         </DialogContent>
       </Dialog>
     </>

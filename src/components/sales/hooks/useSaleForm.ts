@@ -19,7 +19,7 @@ interface FormErrors {
 }
 
 export const useSaleForm = () => {
-  const { pendingEstimateForSale } = useAppStore();
+  const { pendingEstimateForSale, products, clients } = useAppStore();
   
   const [newSaleData, setNewSaleData] = useState<SaleFormData>({
     product_id: 0,
@@ -39,19 +39,55 @@ export const useSaleForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentEstimateItem, setCurrentEstimateItem] = useState(0);
 
-  // Pre-populate form with estimate data
+  // Initialize form based on whether we have estimate data or not
   useEffect(() => {
+    console.log("SALE FORM: Initializing form", { 
+      hasEstimate: !!pendingEstimateForSale,
+      estimateId: pendingEstimateForSale?.id 
+    });
+
     if (pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0) {
-      const firstItem = pendingEstimateForSale.items[0];
+      const currentItem = pendingEstimateForSale.items[currentEstimateItem] || pendingEstimateForSale.items[0];
+      
+      // Find product by name to get product_id
+      const matchedProduct = products.find(p => 
+        p.product_name.toLowerCase().trim() === currentItem.name.toLowerCase().trim()
+      );
+
+      // Find client by name to get client ID
+      const matchedClient = clients.find(c => 
+        c.name.toLowerCase().trim() === pendingEstimateForSale.clientName.toLowerCase().trim()
+      );
+
+      console.log("SALE FORM: Setting up estimate-based sale", {
+        itemName: currentItem.name,
+        matchedProduct: matchedProduct?.product_name,
+        productId: matchedProduct?.product_id,
+        clientName: pendingEstimateForSale.clientName,
+        matchedClient: matchedClient?.name,
+        clientId: matchedClient?.id
+      });
+
       setNewSaleData({
-        product_id: firstItem.product_id || 0,
-        quantity_sold: firstItem.quantity || 1,
-        selling_price: firstItem.price || 0,
-        clientId: 0,
+        product_id: matchedProduct?.product_id || 0,
+        quantity_sold: currentItem.quantity || 1,
+        selling_price: currentItem.price || 0,
+        clientId: matchedClient?.id || 0,
         clientName: pendingEstimateForSale.clientName || "",
       });
+    } else {
+      // Reset form for regular sale
+      console.log("SALE FORM: Resetting form for regular sale");
+      setNewSaleData({
+        product_id: 0,
+        quantity_sold: 1,
+        selling_price: 0,
+        clientId: 0,
+        clientName: "",
+      });
+      setCurrentEstimateItem(0);
     }
-  }, [pendingEstimateForSale]);
+  }, [pendingEstimateForSale, currentEstimateItem, products, clients]);
 
   const validateForm = () => {
     const errors: FormErrors = {
@@ -129,16 +165,8 @@ export const useSaleForm = () => {
   const moveToNextEstimateItem = () => {
     if (pendingEstimateForSale?.items && currentEstimateItem < pendingEstimateForSale.items.length - 1) {
       const nextIndex = currentEstimateItem + 1;
-      const nextItem = pendingEstimateForSale.items[nextIndex];
-      
       setCurrentEstimateItem(nextIndex);
-      setNewSaleData({
-        product_id: nextItem.product_id || 0,
-        quantity_sold: nextItem.quantity || 1,
-        selling_price: nextItem.price || 0,
-        clientId: newSaleData.clientId,
-        clientName: newSaleData.clientName,
-      });
+      console.log("SALE FORM: Moving to next estimate item:", nextIndex + 1);
     }
   };
 

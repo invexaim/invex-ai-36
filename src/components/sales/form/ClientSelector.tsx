@@ -18,15 +18,18 @@ interface ClientSelectorProps {
   onAddClient: (clientData: { name: string; email: string; phone: string; joinDate: string; openInvoices: number }) => void;
   error: boolean;
   disabled: boolean;
+  isFromEstimate?: boolean;
 }
 
 const ClientSelector = ({ 
   clients, 
   selectedClientId, 
+  selectedClientName,
   onClientChange, 
   onAddClient,
   error, 
-  disabled 
+  disabled,
+  isFromEstimate = false
 }: ClientSelectorProps) => {
   const [showNewClientForm, setShowNewClientForm] = useState(false);
 
@@ -59,15 +62,33 @@ const ClientSelector = ({
     setShowNewClientForm(false);
   };
 
+  // Find selected client value for the dropdown
+  const getSelectedValue = () => {
+    if (selectedClientId) return selectedClientId.toString();
+    if (selectedClientName && !selectedClientId) {
+      // Check if client name matches any existing client
+      const matchingClient = clients.find(c => 
+        c.name.toLowerCase().trim() === selectedClientName.toLowerCase().trim()
+      );
+      return matchingClient ? matchingClient.id.toString() : "";
+    }
+    return "";
+  };
+
   return (
     <div className="space-y-2">
-      <Label htmlFor="client">Client <span className="text-red-500">*</span></Label>
+      <Label htmlFor="client">
+        Client <span className="text-red-500">*</span>
+        {isFromEstimate && (
+          <span className="text-sm text-muted-foreground ml-2">(from estimate)</span>
+        )}
+      </Label>
       <div className="flex gap-2">
         <select
           id="client"
           className={`flex h-10 w-full rounded-md border ${error ? "border-red-500" : "border-input"} bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
           onChange={handleClientSelectChange}
-          value={selectedClientId || ""}
+          value={getSelectedValue()}
           disabled={disabled}
         >
           <option value="">Select a client</option>
@@ -94,6 +115,13 @@ const ClientSelector = ({
       </div>
       {error && (
         <p className="text-xs text-red-500">Client selection is required</p>
+      )}
+      
+      {/* Show client name if from estimate and not found in clients list */}
+      {isFromEstimate && selectedClientName && !selectedClientId && (
+        <p className="text-xs text-blue-600">
+          Using client from estimate: {selectedClientName}
+        </p>
       )}
       
       {showNewClientForm && (

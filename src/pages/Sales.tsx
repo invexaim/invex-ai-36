@@ -5,19 +5,34 @@ import SalesHeader from "@/components/sales/SalesHeader";
 import SalesListSection from "@/components/sales/SalesListSection";
 
 const Sales = () => {
-  const { products, sales, deleteSale, pendingEstimateForSale } = useAppStore();
+  const { products, sales, deleteSale, pendingEstimateForSale, setPendingEstimateForSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isRecordSaleOpen, setIsRecordSaleOpen] = useState(false);
 
   // Auto-open record sale dialog if there's a pending estimate
   useEffect(() => {
     if (pendingEstimateForSale) {
+      console.log("SALES PAGE: Auto-opening dialog for estimate:", pendingEstimateForSale.referenceNo);
       setIsRecordSaleOpen(true);
     }
   }, [pendingEstimateForSale]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleOpenRecordSale = () => {
+    // Clear any pending estimate data when manually opening record sale
+    if (pendingEstimateForSale) {
+      console.log("SALES PAGE: Clearing pending estimate for regular sale");
+      setPendingEstimateForSale(null);
+    }
+    setIsRecordSaleOpen(true);
+  };
+
+  const handleCloseRecordSale = () => {
+    setIsRecordSaleOpen(false);
+    // Don't automatically clear estimate here - let the form handle cleanup
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -33,7 +48,8 @@ const Sales = () => {
       <SalesHeader 
         productsExist={products.length > 0} 
         isRecordSaleOpen={isRecordSaleOpen}
-        setIsRecordSaleOpen={setIsRecordSaleOpen}
+        onOpenRecordSale={handleOpenRecordSale}
+        onCloseRecordSale={handleCloseRecordSale}
       />
       <SalesListSection
         sales={filteredSales}

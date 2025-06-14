@@ -176,7 +176,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   return (
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
-        {/* Estimate Info Card */}
+        {/* Estimate Info Card - Only show if actually from estimate */}
         {pendingEstimateForSale && (
           <Card>
             <CardHeader className="pb-3">
@@ -212,7 +212,8 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           onClientChange={handleClientChange}
           onAddClient={addClient}
           error={formErrors.clientName}
-          disabled={isSubmitting || !!pendingEstimateForSale} // Disable if from estimate
+          disabled={isSubmitting}
+          isFromEstimate={!!pendingEstimateForSale}
         />
         
         <SaleDetailsForm
