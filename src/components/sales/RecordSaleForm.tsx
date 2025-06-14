@@ -16,7 +16,15 @@ interface RecordSaleFormProps {
 
 const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   const navigate = useNavigate();
-  const { products, clients, recordSale, setPendingSalePayment, addClient } = useAppStore();
+  const store = useAppStore();
+  const { products, clients, recordSale, setPendingSalePayment, addClient } = store;
+  
+  console.log("RECORD SALE FORM: Store functions available:", {
+    recordSale: typeof recordSale,
+    setPendingSalePayment: typeof setPendingSalePayment,
+    productsCount: products.length,
+    clientsCount: clients.length
+  });
   
   const {
     newSaleData,
@@ -31,24 +39,34 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   } = useSaleForm();
 
   const handleAddSale = async () => {
-    console.log("SALE FORM: Starting sale recording with data:", newSaleData);
+    console.log("RECORD SALE FORM: Starting sale recording with data:", newSaleData);
+    console.log("RECORD SALE FORM: recordSale function:", typeof recordSale);
     
     // Prevent double submissions
     if (isSubmitting) {
-      console.log("SALE FORM: Already submitting, preventing duplicate");
+      console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
       return;
     }
 
     // Validate the form first
     if (!validateForm()) {
-      console.log("SALE FORM: Form validation failed");
+      console.log("RECORD SALE FORM: Form validation failed");
       toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    // Check if recordSale function is available
+    if (typeof recordSale !== 'function') {
+      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
+      console.error("RECORD SALE FORM: Store object:", store);
+      toast.error("Sale recording function is not available. Please refresh the page and try again.");
       return;
     }
 
     // Validate sale data and stock
     const validation = validateSaleData(newSaleData, products, recordSale);
     if (!validation.isValid) {
+      console.log("RECORD SALE FORM: Validation failed");
       return;
     }
 
@@ -64,12 +82,12 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       toast.success("Sale recorded successfully! Redirecting to payments...");
       
       // Navigate to payments page immediately
-      console.log("SALE FORM: Navigating to payments page");
+      console.log("RECORD SALE FORM: Navigating to payments page");
       navigate("/payments");
       
       // Close dialog after a short delay to ensure navigation completes
       setTimeout(() => {
-        console.log("SALE FORM: Closing dialog");
+        console.log("RECORD SALE FORM: Closing dialog");
         onClose();
       }, 100);
     }

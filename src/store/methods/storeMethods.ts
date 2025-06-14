@@ -1,4 +1,3 @@
-
 import { AppState } from '../types';
 
 export const createStoreMethods = (
@@ -9,6 +8,9 @@ export const createStoreMethods = (
   saveDataToSupabase: () => Promise<void>,
   setupRealtimeUpdates: (userId: string) => (() => void)
 ) => {
+  console.log("STORE METHODS: Creating store methods with slices:", Object.keys(slices));
+  console.log("STORE METHODS: Sale slice recordSale function:", typeof slices.saleSlice?.recordSale);
+  
   return {
     // Override set method for specific actions to trigger Supabase sync
     setProducts: (products) => {
@@ -41,8 +43,25 @@ export const createStoreMethods = (
     // Expose the saveDataToSupabase function
     saveDataToSupabase,
     
-    // ENSURE recordSale is the primary function (no addSale wrapper)
-    addSale: slices.saleSlice.recordSale,
+    // ENSURE recordSale is the primary function - with proper error handling
+    recordSale: (...args) => {
+      console.log("STORE METHODS: recordSale called with args:", args);
+      if (!slices.saleSlice || typeof slices.saleSlice.recordSale !== 'function') {
+        console.error("STORE METHODS: Sale slice recordSale function not available");
+        console.error("STORE METHODS: Available slices:", Object.keys(slices));
+        console.error("STORE METHODS: Sale slice contents:", slices.saleSlice);
+        return null;
+      }
+      console.log("STORE METHODS: Calling sale slice recordSale function");
+      return slices.saleSlice.recordSale(...args);
+    },
+    
+    // Keep addSale for backward compatibility
+    addSale: (...args) => {
+      console.log("STORE METHODS: addSale called (redirecting to recordSale)");
+      const storeMethods = get();
+      return storeMethods.recordSale(...args);
+    },
     
     // Override syncDataWithSupabase to support silent option
     syncDataWithSupabase: async (options: { silent?: boolean } = {}) => {

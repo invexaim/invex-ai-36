@@ -21,10 +21,12 @@ export const validateSaleData = (
   recordSale: Function
 ) => {
   console.log("SALE PROCESSOR: Starting validation with data:", saleData);
+  console.log("SALE PROCESSOR: Available products:", products.length);
+  console.log("SALE PROCESSOR: recordSale function type:", typeof recordSale);
   
   // Check if recordSale function exists
   if (typeof recordSale !== 'function') {
-    console.error("SALE PROCESSOR: recordSale is not a function");
+    console.error("SALE PROCESSOR: recordSale is not a function, type:", typeof recordSale);
     toast.error("Sale recording function is not available");
     return { isValid: false };
   }
@@ -32,10 +34,12 @@ export const validateSaleData = (
   // Check if product exists and has sufficient stock
   const selectedProduct = products.find(p => p.product_id === saleData.product_id);
   if (!selectedProduct) {
-    console.log("SALE PROCESSOR: Product not found");
+    console.log("SALE PROCESSOR: Product not found for ID:", saleData.product_id);
     toast.error("Selected product not found");
     return { isValid: false };
   }
+
+  console.log("SALE PROCESSOR: Found product:", selectedProduct);
 
   const availableStock = parseInt(selectedProduct.units as string);
   if (isNaN(availableStock) || availableStock < saleData.quantity_sold) {
@@ -47,6 +51,7 @@ export const validateSaleData = (
     return { isValid: false };
   }
 
+  console.log("SALE PROCESSOR: Validation passed successfully");
   return { isValid: true, selectedProduct };
 };
 
@@ -62,6 +67,8 @@ export const processSaleSubmission = async (
       clientName: saleData.clientName
     });
     
+    console.log("SALE PROCESSOR: Calling recordSale function...");
+    
     // Record the sale using our store function
     const recordedSale = recordSale({
       product_id: saleData.product_id,
@@ -71,13 +78,17 @@ export const processSaleSubmission = async (
       clientName: saleData.clientName.trim()
     });
     
-    console.log("SALE PROCESSOR: recordSale result:", recordedSale);
+    console.log("SALE PROCESSOR: recordSale returned:", recordedSale);
     
     if (recordedSale && recordedSale.sale_id) {
       console.log("SALE PROCESSOR: Sale recorded successfully", recordedSale);
       return { success: true, sale: recordedSale };
+    } else if (recordedSale === null) {
+      console.error("SALE PROCESSOR: recordSale returned null - this indicates an error in the sale slice");
+      toast.error("Failed to record sale. Please check the product availability and try again.");
+      return { success: false };
     } else {
-      console.error("SALE PROCESSOR: recordSale returned invalid result:", recordedSale);
+      console.error("SALE PROCESSOR: recordSale returned unexpected result:", recordedSale);
       toast.error("Failed to record sale. Please try again.");
       return { success: false };
     }
