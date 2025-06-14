@@ -197,7 +197,7 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
-export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState, ExpiryState {
+export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState, ExpiryState, MeetingState {
   // Additional state properties
   isSignedIn: boolean;
   setIsSignedIn: (isSignedIn: boolean) => void;
@@ -304,3 +304,5 @@ export interface ExpiryState {
   updateProductExpiryStatus: (id: string, status: 'active' | 'expired' | 'disposed') => void;
   deleteProductExpiry: (id: string) => void;
 }
+
+import { MeetingState } from './slices/meetingSlice';

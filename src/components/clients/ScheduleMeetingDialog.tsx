@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Meeting } from "@/types/meeting";
+import useAppStore from "@/store/appStore";
 
 interface ScheduleMeetingDialogProps {
   open: boolean;
@@ -41,6 +41,7 @@ export function ScheduleMeetingDialog({
   clientName,
   onMeetingScheduled
 }: ScheduleMeetingDialogProps) {
+  const { addMeeting } = useAppStore();
   const form = useForm<MeetingForm>({
     defaultValues: {
       title: "",
@@ -52,8 +53,7 @@ export function ScheduleMeetingDialog({
   });
 
   const onSubmit = (data: MeetingForm) => {
-    const meeting: Meeting = {
-      id: `meeting-${Date.now()}`,
+    const meetingData = {
       clientId,
       clientName,
       title: data.title,
@@ -61,19 +61,18 @@ export function ScheduleMeetingDialog({
       time: data.time,
       type: data.type,
       notes: data.notes,
-      status: "scheduled",
-      createdAt: new Date().toISOString(),
+      status: "scheduled" as const,
     };
 
-    // Store in localStorage
-    const existingMeetings = JSON.parse(localStorage.getItem('meetings') || '[]');
-    const updatedMeetings = [meeting, ...existingMeetings];
-    localStorage.setItem('meetings', JSON.stringify(updatedMeetings));
-
+    addMeeting(meetingData);
     toast.success(`Meeting scheduled with ${clientName}`);
     
     if (onMeetingScheduled) {
-      onMeetingScheduled(meeting);
+      onMeetingScheduled({
+        ...meetingData,
+        id: `meeting-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      });
     }
     
     onOpenChange(false);

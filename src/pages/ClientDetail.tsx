@@ -10,6 +10,8 @@ import useAppStore from "@/store/appStore";
 import { CreateEstimateDialog } from "@/components/estimates/CreateEstimateDialog";
 import { ScheduleMeetingDialog } from "@/components/clients/ScheduleMeetingDialog";
 import { AddProductsDialog } from "@/components/clients/AddProductsDialog";
+import { MeetingListDialog } from "@/components/clients/MeetingListDialog";
+
 const ClientDetail = () => {
   const {
     clientId
@@ -24,6 +26,7 @@ const ClientDetail = () => {
   const [isEstimateDialogOpen, setIsEstimateDialogOpen] = useState(false);
   const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
+  const [isMeetingListOpen, setIsMeetingListOpen] = useState(false);
 
   // Find the client by id
   const client = clients.find(c => c.id.toString() === clientId);
@@ -45,7 +48,7 @@ const ClientDetail = () => {
   };
   const handleMeetingScheduled = (meeting: any) => {
     console.log("Meeting scheduled:", meeting);
-    // You can add additional logic here if needed
+    // Meeting is now automatically handled by the store
   };
 
   // Mock data for charts
@@ -168,12 +171,14 @@ const ClientDetail = () => {
               <UserPlus className="w-4 h-4 mr-2" />
               Schedule Meeting
             </Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => setIsMeetingListOpen(true)}>
+              <Clock className="w-4 h-4 mr-2" />
+              View Meetings
+            </Button>
           </CardContent>
         </Card>
       </div>
       
-      
-
       {/* Create Estimate Dialog with prefilled client name */}
       <CreateEstimateDialog open={isEstimateDialogOpen} onOpenChange={setIsEstimateDialogOpen} onEstimateCreated={handleEstimateCreated} prefilledClientName={client.name} />
 
@@ -182,6 +187,14 @@ const ClientDetail = () => {
 
       {/* Add Products Dialog */}
       <AddProductsDialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen} clientId={client.id} clientName={client.name} />
+
+      {/* Meeting List Dialog */}
+      <MeetingListDialog 
+        open={isMeetingListOpen} 
+        onOpenChange={setIsMeetingListOpen} 
+        clientId={client.id} 
+        clientName={client.name} 
+      />
     </div>;
 };
 export default ClientDetail;

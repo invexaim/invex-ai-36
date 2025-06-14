@@ -1,4 +1,3 @@
-
 import { AppState } from '../types';
 import { createProductSlice } from '../slices/productSlice';
 import { createSaleSlice } from '../slices/saleSlice';
@@ -7,6 +6,7 @@ import { createPaymentSlice } from '../slices/paymentSlice';
 import { createUserSlice } from '../slices/userSlice';
 import { createCompanySlice } from '../slices/companySlice';
 import { createExpirySlice } from '../slices/expirySlice';
+import { createMeetingSlice } from '../slices/meetingSlice';
 
 export const integrateSlices = (
   set: any, 
@@ -132,6 +132,9 @@ export const integrateSlices = (
   );
   console.log("SLICE INTEGRATION: Payment slice created");
 
+  const meetingSlice = createMeetingSlice(set, get);
+  console.log("SLICE INTEGRATION: Meeting slice created");
+
   const result = {
     userSlice,
     productSlice,
@@ -139,7 +142,8 @@ export const integrateSlices = (
     companySlice,
     expirySlice,
     saleSlice,
-    paymentSlice
+    paymentSlice,
+    meetingSlice
   };
   
   console.log("SLICE INTEGRATION: All slices integrated successfully");

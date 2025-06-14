@@ -1,14 +1,18 @@
 
-import { Users, Phone } from "lucide-react";
+import { Users, Phone, Calendar } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
 import { Client } from "@/types";
+import useAppStore from "@/store/appStore";
 
 interface StatsCardsProps {
   clients: Client[];
+  onMeetingsClick: () => void;
 }
 
-export const StatsCards = ({ clients }: StatsCardsProps) => {
+export const StatsCards = ({ clients, onMeetingsClick }: StatsCardsProps) => {
+  const { getTotalMeetings } = useAppStore();
   const totalClients = clients.length;
+  const totalMeetings = getTotalMeetings();
   
   // Calculate recent contacts (clients added in the last 7 days)
   const recentContacts = clients.filter(client => {
@@ -37,12 +41,13 @@ export const StatsCards = ({ clients }: StatsCardsProps) => {
       </CardStat>
       
       <CardStat 
-        title="Communication Status" 
-        value="85%"
-        icon={<Phone className="w-5 h-5 text-green-500" />} 
-        className="bg-card"
+        title="Meetings" 
+        value={totalMeetings}
+        icon={<Calendar className="w-5 h-5 text-green-500" />} 
+        className="bg-card cursor-pointer hover:shadow-md transition-shadow"
+        onClick={onMeetingsClick}
       >
-        <p className="text-xs text-muted-foreground mt-1">Response rate</p>
+        <p className="text-xs text-muted-foreground mt-1">Total scheduled</p>
       </CardStat>
     </div>
   );
