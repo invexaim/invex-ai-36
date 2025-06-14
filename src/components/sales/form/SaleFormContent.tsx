@@ -58,6 +58,7 @@ const SaleFormContent = ({
         <EstimateItemDisplay
           estimateInfo={estimateInfo}
           selectedProduct={selectedProduct}
+          products={products || []}
         />
       ) : (
         // Always show product selector for regular sales

@@ -17,12 +17,23 @@ interface EstimateItemDisplayProps {
     hasMoreItems: boolean;
   } | null;
   selectedProduct?: Product;
+  products: Product[];
 }
 
-const EstimateItemDisplay = ({ estimateInfo, selectedProduct }: EstimateItemDisplayProps) => {
+const EstimateItemDisplay = ({ estimateInfo, selectedProduct, products }: EstimateItemDisplayProps) => {
   if (!estimateInfo) return null;
 
   const currentItem = estimateInfo.items[estimateInfo.currentIndex];
+  
+  // Try to find the product by matching name or ID
+  const productFromEstimate = products?.find(p => 
+    p.product_id === currentItem?.product_id || 
+    p.product_name === currentItem?.product_name ||
+    p.product_name === currentItem?.name
+  );
+
+  const displayProduct = selectedProduct || productFromEstimate;
+  const productName = displayProduct?.product_name || currentItem?.product_name || currentItem?.name || 'Unknown Product';
 
   return (
     <Card>
@@ -39,7 +50,7 @@ const EstimateItemDisplay = ({ estimateInfo, selectedProduct }: EstimateItemDisp
           <div>
             <p className="text-sm font-medium text-gray-600">Product</p>
             <p className="text-sm font-semibold">
-              {selectedProduct?.product_name || currentItem?.product_name || 'Unknown Product'}
+              {productName}
             </p>
           </div>
           <div>
@@ -57,7 +68,7 @@ const EstimateItemDisplay = ({ estimateInfo, selectedProduct }: EstimateItemDisp
           <div>
             <p className="text-sm font-medium text-gray-600">Available Stock</p>
             <p className="text-sm font-semibold">
-              {selectedProduct ? parseInt(selectedProduct.units as string) : 'N/A'}
+              {displayProduct ? parseInt(displayProduct.units as string) : 'N/A'}
             </p>
           </div>
         </div>

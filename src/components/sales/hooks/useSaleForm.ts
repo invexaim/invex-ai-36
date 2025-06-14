@@ -52,8 +52,18 @@ export const useSaleForm = () => {
         totalItems: pendingEstimateForSale.items.length
       });
       
+      // Find the product by matching name or ID
+      let productId = currentItem.product_id;
+      if (!productId && products) {
+        const matchedProduct = products.find(p => 
+          p.product_name === currentItem.product_name ||
+          p.product_name === currentItem.name
+        );
+        productId = matchedProduct?.product_id || 0;
+      }
+      
       setNewSaleData({
-        product_id: currentItem.product_id || 0,
+        product_id: productId || 0,
         quantity_sold: currentItem.quantity || 1,
         selling_price: currentItem.price || 0,
         clientId: 0,
@@ -70,14 +80,14 @@ export const useSaleForm = () => {
         clientName: "",
       });
     }
-  }, [pendingEstimateForSale, currentEstimateItem, isFromEstimate]);
+  }, [pendingEstimateForSale, currentEstimateItem, isFromEstimate, products]);
 
   const validateForm = () => {
     const errors: FormErrors = {
       product_id: !newSaleData.product_id,
       quantity_sold: newSaleData.quantity_sold <= 0,
       selling_price: newSaleData.selling_price <= 0,
-      clientName: !newSaleData.clientName.trim()
+      clientName: !isFromEstimate && !newSaleData.clientName.trim() // Only require client for regular sales
     };
     
     setFormErrors(errors);
