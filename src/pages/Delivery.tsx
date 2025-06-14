@@ -37,6 +37,7 @@ const Delivery = () => {
       try {
         const parsed = JSON.parse(storedChallans);
         if (Array.isArray(parsed)) {
+          console.log("Loaded challans from localStorage:", parsed);
           setChallans(parsed);
           return;
         }
@@ -65,10 +66,12 @@ const Delivery = () => {
       notes: challanData.notes,
     };
     
+    console.log("Creating new challan:", newChallan);
     const updatedChallans = [newChallan, ...challans];
     setChallans(updatedChallans);
     
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+    toast.success("Delivery challan created successfully");
   };
 
   const handleUpdateChallan = (challanData: any) => {
@@ -86,6 +89,7 @@ const Delivery = () => {
       status: challanData.status || editingChallan?.status || "pending",
     };
     
+    console.log("Updating challan:", updatedChallan);
     const updatedChallans = challans.map(challan => 
       challan.id === editingChallan?.id ? updatedChallan : challan
     );
@@ -93,9 +97,11 @@ const Delivery = () => {
     setChallans(updatedChallans);
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
     setEditingChallan(null);
+    toast.success("Delivery challan updated successfully");
   };
 
   const handleStatusChange = (id: string, newStatus: "delivered") => {
+    console.log("Changing status for challan:", id, "to:", newStatus);
     const updatedChallans = challans.map(challan => 
       challan.id === id ? { ...challan, status: newStatus } : challan
     );
@@ -103,7 +109,7 @@ const Delivery = () => {
     setChallans(updatedChallans);
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
     
-    toast.success("Delivery status updated to delivered");
+    toast.success(`Delivery status updated to ${newStatus}`);
   };
 
   const handleChallanAction = (challanData: any) => {
@@ -115,6 +121,7 @@ const Delivery = () => {
   };
 
   const handleEditChallan = (challan: DeliveryChallan) => {
+    console.log("Editing challan:", challan);
     setEditingChallan(challan);
     setIsDialogOpen(true);
   };
@@ -125,12 +132,15 @@ const Delivery = () => {
   };
 
   const deleteChallan = (id: string) => {
+    console.log("Deleting challan:", id);
     const updatedChallans = challans.filter(challan => challan.id !== id);
     setChallans(updatedChallans);
     localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+    toast.success("Delivery challan deleted successfully");
   };
 
   const handlePrintChallan = (challan: DeliveryChallan) => {
+    console.log("Printing challan:", challan);
     setSelectedChallan(challan);
     setIsPrintDialogOpen(true);
   };
