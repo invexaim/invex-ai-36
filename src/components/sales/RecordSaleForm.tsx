@@ -1,173 +1,99 @@
 
-import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import ProductSelector from "./form/ProductSelector";
-import ClientSelector from "./form/ClientSelector";
-import SaleDetailsForm from "./form/SaleDetailsForm";
+import EstimateInfoCard from "./form/EstimateInfoCard";
+import SaleFormContent from "./form/SaleFormContent";
 import FormActions from "./form/FormActions";
 import { useSaleForm } from "./hooks/useSaleForm";
-import { validateSaleData, processSaleSubmission } from "./utils/saleProcessor";
+import { useSaleSubmission } from "./hooks/useSaleSubmission";
 
 interface RecordSaleFormProps {
   onClose: () => void;
 }
 
 const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
-  const navigate = useNavigate();
   const store = useAppStore();
-  const { products, clients, recordSale, setPendingSalePayment, addClient } = store;
+  const { 
+    products, 
+    clients, 
+    recordSale, 
+    setPendingSalePayment, 
+    addClient, 
+    pendingEstimateForSale,
+    setPendingEstimateForSale 
+  } = store;
   
-  console.log("RECORD SALE FORM: Component mounted with store functions:", {
-    recordSale: typeof recordSale,
-    setPendingSalePayment: typeof setPendingSalePayment,
-    productsCount: products?.length || 0,
-    clientsCount: clients?.length || 0,
-    storeKeys: Object.keys(store).filter(key => typeof store[key] === 'function')
-  });
+  console.log("RECORD SALE FORM: Component mounted with estimate data:", pendingEstimateForSale);
   
   const {
     newSaleData,
     formErrors,
-    isSubmitting,
-    setIsSubmitting,
     validateForm,
     handleProductChange,
     handleClientChange,
     handleQuantityChange,
-    handlePriceChange
+    handlePriceChange,
+    getEstimateItemsInfo,
+    moveToNextEstimateItem
   } = useSaleForm();
 
-  const handleAddSale = async () => {
-    console.log("RECORD SALE FORM: Starting sale recording process");
-    console.log("RECORD SALE FORM: Sale data:", newSaleData);
-    console.log("RECORD SALE FORM: recordSale function type:", typeof recordSale);
-    
-    // Prevent double submissions
-    if (isSubmitting) {
-      console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
-      toast.warning("Sale recording in progress, please wait...");
-      return;
-    }
+  const estimateInfo = getEstimateItemsInfo();
+  const isFromEstimate = !!pendingEstimateForSale;
 
-    // Validate basic requirements
-    if (!recordSale) {
-      console.error("RECORD SALE FORM: recordSale function is not available");
-      toast.error("Sale recording system is not available. Please refresh the page and try again.");
-      return;
-    }
-
-    if (typeof recordSale !== 'function') {
-      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
-      toast.error("Sale recording function is invalid. Please refresh the page and try again.");
-      return;
-    }
-
-    // Validate the form
-    if (!validateForm()) {
-      console.log("RECORD SALE FORM: Form validation failed");
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
-
-    // Validate products availability
-    if (!products || products.length === 0) {
-      console.error("RECORD SALE FORM: No products available");
-      toast.error("No products available. Please add products first.");
-      return;
-    }
-
-    // Validate sale data and stock
-    const validation = validateSaleData(newSaleData, products, recordSale);
-    if (!validation.isValid) {
-      console.log("RECORD SALE FORM: Sale data validation failed");
-      return;
-    }
-
-    console.log("RECORD SALE FORM: All validations passed, proceeding with sale recording");
-    setIsSubmitting(true);
-    
-    try {
-      const result = await processSaleSubmission(newSaleData, recordSale);
-      
-      if (result.success && result.sale) {
-        console.log("RECORD SALE FORM: Sale recorded successfully:", result.sale);
-        
-        // Validate setPendingSalePayment function
-        if (typeof setPendingSalePayment !== 'function') {
-          console.error("RECORD SALE FORM: setPendingSalePayment is not a function");
-          toast.error("Cannot proceed to payment. Please try again.");
-          setIsSubmitting(false);
-          return;
-        }
-        
-        // Store the sale details for the payment page
-        setPendingSalePayment(result.sale);
-        console.log("RECORD SALE FORM: Pending sale payment set");
-        
-        // Show success message
-        toast.success("Sale recorded successfully! Redirecting to payments...");
-        
-        // Close dialog first
-        onClose();
-        
-        // Navigate to payments page with a slight delay to ensure dialog closes
-        setTimeout(() => {
-          console.log("RECORD SALE FORM: Navigating to payments page");
-          navigate("/payments");
-        }, 100);
-        
-      } else {
-        console.error("RECORD SALE FORM: Sale recording failed:", result);
-        toast.error("Failed to record sale. Please check the details and try again.");
-      }
-    } catch (error) {
-      console.error("RECORD SALE FORM: Unexpected error during sale submission:", error);
-      toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { isSubmitting, handleAddSale } = useSaleSubmission({
+    newSaleData,
+    validateForm,
+    isFromEstimate,
+    estimateInfo,
+    moveToNextEstimateItem,
+    pendingEstimateForSale,
+    products,
+    recordSale,
+    setPendingSalePayment,
+    setPendingEstimateForSale,
+    onClose
+  });
 
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
 
   return (
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
-        <ProductSelector
-          products={products || []}
-          selectedProductId={newSaleData.product_id}
+        {/* Estimate Info Card */}
+        {pendingEstimateForSale && (
+          <EstimateInfoCard 
+            pendingEstimateForSale={pendingEstimateForSale}
+            estimateInfo={estimateInfo}
+          />
+        )}
+        
+        <SaleFormContent
+          isFromEstimate={isFromEstimate}
+          estimateInfo={estimateInfo}
+          selectedProduct={selectedProduct}
+          products={products}
+          clients={clients}
+          newSaleData={newSaleData}
+          formErrors={formErrors}
+          isSubmitting={isSubmitting}
           onProductChange={handleProductChange}
-          error={formErrors.product_id}
-          disabled={isSubmitting}
-        />
-        
-        <ClientSelector
-          clients={clients || []}
-          selectedClientId={newSaleData.clientId}
-          selectedClientName={newSaleData.clientName}
           onClientChange={handleClientChange}
-          onAddClient={addClient}
-          error={formErrors.clientName}
-          disabled={isSubmitting}
-        />
-        
-        <SaleDetailsForm
-          quantity={newSaleData.quantity_sold}
-          price={newSaleData.selling_price}
-          maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined}
           onQuantityChange={handleQuantityChange}
           onPriceChange={handlePriceChange}
-          quantityError={formErrors.quantity_sold}
-          priceError={formErrors.selling_price}
-          disabled={isSubmitting}
+          onAddClient={addClient}
         />
         
         <FormActions
           onCancel={onClose}
           onSubmit={handleAddSale}
           isSubmitting={isSubmitting}
+          submitText={
+            estimateInfo && estimateInfo.hasMoreItems 
+              ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`
+              : isFromEstimate
+              ? "Complete Estimate & Proceed to Payment"
+              : "Record Sale & Proceed to Payment"
+          }
         />
       </div>
     </ScrollArea>

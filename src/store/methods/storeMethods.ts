@@ -1,3 +1,4 @@
+
 import { AppState } from '../types';
 
 export const createStoreMethods = (
@@ -33,6 +34,10 @@ export const createStoreMethods = (
       console.log("STORE METHODS: Setting pending sale payment:", sale);
       set({ pendingSalePayment: sale });
     },
+    setPendingEstimateForSale: (estimate) => {
+      console.log("STORE METHODS: Setting pending estimate for sale:", estimate);
+      set({ pendingEstimateForSale: estimate });
+    },
     
     // Initialize required state properties
     isSignedIn: false,
@@ -40,6 +45,7 @@ export const createStoreMethods = (
     isLoading: false,
     setIsLoading: (isLoading) => set({ isLoading }),
     pendingSalePayment: null,
+    pendingEstimateForSale: null,
     
     // Expose the saveDataToSupabase function
     saveDataToSupabase,

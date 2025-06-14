@@ -5,9 +5,10 @@ interface FormActionsProps {
   onCancel: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  submitText?: string;
 }
 
-const FormActions = ({ onCancel, onSubmit, isSubmitting }: FormActionsProps) => {
+const FormActions = ({ onCancel, onSubmit, isSubmitting, submitText }: FormActionsProps) => {
   return (
     <div className="flex justify-end gap-2 mt-4">
       <Button 
@@ -22,7 +23,7 @@ const FormActions = ({ onCancel, onSubmit, isSubmitting }: FormActionsProps) => 
         onClick={onSubmit}
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Recording Sale..." : "Record Sale"}
+        {isSubmitting ? "Recording Sale..." : (submitText || "Record Sale")}
       </Button>
     </div>
   );

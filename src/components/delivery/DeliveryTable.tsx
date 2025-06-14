@@ -56,10 +56,25 @@ export function DeliveryTable({
   onStatusChange
 }: DeliveryTableProps) {
   const handleMarkAsDelivered = (challan: DeliveryChallan) => {
+    console.log("Marking challan as delivered:", challan.id, challan.status);
     if (challan.status === "pending") {
       onStatusChange(challan.id, "delivered");
     }
   };
+
+  // Sort challans by challan number in descending order (newest first)
+  const sortedChallans = [...challans].sort((a, b) => {
+    // Extract number from challan number (e.g., "DC-123456" -> 123456)
+    const extractNumber = (challanNo: string) => {
+      const match = challanNo.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
+    
+    const aNum = extractNumber(a.challanNo);
+    const bNum = extractNumber(b.challanNo);
+    
+    return bNum - aNum; // Descending order
+  });
 
   return (
     <Card className="p-0">
@@ -75,7 +90,7 @@ export function DeliveryTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {challans.map((challan) => (
+          {sortedChallans.map((challan) => (
             <TableRow key={challan.id}>
               <TableCell>
                 {new Date(challan.date).toLocaleDateString()}
@@ -94,6 +109,7 @@ export function DeliveryTable({
                     variant="ghost" 
                     size="icon"
                     onClick={() => onPrintChallan(challan)}
+                    title="Print Challan"
                   >
                     <Printer className="h-4 w-4" />
                   </Button>
@@ -101,6 +117,7 @@ export function DeliveryTable({
                     variant="ghost" 
                     size="icon"
                     onClick={() => onEditChallan(challan)}
+                    title="Edit Challan"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -109,7 +126,7 @@ export function DeliveryTable({
                       variant="ghost" 
                       size="icon"
                       onClick={() => handleMarkAsDelivered(challan)}
-                      className="text-green-600 hover:text-green-700"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
                       title="Mark as Delivered"
                     >
                       <CheckCircle2 className="h-4 w-4" />
@@ -118,8 +135,9 @@ export function DeliveryTable({
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="text-destructive"
+                    className="text-destructive hover:bg-red-50"
                     onClick={() => onDeleteChallan(challan.id)}
+                    title="Delete Challan"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

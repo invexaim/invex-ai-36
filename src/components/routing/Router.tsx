@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -28,7 +29,20 @@ interface AuthGuardProps {
 }
 
 export const Router = () => {
-  const { user, isLoading, authChecked } = useAuthContext();
+  let authContextValue;
+  
+  try {
+    authContextValue = useAuthContext();
+  } catch (error) {
+    // If AuthContext is not available, show loading
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Initializing authentication...</div>
+      </div>
+    );
+  }
+
+  const { user, isLoading, authChecked } = authContextValue;
 
   // Protected route component
   const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
