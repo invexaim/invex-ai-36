@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -62,6 +61,13 @@ export function EstimatePrint({
             @page {
               margin: 15mm;
               size: A4;
+              /* Remove default browser headers/footers */
+              @top-left { content: ""; }
+              @top-center { content: ""; }
+              @top-right { content: ""; }
+              @bottom-left { content: ""; }
+              @bottom-center { content: ""; }
+              @bottom-right { content: ""; }
             }
             
             body {
@@ -71,6 +77,17 @@ export function EstimatePrint({
               background: white;
               margin: 0;
               font-size: 11px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            
+            /* Hide any browser-generated content */
+            body::before,
+            body::after,
+            html::before,
+            html::after {
+              content: none !important;
+              display: none !important;
             }
             
             h1 {
