@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import useAppStore from "@/store/appStore";
+import useCompanyStore from '@/store/slices/companySlice';
 
 interface DeliveryChallanPrintProps {
   open: boolean;
@@ -21,7 +22,7 @@ export function DeliveryChallanPrint({
   challan
 }: DeliveryChallanPrintProps) {
   
-  const { companyName, logo, address } = useAppStore();
+  const { details, address, logo } = useCompanyStore();
   
   const handlePrint = () => {
     window.print();
@@ -53,21 +54,54 @@ export function DeliveryChallanPrint({
         
         <div className="print-content bg-white" id="challan-print">
           {/* Header with Company Logo and Name */}
-          <div className="text-center mb-8 pb-4 border-b-2 border-gray-800">
-            {logo.logoUrl && (
-              <div className="flex justify-center mb-4">
-                <img 
-                  src={logo.logoUrl} 
-                  alt="Company Logo" 
-                  className="h-16 w-auto object-contain"
-                />
+          <div className="mb-6">
+            {/* Top section with logo, company name, and contact details */}
+            <div className="flex items-start justify-between mb-4">
+              {/* Logo */}
+              <div className="flex-shrink-0">
+                {logo.logoUrl && (
+                  <img 
+                    src={logo.logoUrl} 
+                    alt="Company Logo" 
+                    className="h-16 w-16 object-contain"
+                  />
+                )}
               </div>
-            )}
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">{companyName || 'Your Company Name'}</h1>
-            {formatAddress() && (
-              <p className="text-sm text-gray-600 mb-2">{formatAddress()}</p>
-            )}
-            <h2 className="text-xl font-semibold text-gray-600">DELIVERY CHALLAN</h2>
+              
+              {/* Company Name - Centered */}
+              <div className="flex-1 text-center">
+                <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                  {details.companyName || 'Your Company Name'}
+                </h1>
+              </div>
+              
+              {/* Contact Details - Right aligned */}
+              <div className="text-right text-xs text-gray-600 space-y-1 flex-shrink-0 min-w-[200px]">
+                {details.phone && <p>Mobile: {details.phone}</p>}
+                {details.email && <p>Email: {details.email}</p>}
+                {details.taxId && <p>GSTIN: {details.taxId}</p>}
+                {address.street && (
+                  <div className="mt-2">
+                    <p>{address.street}</p>
+                    {address.aptSuite && <p>{address.aptSuite}</p>}
+                    <p>
+                      {address.city}
+                      {address.state && `, ${address.state}`}
+                      {address.postalCode && ` ${address.postalCode}`}
+                    </p>
+                    {address.country && <p>{address.country}</p>}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Horizontal line */}
+            <div className="border-t-2 border-gray-800 mb-4"></div>
+            
+            {/* DELIVERY CHALLAN title - centered */}
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-blue-600">DELIVERY CHALLAN</h2>
+            </div>
           </div>
           
           {/* Challan Information Section */}

@@ -3,14 +3,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, isWithinInterval, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { Product, Sale, Payment } from '@/types';
-import useAppStore from '@/store/appStore';
+import useCompanyStore from '@/store/slices/companySlice';
 
 export type ReportType = "all" | "inventory" | "sales" | "payments";
 export type TimeRange = "daily" | "weekly" | "monthly" | "custom";
 
-const getCompanyName = () => {
-  const { companyName } = useAppStore.getState();
-  return companyName || 'Your Company Name';
+const getCompanyInfo = () => {
+  const { details, address, logo } = useCompanyStore.getState();
+  return { details, address, logo };
 };
 
 const filterSalesByTimeRange = (
@@ -117,17 +117,90 @@ export const generateReport = (
   customDateTo?: Date
 ) => {
   const doc = new jsPDF();
-  const companyName = getCompanyName();
+  const { details, address, logo } = getCompanyInfo();
   
-  // Header
-  doc.setFontSize(20);
-  doc.text(companyName, 20, 20);
+  // Company Header Section
+  let yPosition = 20;
+  
+  // Add logo if available
+  if (logo.logoUrl) {
+    try {
+      // Note: In a real implementation, you'd need to convert the image to base64
+      // For now, we'll skip the logo in PDF but include space for it
+      yPosition += 20;
+    } catch (error) {
+      console.log('Could not add logo to PDF');
+    }
+  }
+  
+  // Company Name
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(details.companyName || 'Your Company Name', 20, yPosition);
+  yPosition += 10;
+  
+  // Company Contact Info
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  
+  if (details.phone) {
+    doc.text(`Phone: ${details.phone}`, 20, yPosition);
+    yPosition += 5;
+  }
+  
+  if (details.email) {
+    doc.text(`Email: ${details.email}`, 20, yPosition);
+    yPosition += 5;
+  }
+  
+  if (details.taxId) {
+    doc.text(`GSTIN: ${details.taxId}`, 20, yPosition);
+    yPosition += 5;
+  }
+  
+  // Company Address
+  if (address.street || address.city) {
+    const addressLine = [];
+    if (address.street) addressLine.push(address.street);
+    if (address.aptSuite) addressLine.push(address.aptSuite);
+    
+    if (addressLine.length > 0) {
+      doc.text(addressLine.join(', '), 20, yPosition);
+      yPosition += 5;
+    }
+    
+    const cityLine = [];
+    if (address.city) cityLine.push(address.city);
+    if (address.state) cityLine.push(address.state);
+    if (address.postalCode) cityLine.push(address.postalCode);
+    
+    if (cityLine.length > 0) {
+      doc.text(cityLine.join(', '), 20, yPosition);
+      yPosition += 5;
+    }
+    
+    if (address.country) {
+      doc.text(address.country, 20, yPosition);
+      yPosition += 5;
+    }
+  }
+  
+  // Add separator line
+  yPosition += 5;
+  doc.setLineWidth(0.5);
+  doc.line(20, yPosition, 190, yPosition);
+  yPosition += 15;
+  
+  // Report Title and Date
   doc.setFontSize(16);
-  doc.text(`${reportType.toUpperCase()} Report`, 20, 35);
-  doc.setFontSize(12);
-  doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 20, 45);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${reportType.toUpperCase()} Report`, 20, yPosition);
+  yPosition += 10;
   
-  let yPosition = 60;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Generated on: ${format(new Date(), 'PPP')}`, 20, yPosition);
+  yPosition += 15;
   
   // Filter data based on time range
   const filteredSales = filterSalesByTimeRange(sales, timeRange, customDateFrom, customDateTo);
@@ -136,6 +209,7 @@ export const generateReport = (
   if (reportType === "all" || reportType === "inventory") {
     // Inventory Section
     doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
     doc.text("Inventory Summary", 20, yPosition);
     yPosition += 10;
     
@@ -161,6 +235,7 @@ export const generateReport = (
   if (reportType === "all" || reportType === "sales") {
     // Sales Section
     doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
     doc.text("Sales Summary", 20, yPosition);
     yPosition += 10;
     
@@ -187,6 +262,7 @@ export const generateReport = (
   if (reportType === "all" || reportType === "payments") {
     // Payments Section
     doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
     doc.text("Payments Summary", 20, yPosition);
     yPosition += 10;
     
