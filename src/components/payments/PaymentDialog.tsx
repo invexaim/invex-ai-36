@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ const PaymentDialog = ({
     amount: pendingSalePayment?.selling_price || 0,
     status: "paid" as const,
     method: "",
-    description: pendingSalePayment ? `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}` : "",
+    description: pendingSalePayment?.product?.product_name || "",
     relatedSaleId: pendingSalePayment?.sale_id,
     gstNumber: "",
     companyName: "",
@@ -132,7 +133,7 @@ const PaymentDialog = ({
         ...prev,
         clientName: pendingSalePayment.clientName || "",
         amount: pendingSalePayment.selling_price || 0,
-        description: `Payment for Sale #${pendingSalePayment.sale_id} - ${pendingSalePayment.product?.product_name || 'Product'}`,
+        description: pendingSalePayment.product?.product_name || "",
         relatedSaleId: pendingSalePayment.sale_id
       }));
     }
