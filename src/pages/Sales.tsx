@@ -1,12 +1,20 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useAppStore from "@/store/appStore";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SalesListSection from "@/components/sales/SalesListSection";
 
 const Sales = () => {
-  const { products, sales, deleteSale } = useAppStore();
+  const { products, sales, deleteSale, pendingEstimateForSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRecordSaleOpen, setIsRecordSaleOpen] = useState(false);
+
+  // Auto-open record sale dialog if there's a pending estimate
+  useEffect(() => {
+    if (pendingEstimateForSale) {
+      setIsRecordSaleOpen(true);
+    }
+  }, [pendingEstimateForSale]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -22,7 +30,11 @@ const Sales = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <SalesHeader productsExist={products.length > 0} />
+      <SalesHeader 
+        productsExist={products.length > 0} 
+        isRecordSaleOpen={isRecordSaleOpen}
+        setIsRecordSaleOpen={setIsRecordSaleOpen}
+      />
       <SalesListSection
         sales={filteredSales}
         searchTerm={searchTerm}

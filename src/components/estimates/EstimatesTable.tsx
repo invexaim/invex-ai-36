@@ -32,7 +32,7 @@ interface Estimate {
   date: string;
   referenceNo: string;
   totalAmount: number;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "rejected" | "completed";
   validUntil: string;
   createdAt: string;
   items?: any[];
@@ -45,9 +45,16 @@ interface EstimatesTableProps {
   onPrintEstimate: (estimate: Estimate) => void;
   onDeleteEstimate: (id: string) => void;
   onEditEstimate: (estimate: Estimate) => void;
+  onUpdateEstimateStatus?: (estimateId: string, newStatus: "pending" | "accepted" | "rejected" | "completed") => void;
 }
 
-export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, onEditEstimate }: EstimatesTableProps) {
+export function EstimatesTable({ 
+  estimates, 
+  onPrintEstimate, 
+  onDeleteEstimate, 
+  onEditEstimate,
+  onUpdateEstimateStatus 
+}: EstimatesTableProps) {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
   const navigate = useNavigate();
@@ -61,6 +68,8 @@ export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, o
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "rejected":
         return "bg-red-100 text-red-800 border-red-200";
+      case "completed":
+        return "bg-blue-100 text-blue-800 border-blue-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -73,6 +82,11 @@ export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, o
 
   const handleApprovalConfirm = () => {
     if (!selectedEstimate) return;
+
+    // Update estimate status to accepted
+    if (onUpdateEstimateStatus) {
+      onUpdateEstimateStatus(selectedEstimate.id, "accepted");
+    }
 
     // Convert estimate to pending estimate format for sales
     const estimateData = {

@@ -1,6 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
 
 interface SaleFormData {
   product_id: number;
@@ -18,6 +19,8 @@ interface FormErrors {
 }
 
 export const useSaleForm = () => {
+  const { pendingEstimateForSale } = useAppStore();
+  
   const [newSaleData, setNewSaleData] = useState<SaleFormData>({
     product_id: 0,
     quantity_sold: 1,
@@ -34,6 +37,21 @@ export const useSaleForm = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentEstimateItem, setCurrentEstimateItem] = useState(0);
+
+  // Pre-populate form with estimate data
+  useEffect(() => {
+    if (pendingEstimateForSale && pendingEstimateForSale.items && pendingEstimateForSale.items.length > 0) {
+      const firstItem = pendingEstimateForSale.items[0];
+      setNewSaleData({
+        product_id: firstItem.product_id || 0,
+        quantity_sold: firstItem.quantity || 1,
+        selling_price: firstItem.price || 0,
+        clientId: 0,
+        clientName: pendingEstimateForSale.clientName || "",
+      });
+    }
+  }, [pendingEstimateForSale]);
 
   const validateForm = () => {
     const errors: FormErrors = {
@@ -97,6 +115,33 @@ export const useSaleForm = () => {
     });
   };
 
+  const getEstimateItemsInfo = () => {
+    if (!pendingEstimateForSale?.items) return null;
+    
+    return {
+      items: pendingEstimateForSale.items,
+      currentIndex: currentEstimateItem,
+      totalItems: pendingEstimateForSale.items.length,
+      hasMoreItems: currentEstimateItem < pendingEstimateForSale.items.length - 1
+    };
+  };
+
+  const moveToNextEstimateItem = () => {
+    if (pendingEstimateForSale?.items && currentEstimateItem < pendingEstimateForSale.items.length - 1) {
+      const nextIndex = currentEstimateItem + 1;
+      const nextItem = pendingEstimateForSale.items[nextIndex];
+      
+      setCurrentEstimateItem(nextIndex);
+      setNewSaleData({
+        product_id: nextItem.product_id || 0,
+        quantity_sold: nextItem.quantity || 1,
+        selling_price: nextItem.price || 0,
+        clientId: newSaleData.clientId,
+        clientName: newSaleData.clientName,
+      });
+    }
+  };
+
   return {
     newSaleData,
     formErrors,
@@ -106,6 +151,8 @@ export const useSaleForm = () => {
     handleProductChange,
     handleClientChange,
     handleQuantityChange,
-    handlePriceChange
+    handlePriceChange,
+    getEstimateItemsInfo,
+    moveToNextEstimateItem
   };
 };

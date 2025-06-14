@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import PaymentHeader from "@/components/payments/PaymentHeader";
@@ -20,11 +20,30 @@ const Payments = () => {
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
 
   // Initialize add payment dialog when navigating from sales page
-  useState(() => {
+  useEffect(() => {
     if (pendingSalePayment) {
       setIsAddPaymentOpen(true);
     }
-  });
+  }, [pendingSalePayment]);
+
+  const updateEstimateStatus = (estimateId: string, newStatus: "pending" | "accepted" | "rejected" | "completed") => {
+    console.log("Updating estimate status in localStorage:", estimateId, "to", newStatus);
+    
+    try {
+      const storedEstimates = localStorage.getItem('estimates');
+      if (storedEstimates) {
+        const estimates = JSON.parse(storedEstimates);
+        const updatedEstimates = estimates.map((est: any) => 
+          est.id === estimateId ? { ...est, status: newStatus } : est
+        );
+        
+        localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
+        console.log("Estimate status updated successfully in localStorage");
+      }
+    } catch (error) {
+      console.error("Error updating estimate status:", error);
+    }
+  };
 
   const handleAddPayment = () => {
     setIsAddPaymentOpen(true);
@@ -40,7 +59,13 @@ const Payments = () => {
       ...formData,
     });
     
-    // Clear pending sale payment if there was one
+    // Check if this payment is for an estimate-based sale
+    if (pendingSalePayment?.estimateId && pendingSalePayment?.shouldCompleteEstimate) {
+      console.log("Payment completed for estimate:", pendingSalePayment.estimateId);
+      updateEstimateStatus(pendingSalePayment.estimateId, "completed");
+    }
+    
+    // Clear pending sale payment
     if (pendingSalePayment) {
       setPendingSalePayment(null);
     }

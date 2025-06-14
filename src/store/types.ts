@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -38,6 +37,9 @@ export interface Sale {
   clientName?: string;
   relatedSaleId?: number;
   transactionId?: string; // Add transaction ID for deduplication
+  estimateId?: string; // Add estimate ID for tracking
+  isFromEstimate?: boolean; // Flag to indicate if sale is from estimate
+  shouldCompleteEstimate?: boolean; // Flag to indicate if estimate should be completed
 }
 
 export interface ProductPurchase {
