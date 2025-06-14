@@ -14,8 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Product } from "@/types";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, Plus } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import useAppStore from "@/store/appStore";
-import { Plus } from "lucide-react";
 import { AddCategoryDialog } from "./AddCategoryDialog";
 
 interface AddProductDialogProps {
@@ -29,8 +33,9 @@ export const AddProductDialog = ({
   onOpenChange,
   onAddProduct,
 }: AddProductDialogProps) => {
-  const categories = useAppStore(state => state.categories || []);
+  const { categories = [], addProductExpiry, products } = useAppStore();
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [includeExpiry, setIncludeExpiry] = useState(false);
   
   const [formData, setFormData] = useState({
     product_name: "",
@@ -40,22 +45,51 @@ export const AddProductDialog = ({
     reorder_level: 5,
   });
 
+  const [expiryData, setExpiryData] = useState({
+    expiry_date: undefined as Date | undefined,
+    batch_number: "",
+    expiry_quantity: "",
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     if (name === 'price') {
-      // Handle price as a float
       setFormData({ ...formData, [name]: parseFloat(value) || 0 });
     } else if (name === 'reorder_level') {
-      // Handle reorder level as an integer
       setFormData({ ...formData, [name]: parseInt(value) || 0 });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setExpiryData({ ...expiryData, [name]: value });
+  };
+
   const handleCategoryChange = (value: string) => {
     setFormData({ ...formData, category: value });
+  };
+
+  const handleExpiryDateChange = (date: Date | undefined) => {
+    setExpiryData({ ...expiryData, expiry_date: date });
+  };
+
+  const resetForm = () => {
+    setFormData({
+      product_name: "",
+      category: "",
+      price: 0,
+      units: "0",
+      reorder_level: 5,
+    });
+    setExpiryData({
+      expiry_date: undefined,
+      batch_number: "",
+      expiry_quantity: "",
+    });
+    setIncludeExpiry(false);
   };
 
   const handleSubmit = () => {
@@ -80,26 +114,59 @@ export const AddProductDialog = ({
       return;
     }
 
+    // Validate expiry data if included
+    if (includeExpiry) {
+      if (!expiryData.expiry_date) {
+        toast.error("Expiry date is required when tracking expiry");
+        return;
+      }
+
+      if (expiryData.expiry_date <= new Date()) {
+        toast.error("Expiry date must be in the future");
+        return;
+      }
+
+      const expiryQuantity = parseInt(expiryData.expiry_quantity) || parseInt(formData.units);
+      if (expiryQuantity <= 0) {
+        toast.error("Expiry quantity must be greater than zero");
+        return;
+      }
+
+      if (expiryQuantity > parseInt(formData.units)) {
+        toast.error("Expiry quantity cannot exceed total units");
+        return;
+      }
+    }
+
+    // Calculate the next product ID
+    const nextProductId = products.length > 0 ? Math.max(...products.map(p => p.product_id)) + 1 : 1;
+
     // Submit product
     onAddProduct(formData);
     
-    // Reset form
-    setFormData({
-      product_name: "",
-      category: "",
-      price: 0,
-      units: "0",
-      reorder_level: 5,
-    });
+    // If expiry data is included, add it to expiry tracking
+    if (includeExpiry && expiryData.expiry_date) {
+      addProductExpiry({
+        product_id: nextProductId,
+        product_name: formData.product_name,
+        expiry_date: expiryData.expiry_date.toISOString().split('T')[0],
+        batch_number: expiryData.batch_number || undefined,
+        quantity: parseInt(expiryData.expiry_quantity) || parseInt(formData.units),
+        notes: `Added with product creation`,
+      });
+      
+      toast.success(`Product added with expiry tracking`);
+    }
     
-    // Close dialog
+    // Reset form and close dialog
+    resetForm();
     onOpenChange(false);
   };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Product</DialogTitle>
             <DialogDescription>
@@ -117,6 +184,84 @@ export const AddProductDialog = ({
                 placeholder="Enter product name"
               />
             </div>
+
+            {/* Expiry Date Toggle */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="include_expiry"
+                  checked={includeExpiry}
+                  onChange={(e) => setIncludeExpiry(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="include_expiry" className="text-sm font-medium">
+                  Track expiry date for this product
+                </Label>
+              </div>
+            </div>
+
+            {/* Expiry Date Field */}
+            {includeExpiry && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                <div className="space-y-2">
+                  <Label>Expiry Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !expiryData.expiry_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {expiryData.expiry_date ? (
+                          format(expiryData.expiry_date, "PPP")
+                        ) : (
+                          <span>Pick expiry date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={expiryData.expiry_date}
+                        onSelect={handleExpiryDateChange}
+                        disabled={(date) => date <= new Date()}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="batch_number">Batch Number (Optional)</Label>
+                    <Input
+                      id="batch_number"
+                      name="batch_number"
+                      value={expiryData.batch_number}
+                      onChange={handleExpiryChange}
+                      placeholder="e.g., BATCH001"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expiry_quantity">Expiry Quantity</Label>
+                    <Input
+                      id="expiry_quantity"
+                      name="expiry_quantity"
+                      type="number"
+                      min="1"
+                      value={expiryData.expiry_quantity}
+                      onChange={handleExpiryChange}
+                      placeholder={formData.units || "0"}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>

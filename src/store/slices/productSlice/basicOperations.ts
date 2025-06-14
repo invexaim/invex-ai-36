@@ -12,8 +12,9 @@ export const createBasicOperations = (set: any, get: any) => ({
   setCategories: (categories: string[]) => set({ categories }),
   
   addProduct: (productData) => set((state: ProductState) => {
+    const newProductId = state.products.length > 0 ? Math.max(...state.products.map(p => p.product_id)) + 1 : 1;
     const newProduct: Product = {
-      product_id: state.products.length > 0 ? Math.max(...state.products.map(p => p.product_id)) + 1 : 1,
+      product_id: newProductId,
       product_name: productData.product_name,
       category: productData.category,
       price: productData.price,
