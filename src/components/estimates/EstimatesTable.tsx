@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Download, Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Printer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,9 +31,10 @@ interface EstimatesTableProps {
   estimates: Estimate[];
   onPrintEstimate: (estimate: Estimate) => void;
   onDeleteEstimate: (id: string) => void;
+  onEditEstimate: (estimate: Estimate) => void;
 }
 
-export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate }: EstimatesTableProps) {
+export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate, onEditEstimate }: EstimatesTableProps) {
   function getStatusColor(status: string) {
     switch (status) {
       case "accepted":
@@ -83,8 +84,12 @@ export function EstimatesTable({ estimates, onPrintEstimate, onDeleteEstimate }:
                   >
                     <Printer className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <Download className="h-4 w-4" />
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onEditEstimate(estimate)}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon">
                     <CheckCircle2 className="h-4 w-4" />

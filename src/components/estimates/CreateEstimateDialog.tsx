@@ -23,6 +23,7 @@ interface CreateEstimateDialogProps {
   onOpenChange: (open: boolean) => void;
   onEstimateCreated?: (estimateData: any) => void;
   prefilledClientName?: string;
+  editingEstimate?: any;
 }
 
 interface EstimateForm {
@@ -46,7 +47,8 @@ export function CreateEstimateDialog({
   open,
   onOpenChange,
   onEstimateCreated,
-  prefilledClientName
+  prefilledClientName,
+  editingEstimate
 }: CreateEstimateDialogProps) {
   const [items, setItems] = useState<EstimateItem[]>([
     { id: 1, name: "", quantity: 1, price: 0, total: 0 },
@@ -63,12 +65,28 @@ export function CreateEstimateDialog({
     },
   });
 
-  // Update client name when prefilledClientName changes
+  // Update form when editing an estimate
   useEffect(() => {
-    if (prefilledClientName && open) {
+    if (editingEstimate && open) {
+      form.setValue("clientName", editingEstimate.clientName);
+      form.setValue("date", new Date(editingEstimate.date));
+      form.setValue("validUntil", new Date(editingEstimate.validUntil));
+      form.setValue("notes", editingEstimate.notes || "");
+      form.setValue("terms", editingEstimate.terms || "Payment due within 30 days of issue.");
+      
+      if (editingEstimate.items && editingEstimate.items.length > 0) {
+        setItems(editingEstimate.items.map((item: any, index: number) => ({
+          id: index + 1,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.quantity * item.price
+        })));
+      }
+    } else if (prefilledClientName && open && !editingEstimate) {
       form.setValue("clientName", prefilledClientName);
     }
-  }, [prefilledClientName, open, form]);
+  }, [editingEstimate, prefilledClientName, open, form]);
   
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
@@ -84,14 +102,14 @@ export function CreateEstimateDialog({
     const estimateData = {
       ...data,
       items: items,
-      status: "pending",
+      status: editingEstimate?.status || "pending",
       totalAmount: calculateTotal(),
-      referenceNo: `EST-${Date.now().toString().slice(-6)}`,
-      createdAt: new Date().toISOString(),
+      referenceNo: editingEstimate?.referenceNo || `EST-${Date.now().toString().slice(-6)}`,
+      createdAt: editingEstimate?.createdAt || new Date().toISOString(),
     };
     
-    console.log("Creating estimate:", estimateData);
-    toast.success("Estimate created successfully");
+    console.log(editingEstimate ? "Updating estimate:" : "Creating estimate:", estimateData);
+    toast.success(editingEstimate ? "Estimate updated successfully" : "Estimate created successfully");
     
     // Call the callback function if it exists
     if (onEstimateCreated) {
@@ -109,7 +127,9 @@ export function CreateEstimateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Create New Estimate</DialogTitle>
+          <DialogTitle>
+            {editingEstimate ? "Edit Estimate" : "Create New Estimate"}
+          </DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="h-[70vh] pr-4">
@@ -128,7 +148,9 @@ export function CreateEstimateDialog({
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Estimate</Button>
+                <Button type="submit">
+                  {editingEstimate ? "Update Estimate" : "Create Estimate"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>

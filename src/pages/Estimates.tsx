@@ -26,6 +26,7 @@ const Estimates = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
+  const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
 
   // Load estimates from localStorage
   useEffect(() => {
@@ -68,6 +69,29 @@ const Estimates = () => {
     localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
   };
 
+  const handleUpdateEstimate = (estimateData: any) => {
+    const updatedEstimate = {
+      ...editingEstimate,
+      clientName: estimateData.clientName,
+      date: estimateData.date,
+      totalAmount: estimateData.totalAmount || 0,
+      status: estimateData.status || "pending",
+      validUntil: estimateData.validUntil,
+      items: estimateData.items,
+      notes: estimateData.notes,
+      terms: estimateData.terms,
+    };
+    
+    const updatedEstimates = estimates.map(est => 
+      est.id === editingEstimate?.id ? updatedEstimate : est
+    );
+    setEstimates(updatedEstimates);
+    
+    // Store locally
+    localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
+    setEditingEstimate(null);
+  };
+
   const deleteEstimate = (id: string) => {
     const updatedEstimates = estimates.filter(est => est.id !== id);
     setEstimates(updatedEstimates);
@@ -79,8 +103,19 @@ const Estimates = () => {
     setIsPrintDialogOpen(true);
   };
 
-  const handleOpenCreateDialog = () => {
+  const handleEditEstimate = (estimate: Estimate) => {
+    setEditingEstimate(estimate);
     setIsDialogOpen(true);
+  };
+
+  const handleOpenCreateDialog = () => {
+    setEditingEstimate(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingEstimate(null);
   };
 
   return (
@@ -94,6 +129,7 @@ const Estimates = () => {
           estimates={estimates}
           onPrintEstimate={handlePrintEstimate}
           onDeleteEstimate={deleteEstimate}
+          onEditEstimate={handleEditEstimate}
         />
       )}
 
@@ -101,8 +137,9 @@ const Estimates = () => {
       
       <CreateEstimateDialog 
         open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen}
-        onEstimateCreated={handleCreateEstimate}
+        onOpenChange={handleDialogClose}
+        onEstimateCreated={editingEstimate ? handleUpdateEstimate : handleCreateEstimate}
+        editingEstimate={editingEstimate}
       />
       
       {selectedEstimate && (
