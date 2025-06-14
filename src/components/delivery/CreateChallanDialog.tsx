@@ -1,8 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
-import useAppStore from "@/store/appStore";
 import { toast } from "sonner";
 
 import {
@@ -12,32 +10,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChallanBasicDetails } from "./form/ChallanBasicDetails";
+import { ChallanItemsSection } from "./form/ChallanItemsSection";
+import { ChallanAdditionalDetails } from "./form/ChallanAdditionalDetails";
 
 interface CreateChallanDialogProps {
   open: boolean;
@@ -71,9 +49,6 @@ export function CreateChallanDialog({
   const [items, setItems] = useState<ChallanItem[]>([
     { id: 1, productId: 0, name: "", quantity: 1 },
   ]);
-  
-  const clients = useAppStore((state) => state.clients);
-  const products = useAppStore((state) => state.products);
   
   const form = useForm<ChallanForm>({
     defaultValues: {
@@ -170,199 +145,16 @@ export function CreateChallanDialog({
         <ScrollArea className="h-[70vh] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="clientName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a client" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clients.length > 0 ? (
-                            clients.map((client) => (
-                              <SelectItem key={client.id} value={client.name}>
-                                {client.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="new">Enter Client Name</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className="pl-3 text-left font-normal"
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="vehicleNo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vehicle No.</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter vehicle number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <ChallanBasicDetails form={form} />
               
-              <FormField
-                control={form.control}
-                name="deliveryAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Delivery Address</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Delivery address"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <ChallanItemsSection 
+                items={items}
+                onAddItem={addItem}
+                onRemoveItem={removeItem}
+                onUpdateItem={updateItem}
               />
               
-              <div>
-                <h3 className="font-medium mb-2">Items</h3>
-                <div className="border rounded-md p-2">
-                  <div className="grid grid-cols-12 gap-2 font-medium text-sm py-2 px-2">
-                    <div className="col-span-8">Item</div>
-                    <div className="col-span-3">Quantity</div>
-                    <div className="col-span-1"></div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {items.map((item) => (
-                    <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-2 px-2">
-                      <div className="col-span-8">
-                        <Select
-                          value={item.name}
-                          onValueChange={(value) => {
-                            const selectedProduct = products.find(p => p.product_name === value);
-                            if (selectedProduct) {
-                              updateItem(item.id, 'productId', selectedProduct.product_id);
-                              updateItem(item.id, 'name', value);
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select product" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((product) => (
-                              <SelectItem 
-                                key={product.product_id} 
-                                value={product.product_name}
-                              >
-                                {product.product_name} (Available: {product.units})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-3">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => 
-                            updateItem(item.id, 'quantity', parseInt(e.target.value) || 0)
-                          }
-                        />
-                      </div>
-                      <div className="col-span-1 flex justify-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(item.id)}
-                          disabled={items.length === 1}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <div className="py-2 px-2">
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      className="w-full"
-                      onClick={addItem}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Item
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional notes for delivery"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <ChallanAdditionalDetails form={form} />
               
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
