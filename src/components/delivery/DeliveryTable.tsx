@@ -32,6 +32,7 @@ interface DeliveryTableProps {
   onEditChallan: (challan: DeliveryChallan) => void;
   onDeleteChallan: (id: string) => void;
   onPrintChallan: (challan: DeliveryChallan) => void;
+  onStatusChange: (id: string, newStatus: "delivered") => void;
 }
 
 function getStatusColor(status: string) {
@@ -51,8 +52,15 @@ export function DeliveryTable({
   challans, 
   onEditChallan, 
   onDeleteChallan, 
-  onPrintChallan 
+  onPrintChallan,
+  onStatusChange
 }: DeliveryTableProps) {
+  const handleMarkAsDelivered = (challan: DeliveryChallan) => {
+    if (challan.status === "pending") {
+      onStatusChange(challan.id, "delivered");
+    }
+  };
+
   return (
     <Card className="p-0">
       <Table>
@@ -96,9 +104,17 @@ export function DeliveryTable({
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
+                  {challan.status === "pending" && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleMarkAsDelivered(challan)}
+                      className="text-green-600 hover:text-green-700"
+                      title="Mark as Delivered"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="icon" 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -8,23 +7,35 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import useAppStore from "@/store/appStore";
 
 interface DeliveryChallanPrintProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   challan: any;
-  companyName: string;
 }
 
 export function DeliveryChallanPrint({ 
   open, 
   onOpenChange, 
-  challan, 
-  companyName 
+  challan
 }: DeliveryChallanPrintProps) {
+  
+  const { companyName, logo, address } = useAppStore();
   
   const handlePrint = () => {
     window.print();
+  };
+
+  const formatAddress = () => {
+    const addressParts = [];
+    if (address.street) addressParts.push(address.street);
+    if (address.aptSuite) addressParts.push(address.aptSuite);
+    if (address.city) addressParts.push(address.city);
+    if (address.state) addressParts.push(address.state);
+    if (address.postalCode) addressParts.push(address.postalCode);
+    if (address.country) addressParts.push(address.country);
+    return addressParts.join(', ');
   };
 
   return (
@@ -41,9 +52,21 @@ export function DeliveryChallanPrint({
         </DialogHeader>
         
         <div className="print-content bg-white" id="challan-print">
-          {/* Header with Company Name */}
+          {/* Header with Company Logo and Name */}
           <div className="text-center mb-8 pb-4 border-b-2 border-gray-800">
+            {logo.logoUrl && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={logo.logoUrl} 
+                  alt="Company Logo" 
+                  className="h-16 w-auto object-contain"
+                />
+              </div>
+            )}
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{companyName || 'Your Company Name'}</h1>
+            {formatAddress() && (
+              <p className="text-sm text-gray-600 mb-2">{formatAddress()}</p>
+            )}
             <h2 className="text-xl font-semibold text-gray-600">DELIVERY CHALLAN</h2>
           </div>
           
@@ -183,6 +206,12 @@ export function DeliveryChallanPrint({
               font-size: 14px !important;
               color: #2563eb !important;
               margin-bottom: 12px !important;
+            }
+            
+            #challan-print img {
+              max-width: 100px !important;
+              height: auto !important;
+              object-fit: contain !important;
             }
             
             #challan-print table {

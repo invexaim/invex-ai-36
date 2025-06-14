@@ -7,6 +7,7 @@ import { DeliveryHeader } from '@/components/delivery/DeliveryHeader';
 import { DeliveryEmptyState } from '@/components/delivery/DeliveryEmptyState';
 import { DeliveryTable } from '@/components/delivery/DeliveryTable';
 import { DeliveryAboutSection } from '@/components/delivery/DeliveryAboutSection';
+import { toast } from 'sonner';
 
 interface DeliveryChallan {
   id: string;
@@ -28,7 +29,6 @@ const Delivery = () => {
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedChallan, setSelectedChallan] = useState<DeliveryChallan | null>(null);
   const [editingChallan, setEditingChallan] = useState<DeliveryChallan | null>(null);
-  const { companyName } = useAppStore();
 
   // Load challans from localStorage
   useEffect(() => {
@@ -95,6 +95,17 @@ const Delivery = () => {
     setEditingChallan(null);
   };
 
+  const handleStatusChange = (id: string, newStatus: "delivered") => {
+    const updatedChallans = challans.map(challan => 
+      challan.id === id ? { ...challan, status: newStatus } : challan
+    );
+    
+    setChallans(updatedChallans);
+    localStorage.setItem('deliveryChallans', JSON.stringify(updatedChallans));
+    
+    toast.success("Delivery status updated to delivered");
+  };
+
   const handleChallanAction = (challanData: any) => {
     if (editingChallan) {
       handleUpdateChallan(challanData);
@@ -140,6 +151,7 @@ const Delivery = () => {
           onEditChallan={handleEditChallan}
           onDeleteChallan={deleteChallan}
           onPrintChallan={handlePrintChallan}
+          onStatusChange={handleStatusChange}
         />
       )}
 
@@ -157,7 +169,6 @@ const Delivery = () => {
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
           challan={selectedChallan}
-          companyName={companyName}
         />
       )}
     </div>
