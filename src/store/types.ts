@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -211,24 +212,11 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
-import { MeetingState } from './slices/meetingSlice';
-
-export interface AppState extends ProductState, ClientState, SaleState, PaymentState, UserState, CompanyState, MeetingState {
-  // Expiry state
-  productExpiries: ProductExpiry[];
-  setProductExpiries: (expiries: ProductExpiry[]) => void;
-  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'created_at' | 'updated_at'>) => ProductExpiry;
-  updateProductExpiry: (id: string, updates: Partial<ProductExpiry>) => void;
-  deleteProductExpiry: (id: string) => void;
-  loadProductExpiries: () => Promise<void>;
-  getExpiringProducts: (daysAhead?: number) => ProductExpiry[];
-  getExpiredProducts: () => ProductExpiry[];
-
-  // Company state
+export interface CompanyState {
+  // Legacy field for backward compatibility
   companyName: string;
-  setCompanyName: (name: string) => void;
   
-  // Expanded company state
+  // Comprehensive company data
   details: {
     companyName: string;
     registrationNumber: string;
@@ -272,6 +260,7 @@ export interface AppState extends ProductState, ClientState, SaleState, PaymentS
   }>;
   
   // Company actions
+  setCompanyName: (name: string) => void;
   updateDetails: (details: any) => void;
   updateAddress: (address: any) => void;
   updateLogo: (logo: any) => void;
@@ -280,6 +269,20 @@ export interface AppState extends ProductState, ClientState, SaleState, PaymentS
   addCustomField: (field: any) => void;
   updateCustomField: (id: string, field: any) => void;
   removeCustomField: (id: string) => void;
+}
+
+import { MeetingState } from './slices/meetingSlice';
+
+export interface AppState extends ProductState, ClientState, SaleState, PaymentState, UserState, CompanyState, MeetingState {
+  // Expiry state
+  productExpiries: ProductExpiry[];
+  setProductExpiries: (expiries: ProductExpiry[]) => void;
+  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'created_at' | 'updated_at'>) => ProductExpiry;
+  updateProductExpiry: (id: string, updates: Partial<ProductExpiry>) => void;
+  deleteProductExpiry: (id: string) => void;
+  loadProductExpiries: () => Promise<void>;
+  getExpiringProducts: (daysAhead?: number) => ProductExpiry[];
+  getExpiredProducts: () => ProductExpiry[];
 }
 
 // Add this helper function to check if a value is a valid user data row

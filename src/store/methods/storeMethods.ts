@@ -1,5 +1,5 @@
 
-import { AppState } from '../types';
+import { AppState, Sale } from '../types';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
 
@@ -10,49 +10,68 @@ export const createStoreMethods = (
   slices: any,
   setupRealtimeUpdates: (userId: string) => void
 ) => {
-  const recordSale = async (
+  // Legacy method that matches the original signature for backward compatibility
+  const recordSaleWithParams = async (
     productName: string, 
     quantitySold: number, 
     sellingPrice: number,
     clientName: string
   ) => {
+    // Convert to sale data format and call the main recordSale method
+    const product = get().products.find((p: Product) => p.product_name === productName);
+    if (!product) {
+      console.error("STORE METHODS: Product not found:", productName);
+      return;
+    }
+
+    const saleData = {
+      product_id: product.product_id,
+      quantity_sold: quantitySold,
+      selling_price: sellingPrice,
+      clientName: clientName
+    };
+
+    return recordSale(saleData);
+  };
+
+  const recordSale = (saleData: Omit<Sale, 'sale_id' | 'sale_date'>): Sale => {
     try {
-      console.log("STORE METHODS: Recording sale:", { productName, quantitySold, sellingPrice, clientName });
+      console.log("STORE METHODS: Recording sale:", saleData);
       
       // Input validation
-      if (!productName || typeof productName !== 'string' || productName.trim() === '') {
-        console.error("STORE METHODS: Invalid product name");
-        return;
+      if (!saleData.product_id || typeof saleData.product_id !== 'number') {
+        console.error("STORE METHODS: Invalid product ID");
+        throw new Error("Invalid product ID");
       }
-      if (!quantitySold || typeof quantitySold !== 'number' || quantitySold <= 0) {
+      if (!saleData.quantity_sold || typeof saleData.quantity_sold !== 'number' || saleData.quantity_sold <= 0) {
         console.error("STORE METHODS: Invalid quantity sold");
-        return;
+        throw new Error("Invalid quantity sold");
       }
-      if (!sellingPrice || typeof sellingPrice !== 'number' || sellingPrice <= 0) {
+      if (!saleData.selling_price || typeof saleData.selling_price !== 'number' || saleData.selling_price <= 0) {
         console.error("STORE METHODS: Invalid selling price");
-        return;
+        throw new Error("Invalid selling price");
       }
-      if (!clientName || typeof clientName !== 'string' || clientName.trim() === '') {
+      if (!saleData.clientName || typeof saleData.clientName !== 'string' || saleData.clientName.trim() === '') {
         console.error("STORE METHODS: Invalid client name");
-        return;
+        throw new Error("Invalid client name");
       }
       
-      // Find the product by name
-      const product = get().products.find((p: Product) => p.product_name === productName);
+      // Find the product
+      const product = get().products.find((p: Product) => p.product_id === saleData.product_id);
       if (!product) {
-        console.error("STORE METHODS: Product not found:", productName);
-        return;
+        console.error("STORE METHODS: Product not found:", saleData.product_id);
+        throw new Error("Product not found");
       }
       
       // Check if there are enough units in stock
       const availableUnits = parseInt(product.units as string);
-      if (availableUnits < quantitySold) {
+      if (availableUnits < saleData.quantity_sold) {
         console.error("STORE METHODS: Not enough units in stock");
-        return;
+        throw new Error("Not enough units in stock");
       }
       
       // Calculate the new number of units
-      const newUnits = availableUnits - quantitySold;
+      const newUnits = availableUnits - saleData.quantity_sold;
       
       // Update the product units
       set((state: AppState) => ({
@@ -62,14 +81,14 @@ export const createStoreMethods = (
       }));
       
       // Create a new sale object
-      const newSale = {
-        sale_id: Date.now().toString(), // Generate a unique ID
-        product_id: product.product_id,
-        product_name: productName,
-        quantity_sold: quantitySold,
-        selling_price: sellingPrice,
+      const newSale: Sale = {
+        sale_id: Date.now(),
+        product_id: saleData.product_id,
+        quantity_sold: saleData.quantity_sold,
+        selling_price: saleData.selling_price,
         sale_date: new Date().toISOString(),
-        client_name: clientName
+        clientName: saleData.clientName,
+        product: product
       };
       
       // Add the new sale to the sales array
@@ -78,60 +97,68 @@ export const createStoreMethods = (
       }));
       
       // Update client purchase history
-      slices.saleSlice.updateClientPurchase(clientName, sellingPrice * quantitySold, productName, quantitySold);
+      if (slices.clientSlice?.updateClientPurchase) {
+        slices.clientSlice.updateClientPurchase(
+          saleData.clientName, 
+          saleData.selling_price * saleData.quantity_sold, 
+          product.product_name, 
+          saleData.quantity_sold
+        );
+      }
       
       console.log("STORE METHODS: Sale recorded successfully");
       
-      // Save data to Supabase
-      await saveDataToSupabase();
+      // Save data to Supabase asynchronously
+      saveDataToSupabase().catch(error => {
+        console.error("STORE METHODS: Error saving to Supabase:", error);
+      });
+      
+      return newSale;
       
     } catch (error) {
       console.error("STORE METHODS: Error recording sale:", error);
+      throw error;
     }
   };
 
-  const addSale = async (sale: any) => {
+  const addSale = (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => {
     try {
-      console.log("STORE METHODS: Adding sale:", sale);
+      console.log("STORE METHODS: Adding sale:", saleData);
       
       // Input validation
-      if (!sale) {
-        console.error("STORE METHODS: Invalid sale data");
-        return;
-      }
-      if (!sale.product_id || typeof sale.product_id !== 'number') {
+      if (!saleData.product_id || typeof saleData.product_id !== 'number') {
         console.error("STORE METHODS: Invalid product ID");
         return;
       }
-      if (!sale.quantity_sold || typeof sale.quantity_sold !== 'number' || sale.quantity_sold <= 0) {
+      if (!saleData.quantity_sold || typeof saleData.quantity_sold !== 'number' || saleData.quantity_sold <= 0) {
         console.error("STORE METHODS: Invalid quantity sold");
         return;
       }
-      if (!sale.selling_price || typeof sale.selling_price !== 'number' || sale.selling_price <= 0) {
+      if (!saleData.selling_price || typeof saleData.selling_price !== 'number' || saleData.selling_price <= 0) {
         console.error("STORE METHODS: Invalid selling price");
         return;
       }
-      if (!sale.client_name || typeof sale.client_name !== 'string' || sale.client_name.trim() === '') {
+      if (!saleData.clientName || typeof saleData.clientName !== 'string' || saleData.clientName.trim() === '') {
         console.error("STORE METHODS: Invalid client name");
         return;
       }
       
       // Find the product by ID
-      const product = get().products.find((p: Product) => p.product_id === sale.product_id);
+      const product = get().products.find((p: Product) => p.product_id === saleData.product_id);
       if (!product) {
-        console.error("STORE METHODS: Product not found:", sale.product_id);
+        console.error("STORE METHODS: Product not found:", saleData.product_id);
         return;
       }
       
       // Create a new sale object
-      const newSale = {
-        sale_id: Date.now().toString(), // Generate a unique ID
-        product_id: sale.product_id,
-        product_name: product.product_name,
-        quantity_sold: sale.quantity_sold,
-        selling_price: sale.selling_price,
+      const newSale: Sale = {
+        sale_id: Date.now(),
+        product_id: saleData.product_id,
+        quantity_sold: saleData.quantity_sold,
+        selling_price: saleData.selling_price,
         sale_date: new Date().toISOString(),
-        client_name: sale.client_name
+        clientName: saleData.clientName,
+        product: product
       };
       
       // Add the new sale to the sales array
@@ -140,12 +167,21 @@ export const createStoreMethods = (
       }));
       
       // Update client purchase history
-      slices.saleSlice.updateClientPurchase(sale.client_name, sale.selling_price * sale.quantity_sold, product.product_name, sale.quantity_sold);
+      if (slices.clientSlice?.updateClientPurchase) {
+        slices.clientSlice.updateClientPurchase(
+          saleData.clientName, 
+          saleData.selling_price * saleData.quantity_sold, 
+          product.product_name, 
+          saleData.quantity_sold
+        );
+      }
       
       console.log("STORE METHODS: Sale added successfully");
       
-      // Save data to Supabase
-      await saveDataToSupabase();
+      // Save data to Supabase asynchronously
+      saveDataToSupabase().catch(error => {
+        console.error("STORE METHODS: Error saving to Supabase:", error);
+      });
       
     } catch (error) {
       console.error("STORE METHODS: Error adding sale:", error);
@@ -285,6 +321,7 @@ export const createStoreMethods = (
 
   return {
     recordSale,
+    recordSaleWithParams, // Keep for backward compatibility
     addSale,
     syncDataWithSupabase,
     saveDataToSupabase,
