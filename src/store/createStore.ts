@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppState } from './types';
@@ -18,10 +17,28 @@ export function createPersistedStore<T extends AppState>(
       {
         name: 'invex-store', // Name for the persisted storage
         partialize: (state) => {
-          // Only persist the data, not the user info
-          // This ensures data is available locally but we rely on Supabase for the authoritative source
-          const { currentUser, pendingSalePayment, ...rest } = state;
-          return rest;
+          // Only persist user-independent preferences, not user data
+          // User data should come from Supabase, not localStorage
+          const { 
+            currentUser, 
+            pendingSalePayment, 
+            products, 
+            sales, 
+            clients, 
+            payments,
+            meetings,
+            ...rest 
+          } = state;
+          return {
+            // Keep only UI preferences and non-user-specific data
+            ...rest,
+            // Reset user data to empty arrays for new sessions
+            products: [],
+            sales: [],
+            clients: [],
+            payments: [],
+            meetings: []
+          };
         },
       }
     )

@@ -22,25 +22,48 @@ export const createUserSlice = (
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
   clearLocalData: () => {
-    console.log("USER: Clearing local state for UI refresh only, not affecting stored data");
-    // Make sure to save data to Supabase before clearing local state
+    console.log("USER: Clearing local state and all user data");
     const { currentUser } = get();
     if (currentUser) {
-      console.log("USER: Saving data before logout");
+      console.log("USER: Saving data before clearing local state");
       saveDataToSupabase()
         .then(() => {
-          console.log("USER: Data saved successfully before logout");
-          // Only clear the user information, not the actual data
-          set({ currentUser: null, isSignedIn: false });
+          console.log("USER: Data saved successfully before clearing");
+          // Clear all user data when logging out
+          set({ 
+            currentUser: null, 
+            isSignedIn: false,
+            products: [],
+            sales: [],
+            clients: [],
+            payments: [],
+            meetings: []
+          });
         })
         .catch(error => {
-          console.error("USER: Error saving data before logout:", error);
+          console.error("USER: Error saving data before clearing:", error);
           // Even if there's an error, still clear user information
-          set({ currentUser: null, isSignedIn: false });
+          set({ 
+            currentUser: null, 
+            isSignedIn: false,
+            products: [],
+            sales: [],
+            clients: [],
+            payments: [],
+            meetings: []
+          });
         });
     } else {
-      // No current user, just clear user information
-      set({ currentUser: null, isSignedIn: false });
+      // No current user, just clear everything
+      set({ 
+        currentUser: null, 
+        isSignedIn: false,
+        products: [],
+        sales: [],
+        clients: [],
+        payments: [],
+        meetings: []
+      });
     }
   },
   
@@ -55,30 +78,30 @@ export const createUserSlice = (
     
     try {
       const userId = currentUser.id;
+      console.log("USER: Syncing data for user:", userId);
+      
+      // First clear any existing data to prevent mixing user data
+      set({
+        products: [],
+        sales: [],
+        clients: [],
+        payments: [],
+        meetings: []
+      });
+      
       const userData = await fetchUserDataFromSupabase(userId);
       
       if (!userData) {
-        // If no data exists in Supabase, check if we have local data to save
-        const localProducts = get().products || [];
-        const localSales = get().sales || [];
-        const localClients = get().clients || [];
-        const localPayments = get().payments || [];
-        
-        if (localProducts.length > 0 || localSales.length > 0 || 
-            localClients.length > 0 || localPayments.length > 0) {
-          console.log('USER: Saving local data to Supabase for new user');
-          await saveUserDataToSupabase(userId, get());
-          return; // Return early as we're already using local data
-        } else {
-          // No local data, create empty record
-          await createEmptyUserData(userId);
-          set({
-            products: [],
-            sales: [],
-            clients: [],
-            payments: []
-          });
-        }
+        // If no data exists in Supabase, create empty record
+        console.log('USER: No existing data found, creating empty record');
+        await createEmptyUserData(userId);
+        set({
+          products: [],
+          sales: [],
+          clients: [],
+          payments: [],
+          meetings: []
+        });
       } else {
         // If data exists in Supabase, use it to update local state
         try {
@@ -87,6 +110,7 @@ export const createUserSlice = (
           const sales = Array.isArray(userData.sales) ? userData.sales : [];
           const clients = Array.isArray(userData.clients) ? userData.clients : [];
           const payments = Array.isArray(userData.payments) ? userData.payments : [];
+          const meetings = []; // Meetings are not stored in Supabase yet
           
           console.log("USER: Setting data from Supabase:", { 
             productsCount: products.length,
@@ -101,7 +125,8 @@ export const createUserSlice = (
             products,
             sales,
             clients,
-            payments
+            payments,
+            meetings
           });
           
           if (!silent) {

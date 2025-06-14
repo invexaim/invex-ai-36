@@ -37,7 +37,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const { setupRealtimeUpdates } = useAppStore();
+  const { setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings } = useAppStore();
+
+  // Function to clear all user data when switching users
+  const clearUserData = () => {
+    console.log('AUTH: Clearing all user data for user switch');
+    setProducts([]);
+    setSales([]);
+    setClients([]);
+    setPayments([]);
+    setMeetings([]);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -53,7 +63,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           if (initialSession?.user) {
             console.log('AUTH: User authenticated, setting up realtime updates');
-            setupRealtimeUpdates(initialSession.user.id);
+            // Clear any existing data first
+            clearUserData();
+            // Then sync data for this user
+            setTimeout(async () => {
+              try {
+                await syncDataWithSupabase({ silent: true });
+                setupRealtimeUpdates(initialSession.user.id);
+              } catch (error) {
+                console.error('AUTH: Error syncing data on init:', error);
+              }
+            }, 100);
           }
         }
       } catch (error) {
@@ -73,14 +93,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('AUTH: Auth state change:', user?.id);
       
       if (isMounted) {
+        const previousUserId = session?.user?.id;
+        const newUserId = user?.id;
+        
         setUser(user);
         setSession(user ? { user } as Session : null);
         
-        if (user) {
-          console.log('AUTH: User signed in, setting up realtime updates');
-          setupRealtimeUpdates(user.id);
-        } else {
-          console.log('AUTH: User signed out, cleaning up');
+        if (user && newUserId !== previousUserId) {
+          console.log('AUTH: New user signed in, clearing data and syncing');
+          // Clear data immediately when a different user signs in
+          clearUserData();
+          
+          // Sync data for the new user after a short delay
+          setTimeout(async () => {
+            try {
+              await syncDataWithSupabase({ silent: true });
+              setupRealtimeUpdates(user.id);
+            } catch (error) {
+              console.error('AUTH: Error syncing data for new user:', error);
+            }
+          }, 100);
+        } else if (!user) {
+          console.log('AUTH: User signed out, clearing data');
+          clearUserData();
         }
       }
     });
@@ -89,10 +124,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, session?.user?.id]);
 
   const signOut = async () => {
     try {
+      // Clear data before signing out
+      clearUserData();
       await AuthService.signOut();
       setUser(null);
       setSession(null);
