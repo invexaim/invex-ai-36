@@ -2,7 +2,6 @@
 import { StateCreator } from 'zustand';
 import { ProductExpiry } from '@/types';
 import { AppState } from '../types';
-import { toast } from 'sonner';
 
 export interface ExpiryState {
   productExpiries: ProductExpiry[];
@@ -27,7 +26,7 @@ export const createExpirySlice: StateCreator<
   addProductExpiry: (expiryData) => {
     const currentUser = get().currentUser;
     if (!currentUser) {
-      toast.error("You must be logged in to add expiry dates");
+      console.warn("No current user found when adding expiry date");
       return;
     }
 

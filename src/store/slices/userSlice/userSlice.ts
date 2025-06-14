@@ -37,7 +37,8 @@ export const createUserSlice = (
             sales: [],
             clients: [],
             payments: [],
-            meetings: []
+            meetings: [],
+            productExpiries: []
           });
         })
         .catch(error => {
@@ -50,7 +51,8 @@ export const createUserSlice = (
             sales: [],
             clients: [],
             payments: [],
-            meetings: []
+            meetings: [],
+            productExpiries: []
           });
         });
     } else {
@@ -62,7 +64,8 @@ export const createUserSlice = (
         sales: [],
         clients: [],
         payments: [],
-        meetings: []
+        meetings: [],
+        productExpiries: []
       });
     }
   },
@@ -86,7 +89,8 @@ export const createUserSlice = (
         sales: [],
         clients: [],
         payments: [],
-        meetings: []
+        meetings: [],
+        productExpiries: []
       });
       
       const userData = await fetchUserDataFromSupabase(userId);
@@ -100,7 +104,8 @@ export const createUserSlice = (
           sales: [],
           clients: [],
           payments: [],
-          meetings: []
+          meetings: [],
+          productExpiries: []
         });
       } else {
         // If data exists in Supabase, use it to update local state
@@ -111,6 +116,7 @@ export const createUserSlice = (
           const clients = Array.isArray(userData.clients) ? userData.clients : [];
           const payments = Array.isArray(userData.payments) ? userData.payments : [];
           const meetings = []; // Meetings are not stored in Supabase yet
+          const productExpiries = []; // Start with empty expiry data
           
           console.log("USER: Setting data from Supabase:", { 
             productsCount: products.length,
@@ -126,7 +132,8 @@ export const createUserSlice = (
             sales,
             clients,
             payments,
-            meetings
+            meetings,
+            productExpiries
           });
           
           if (!silent) {
@@ -164,7 +171,7 @@ export const createUserSlice = (
     }
   },
   
-  setupRealtimeUpdates: (userId: string): (() => void) => {
+  setupRealtimeUpdates: (): (() => void) => {
     // Implementation is in the main store to handle unsubscribe logic
     return () => {}; // Return empty function as fallback
   }
