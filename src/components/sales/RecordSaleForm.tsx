@@ -9,7 +9,6 @@ import ProductSelector from "./form/ProductSelector";
 import ClientSelector from "./form/ClientSelector";
 import SaleDetailsForm from "./form/SaleDetailsForm";
 import FormActions from "./form/FormActions";
-import EstimateItemDisplay from "./form/EstimateItemDisplay";
 import { useSaleForm } from "./hooks/useSaleForm";
 import { validateSaleData, processSaleSubmission } from "./utils/saleProcessor";
 
@@ -47,11 +46,13 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   } = useSaleForm();
 
   const estimateInfo = getEstimateItemsInfo();
-  const isFromEstimate = !!pendingEstimateForSale;
 
   const handleAddSale = async () => {
     console.log("RECORD SALE FORM: Starting sale recording process");
+    console.log("RECORD SALE FORM: Sale data:", newSaleData);
+    console.log("RECORD SALE FORM: Estimate ID:", pendingEstimateForSale?.id);
     
+    // Prevent double submissions
     if (isSubmitting) {
       console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
       toast.warning("Sale recording in progress, please wait...");
@@ -59,25 +60,23 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     }
 
     // Validate basic requirements
-    if (!recordSale || typeof recordSale !== 'function') {
+    if (!recordSale) {
       console.error("RECORD SALE FORM: recordSale function is not available");
       toast.error("Sale recording system is not available. Please refresh the page and try again.");
       return;
     }
 
-    // Validate the form (skip product/client validation for estimates)
-    if (!isFromEstimate && !validateForm()) {
-      console.log("RECORD SALE FORM: Form validation failed");
-      toast.error("Please fill in all required fields correctly");
+    if (typeof recordSale !== 'function') {
+      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
+      toast.error("Sale recording function is invalid. Please refresh the page and try again.");
       return;
     }
 
-    // For estimates, validate only quantity and price
-    if (isFromEstimate) {
-      if (newSaleData.quantity_sold <= 0 || newSaleData.selling_price <= 0) {
-        toast.error("Please enter valid quantity and price");
-        return;
-      }
+    // Validate the form
+    if (!validateForm()) {
+      console.log("RECORD SALE FORM: Form validation failed");
+      toast.error("Please fill in all required fields correctly");
+      return;
     }
 
     // Validate products availability
@@ -198,36 +197,23 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           </Card>
         )}
         
-        {/* Conditional rendering based on estimate presence */}
-        {isFromEstimate ? (
-          // Show read-only estimate item details
-          <EstimateItemDisplay
-            estimateInfo={estimateInfo}
-            selectedProduct={selectedProduct}
-          />
-        ) : (
-          // Show normal product selector for non-estimate sales
-          <ProductSelector
-            products={products || []}
-            selectedProductId={newSaleData.product_id}
-            onProductChange={handleProductChange}
-            error={formErrors.product_id}
-            disabled={isSubmitting}
-          />
-        )}
+        <ProductSelector
+          products={products || []}
+          selectedProductId={newSaleData.product_id}
+          onProductChange={handleProductChange}
+          error={formErrors.product_id}
+          disabled={isSubmitting}
+        />
         
-        {/* Only show client selector for non-estimate sales */}
-        {!isFromEstimate && (
-          <ClientSelector
-            clients={clients || []}
-            selectedClientId={newSaleData.clientId}
-            selectedClientName={newSaleData.clientName}
-            onClientChange={handleClientChange}
-            onAddClient={addClient}
-            error={formErrors.clientName}
-            disabled={isSubmitting}
-          />
-        )}
+        <ClientSelector
+          clients={clients || []}
+          selectedClientId={newSaleData.clientId}
+          selectedClientName={newSaleData.clientName}
+          onClientChange={handleClientChange}
+          onAddClient={addClient}
+          error={formErrors.clientName}
+          disabled={isSubmitting || !!pendingEstimateForSale} // Disable if from estimate
+        />
         
         <SaleDetailsForm
           quantity={newSaleData.quantity_sold}
@@ -247,8 +233,6 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           submitText={
             estimateInfo && estimateInfo.hasMoreItems 
               ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`
-              : isFromEstimate
-              ? "Complete Estimate & Proceed to Payment"
               : "Record Sale & Proceed to Payment"
           }
         />
