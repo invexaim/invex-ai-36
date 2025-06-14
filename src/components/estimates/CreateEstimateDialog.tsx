@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ interface CreateEstimateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEstimateCreated?: (estimateData: any) => void;
+  prefilledClientName?: string;
 }
 
 interface EstimateForm {
@@ -44,7 +45,8 @@ interface EstimateItem {
 export function CreateEstimateDialog({
   open,
   onOpenChange,
-  onEstimateCreated
+  onEstimateCreated,
+  prefilledClientName
 }: CreateEstimateDialogProps) {
   const [items, setItems] = useState<EstimateItem[]>([
     { id: 1, name: "", quantity: 1, price: 0, total: 0 },
@@ -60,6 +62,13 @@ export function CreateEstimateDialog({
       terms: "Payment due within 30 days of issue.",
     },
   });
+
+  // Update client name when prefilledClientName changes
+  useEffect(() => {
+    if (prefilledClientName && open) {
+      form.setValue("clientName", prefilledClientName);
+    }
+  }, [prefilledClientName, open, form]);
   
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
