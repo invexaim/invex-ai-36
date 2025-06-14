@@ -1,7 +1,8 @@
+
 import { AppState } from '../types';
 import { createProductSlice } from '../slices/productSlice';
 import { createSaleSlice } from '../slices/saleSlice';
-import { createClientSlice } from '../slices/clientSlice';
+import { createClientSlice } from '../slices/client';
 import { createPaymentSlice } from '../slices/paymentSlice';
 import { createUserSlice } from '../slices/userSlice';
 import { createCompanySlice } from '../slices/companySlice';
