@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -18,6 +19,11 @@ import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
 interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+// Define the AuthGuard props interface
+interface AuthGuardProps {
   children: ReactNode;
 }
 
@@ -42,7 +48,7 @@ export const Router = () => {
   };
 
   // AuthGuard component
-  const AuthGuard = ({ children }: ReactNode) => {
+  const AuthGuard = ({ children }: AuthGuardProps) => {
     const { user, isLoading, authChecked } = useAuthContext();
     
     // Add check for authChecked to ensure we've at least attempted to check auth status
