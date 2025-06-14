@@ -12,13 +12,13 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Router />
-        </AuthProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
