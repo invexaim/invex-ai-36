@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,26 +10,24 @@ import SaleDetailsForm from "./form/SaleDetailsForm";
 import FormActions from "./form/FormActions";
 import { useSaleForm } from "./hooks/useSaleForm";
 import { validateSaleData, processSaleSubmission } from "./utils/saleProcessor";
-
 interface RecordSaleFormProps {
   onClose: () => void;
 }
-
-const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
+const RecordSaleForm = ({
+  onClose
+}: RecordSaleFormProps) => {
   const navigate = useNavigate();
   const store = useAppStore();
-  const { 
-    products, 
-    clients, 
-    recordSale, 
-    setPendingSalePayment, 
-    addClient, 
+  const {
+    products,
+    clients,
+    recordSale,
+    setPendingSalePayment,
+    addClient,
     pendingEstimateForSale,
-    setPendingEstimateForSale 
+    setPendingEstimateForSale
   } = store;
-  
   console.log("RECORD SALE FORM: Component mounted with estimate data:", pendingEstimateForSale);
-  
   const {
     newSaleData,
     formErrors,
@@ -44,14 +41,12 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     getEstimateItemsInfo,
     moveToNextEstimateItem
   } = useSaleForm();
-
   const estimateInfo = getEstimateItemsInfo();
-
   const handleAddSale = async () => {
     console.log("RECORD SALE FORM: Starting sale recording process");
     console.log("RECORD SALE FORM: Sale data:", newSaleData);
     console.log("RECORD SALE FORM: Estimate ID:", pendingEstimateForSale?.id);
-    
+
     // Prevent double submissions
     if (isSubmitting) {
       console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
@@ -65,7 +60,6 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       toast.error("Sale recording system is not available. Please refresh the page and try again.");
       return;
     }
-
     if (typeof recordSale !== 'function') {
       console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
       toast.error("Sale recording function is invalid. Please refresh the page and try again.");
@@ -92,25 +86,20 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       console.log("RECORD SALE FORM: Sale data validation failed");
       return;
     }
-
     console.log("RECORD SALE FORM: All validations passed, proceeding with sale recording");
     setIsSubmitting(true);
-    
     try {
       // Add estimate ID to sale data if available
       const saleDataWithEstimate = {
         ...newSaleData,
         estimateId: pendingEstimateForSale?.id
       };
-
       const result = await processSaleSubmission(saleDataWithEstimate, recordSale);
-      
       if (result.success && result.sale) {
         console.log("RECORD SALE FORM: Sale recorded successfully:", result.sale);
-        
+
         // Check if this is the last item from an estimate
         const shouldCompleteEstimate = estimateInfo && !estimateInfo.hasMoreItems;
-        
         if (estimateInfo && estimateInfo.hasMoreItems) {
           // Move to next item in estimate
           moveToNextEstimateItem();
@@ -118,7 +107,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           setIsSubmitting(false);
           return;
         }
-        
+
         // Validate setPendingSalePayment function
         if (typeof setPendingSalePayment !== 'function') {
           console.error("RECORD SALE FORM: setPendingSalePayment is not a function");
@@ -126,7 +115,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           setIsSubmitting(false);
           return;
         }
-        
+
         // Store the sale details for the payment page with estimate info
         const saleWithEstimateInfo = {
           ...result.sale,
@@ -134,31 +123,29 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
           isFromEstimate: !!pendingEstimateForSale,
           shouldCompleteEstimate
         };
-        
         setPendingSalePayment(saleWithEstimateInfo);
         console.log("RECORD SALE FORM: Pending sale payment set with estimate info");
-        
+
         // Clear the pending estimate since we're done with it
         if (shouldCompleteEstimate) {
           setPendingEstimateForSale(null);
         }
-        
+
         // Show success message
         if (shouldCompleteEstimate) {
           toast.success("All estimate items recorded! Redirecting to payments...");
         } else {
           toast.success("Sale recorded successfully! Redirecting to payments...");
         }
-        
+
         // Close dialog first
         onClose();
-        
+
         // Navigate to payments page with a slight delay to ensure dialog closes
         setTimeout(() => {
           console.log("RECORD SALE FORM: Navigating to payments page");
           navigate("/payments");
         }, 100);
-        
       } else {
         console.error("RECORD SALE FORM: Sale recording failed:", result);
         toast.error("Failed to record sale. Please check the details and try again.");
@@ -170,76 +157,20 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       setIsSubmitting(false);
     }
   };
-
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
-
-  return (
-    <ScrollArea className="h-[80vh]">
+  return <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
         {/* Estimate Info Card - Only show if actually from estimate */}
-        {pendingEstimateForSale && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Recording Sale from Estimate</CardTitle>
-                <Badge variant="outline">{pendingEstimateForSale.referenceNo}</Badge>
-              </div>
-              <CardDescription>
-                Client: {pendingEstimateForSale.clientName} | 
-                Total: ₹{pendingEstimateForSale.totalAmount.toLocaleString()}
-                {estimateInfo && (
-                  <span className="ml-2">
-                    Item {estimateInfo.currentIndex + 1} of {estimateInfo.totalItems}
-                  </span>
-                )}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
+        {pendingEstimateForSale}
         
-        <ProductSelector
-          products={products || []}
-          selectedProductId={newSaleData.product_id}
-          onProductChange={handleProductChange}
-          error={formErrors.product_id}
-          disabled={isSubmitting}
-        />
+        <ProductSelector products={products || []} selectedProductId={newSaleData.product_id} onProductChange={handleProductChange} error={formErrors.product_id} disabled={isSubmitting} />
         
-        <ClientSelector
-          clients={clients || []}
-          selectedClientId={newSaleData.clientId}
-          selectedClientName={newSaleData.clientName}
-          onClientChange={handleClientChange}
-          onAddClient={addClient}
-          error={formErrors.clientName}
-          disabled={isSubmitting}
-          isFromEstimate={!!pendingEstimateForSale}
-        />
+        <ClientSelector clients={clients || []} selectedClientId={newSaleData.clientId} selectedClientName={newSaleData.clientName} onClientChange={handleClientChange} onAddClient={addClient} error={formErrors.clientName} disabled={isSubmitting} isFromEstimate={!!pendingEstimateForSale} />
         
-        <SaleDetailsForm
-          quantity={newSaleData.quantity_sold}
-          price={newSaleData.selling_price}
-          maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined}
-          onQuantityChange={handleQuantityChange}
-          onPriceChange={handlePriceChange}
-          quantityError={formErrors.quantity_sold}
-          priceError={formErrors.selling_price}
-          disabled={isSubmitting}
-        />
+        <SaleDetailsForm quantity={newSaleData.quantity_sold} price={newSaleData.selling_price} maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined} onQuantityChange={handleQuantityChange} onPriceChange={handlePriceChange} quantityError={formErrors.quantity_sold} priceError={formErrors.selling_price} disabled={isSubmitting} />
         
-        <FormActions
-          onCancel={onClose}
-          onSubmit={handleAddSale}
-          isSubmitting={isSubmitting}
-          submitText={
-            estimateInfo && estimateInfo.hasMoreItems 
-              ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`
-              : "Record Sale & Proceed to Payment"
-          }
-        />
+        <FormActions onCancel={onClose} onSubmit={handleAddSale} isSubmitting={isSubmitting} submitText={estimateInfo && estimateInfo.hasMoreItems ? `Record Item ${estimateInfo.currentIndex + 1} & Continue` : "Record Sale & Proceed to Payment"} />
       </div>
-    </ScrollArea>
-  );
+    </ScrollArea>;
 };
-
 export default RecordSaleForm;
