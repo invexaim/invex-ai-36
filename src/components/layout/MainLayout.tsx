@@ -131,6 +131,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       label: "Delivery",
       href: "/delivery",
     },
+    {
+      icon: <Calendar className="w-5 h-5" />,
+      label: "Expiry",
+      href: "/expiry",
+    },
   ];
 
   return (

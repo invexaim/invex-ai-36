@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -15,6 +14,7 @@ import Delivery from "@/pages/Delivery";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import Settings from "@/pages/Settings";
+import Expiry from "@/pages/Expiry";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -169,6 +169,14 @@ export const Router = () => {
           <ProtectedRoute>
             <MainLayout>
               <Products filterType="low-stock" />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/expiry" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Expiry />
             </MainLayout>
           </ProtectedRoute>
         } />

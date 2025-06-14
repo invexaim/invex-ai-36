@@ -180,7 +180,7 @@ export interface UserState {
   setupRealtimeUpdates: (userId: string) => (() => void);
 }
 
-export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState {
+export interface AppState extends ProductState, SaleState, ClientState, PaymentState, UserState, ExpiryState {
   // Additional state properties
   isSignedIn: boolean;
   setIsSignedIn: (isSignedIn: boolean) => void;
@@ -261,4 +261,26 @@ export function isUserDataRow(value: any): boolean {
     'clients' in value && 
     'payments' in value
   );
+}
+
+export interface ProductExpiry {
+  id: string;
+  user_id: string;
+  product_id: number;
+  product_name: string;
+  expiry_date: string;
+  batch_number?: string;
+  quantity: number;
+  status: 'active' | 'expired' | 'disposed';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpiryState {
+  productExpiries: ProductExpiry[];
+  setProductExpiries: (expiries: ProductExpiry[]) => void;
+  addProductExpiry: (expiry: Omit<ProductExpiry, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'status'>) => void;
+  updateProductExpiryStatus: (id: string, status: 'active' | 'expired' | 'disposed') => void;
+  deleteProductExpiry: (id: string) => void;
 }

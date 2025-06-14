@@ -1,4 +1,3 @@
-
 import { AppState } from './types';
 import { toast } from "sonner";
 
@@ -11,6 +10,7 @@ import { createCompanySlice } from './slices/companySlice';
 import { saveUserDataToSupabase, setupRealtimeSubscription } from './slices/userSlice/dataSync';
 import { createPersistedStore } from './createStore';
 import { configureAutoSave, processRealtimeUpdate, updateLastTimestamp } from './realtimeSync';
+import { createExpirySlice } from './slices/expirySlice';
 
 // Create a combined store with all slices
 const useAppStore = createPersistedStore<AppState>(
@@ -42,6 +42,8 @@ const useAppStore = createPersistedStore<AppState>(
     const clientSlice = createClientSlice(set, get);
     
     const companySlice = createCompanySlice(set, get);
+    
+    const expirySlice = createExpirySlice(set, get);
     
     // Create sale slice with direct reference to client update function
     // Pass the updateClientPurchase function with proper signature including transactionId
@@ -105,6 +107,8 @@ const useAppStore = createPersistedStore<AppState>(
       ...userSlice,
       // Company slice
       ...companySlice,
+      // Expiry slice
+      ...expirySlice,
       
       // Override set method for specific actions to trigger Supabase sync
       setProducts: (products) => {

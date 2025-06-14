@@ -1,3 +1,4 @@
+
 export interface Product {
   product_id: number;
   product_name: string;
@@ -82,6 +83,20 @@ export interface Payment {
   state?: string;
   pincode?: string;
   transactionId?: string; // Add transaction ID for deduplication
+}
+
+export interface ProductExpiry {
+  id: string;
+  user_id: string;
+  product_id: number;
+  product_name: string;
+  expiry_date: string;
+  batch_number?: string;
+  quantity: number;
+  status: 'active' | 'expired' | 'disposed';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InventoryAnalysis {
