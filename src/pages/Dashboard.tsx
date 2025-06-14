@@ -65,7 +65,7 @@ const Dashboard = () => {
     },
   ];
 
-  // Additional expiry stats for bottom section
+  // Additional expiry stats for above charts section
   const expiryStats = [
     {
       title: "Expiring Products",
@@ -186,6 +186,23 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Expiry Stats Section - moved above charts */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Product Expiry Overview</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {expiryStats.map((stat, index) => (
+            <CardStat
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              onClick={stat.onClick}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -262,23 +279,6 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* New Expiry Stats Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Product Expiry Overview</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {expiryStats.map((stat, index) => (
-            <CardStat
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              onClick={stat.onClick}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-            />
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
