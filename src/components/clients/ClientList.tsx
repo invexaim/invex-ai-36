@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { RefreshCw, Search, Trash2, Users, Plus, Eye, ChevronLeft, ChevronRight } from "lucide-react";
@@ -144,14 +143,11 @@ export const ClientList = ({ clients, onDeleteClient, onAddClientClick }: Client
                           </TooltipTrigger>
                           <TooltipContent className="max-w-sm">
                             <div className="space-y-1">
-                              <p className="font-semibold">Purchase History:</p>
+                              <p className="font-semibold">Recent Products:</p>
                               {client.purchaseHistory && client.purchaseHistory.length > 0 ? (
                                 client.purchaseHistory.slice(0, 5).map((purchase, index) => (
                                   <div key={index} className="text-xs">
                                     <span className="font-medium">{purchase.productName}</span>
-                                    <span className="text-muted-foreground ml-2">
-                                      ₹{purchase.amount} - {new Date(purchase.purchaseDate).toLocaleDateString()}
-                                    </span>
                                   </div>
                                 ))
                               ) : (
