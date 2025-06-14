@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Client } from '@/types';
 import { toast } from 'sonner';
@@ -8,7 +7,10 @@ export const createClientSlice = (set: any, get: any) => ({
   clients: [],
   processedTransactions: new Set<string>(), // Track processed transactions
   
-  setClients: (clients: Client[]) => set({ clients }),
+  setClients: (clients: Client[]) => {
+    console.log("CLIENT SET: Setting clients:", clients.length);
+    set({ clients });
+  },
   
   addClient: (clientData) => set((state: ClientState) => {
     const newClient: Client = {
@@ -47,75 +49,109 @@ export const createClientSlice = (set: any, get: any) => ({
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),
   
-  // This is the ONLY function that should update client purchase data
+  // ENHANCED: This is the ONLY function that should update client purchase data
   updateClientPurchase: (clientName, amount, productName, quantity, transactionId) => set((state: ClientState) => {
-    // Generate transaction ID if not provided
-    const txId = transactionId || `${clientName}-${productName}-${quantity}-${amount}-${Date.now()}`;
-    
-    console.log("CLIENT UPDATE: Processing transaction:", { 
-      txId, 
-      clientName, 
-      amount, 
-      productName, 
-      quantity,
-      alreadyProcessed: state.processedTransactions?.has(txId)
-    });
-    
-    // Skip if no client name
+    // CRITICAL: Validate inputs first
     if (!clientName || !clientName.trim()) {
       console.log("CLIENT UPDATE: Skipping - no client name provided");
       return { clients: state.clients };
     }
+
+    if (typeof amount !== 'number' || amount <= 0) {
+      console.log("CLIENT UPDATE: Skipping - invalid amount:", amount);
+      return { clients: state.clients };
+    }
+
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      console.log("CLIENT UPDATE: Skipping - invalid quantity:", quantity);
+      return { clients: state.clients };
+    }
     
-    // Check if this transaction has already been processed
+    // Generate a robust transaction ID if not provided
+    const txId = transactionId || `${clientName.trim()}-${productName}-${quantity}-${amount}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log("CLIENT UPDATE: Processing transaction:", { 
+      txId, 
+      clientName: clientName.trim(), 
+      amount, 
+      productName, 
+      quantity,
+      alreadyProcessed: state.processedTransactions?.has(txId),
+      processedCount: state.processedTransactions?.size || 0
+    });
+    
+    // ENHANCED: Check if this transaction has already been processed
     if (state.processedTransactions?.has(txId)) {
-      console.log("CLIENT UPDATE: Skipping - transaction already processed:", txId);
+      console.log("CLIENT UPDATE: DUPLICATE DETECTED - transaction already processed:", txId);
       return { clients: state.clients };
     }
     
     // Check if the client exists
-    const clientExists = state.clients.some(client => client.name === clientName);
+    const clientExists = state.clients.some(client => client.name.trim() === clientName.trim());
     
     if (!clientExists) {
-      console.log("CLIENT UPDATE: Skipping - client does not exist:", clientName);
+      console.log("CLIENT UPDATE: Skipping - client does not exist:", clientName.trim());
+      console.log("CLIENT UPDATE: Available clients:", state.clients.map(c => c.name));
       return { clients: state.clients };
     }
     
-    console.log("CLIENT UPDATE: Processing purchase update:", { clientName, amount, productName, quantity, txId });
+    console.log("CLIENT UPDATE: Processing purchase update:", { 
+      clientName: clientName.trim(), 
+      amount, 
+      productName, 
+      quantity, 
+      txId 
+    });
     
-    // Update the client
+    // Update the client with enhanced validation
     const updatedClients = state.clients.map(client => {
-      if (client.name === clientName) {
+      if (client.name.trim() === clientName.trim()) {
         const newPurchase = {
-          productName,
-          quantity,
-          amount,
+          productName: productName || "Unknown Product",
+          quantity: Number(quantity),
+          amount: Number(amount),
           purchaseDate: new Date().toISOString(),
           transactionId: txId, // Add transaction ID to purchase history
         };
         
+        // ENHANCED: Validate existing totals before updating
+        const currentTotalPurchases = Number(client.totalPurchases) || 0;
+        const currentTotalSpent = Number(client.totalSpent) || 0;
+        
         const updatedClient = {
           ...client,
-          totalPurchases: client.totalPurchases + quantity,
-          totalSpent: client.totalSpent + amount,
+          totalPurchases: currentTotalPurchases + Number(quantity),
+          totalSpent: currentTotalSpent + Number(amount),
           lastPurchase: new Date().toISOString(),
           purchaseHistory: [newPurchase, ...(client.purchaseHistory || [])],
         };
         
         console.log("CLIENT UPDATE: Updated client data:", {
           name: updatedClient.name,
-          totalPurchases: updatedClient.totalPurchases,
-          totalSpent: updatedClient.totalSpent,
+          oldTotalPurchases: currentTotalPurchases,
+          newTotalPurchases: updatedClient.totalPurchases,
+          oldTotalSpent: currentTotalSpent,
+          newTotalSpent: updatedClient.totalSpent,
           newPurchase
         });
+        
         return updatedClient;
       }
       return client;
     });
     
-    // Mark transaction as processed
+    // ENHANCED: Mark transaction as processed with size limit
     const newProcessedTransactions = new Set(state.processedTransactions || []);
+    
+    // Prevent memory buildup by keeping only recent transactions (last 1000)
+    if (newProcessedTransactions.size > 1000) {
+      console.log("CLIENT UPDATE: Clearing old processed transactions to prevent memory buildup");
+      newProcessedTransactions.clear();
+    }
+    
     newProcessedTransactions.add(txId);
+    
+    console.log("CLIENT UPDATE: Transaction marked as processed. Total processed:", newProcessedTransactions.size);
     
     return { 
       clients: updatedClients,
@@ -123,16 +159,30 @@ export const createClientSlice = (set: any, get: any) => ({
     };
   }),
   
-  // Utility function to recalculate client totals from purchase history
+  // ENHANCED: Utility function to recalculate client totals from purchase history
   recalculateClientTotals: (clientId) => set((state: ClientState) => {
     console.log("CLIENT RECALCULATE: Recalculating totals for client:", clientId);
     
     const updatedClients = state.clients.map(client => {
       if (client.id === clientId) {
-        const totalPurchases = (client.purchaseHistory || []).reduce((sum, purchase) => sum + purchase.quantity, 0);
-        const totalSpent = (client.purchaseHistory || []).reduce((sum, purchase) => sum + purchase.amount, 0);
+        // ENHANCED: Validate purchase history before calculation
+        const validPurchases = (client.purchaseHistory || []).filter(purchase => 
+          purchase && 
+          typeof purchase.quantity === 'number' && 
+          typeof purchase.amount === 'number' &&
+          purchase.quantity > 0 &&
+          purchase.amount >= 0
+        );
         
-        console.log("CLIENT RECALCULATE: New totals:", { totalPurchases, totalSpent });
+        const totalPurchases = validPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+        const totalSpent = validPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+        
+        console.log("CLIENT RECALCULATE: New totals:", { 
+          clientId,
+          validPurchasesCount: validPurchases.length,
+          totalPurchases, 
+          totalSpent 
+        });
         
         return {
           ...client,
@@ -146,8 +196,11 @@ export const createClientSlice = (set: any, get: any) => ({
     return { clients: updatedClients };
   }),
   
-  // Clear processed transactions (useful for debugging)
-  clearProcessedTransactions: () => set({ processedTransactions: new Set() })
+  // ENHANCED: Clear processed transactions with logging
+  clearProcessedTransactions: () => {
+    console.log("CLIENT CLEAR: Clearing all processed transactions");
+    set({ processedTransactions: new Set() });
+  }
 });
 
 export const useClientStore = create<ClientState>((set, get) => 

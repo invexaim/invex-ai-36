@@ -2,13 +2,16 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Track active subscriptions to prevent duplicates
+let activeSubscriptions = new Set<string>();
+
 export async function saveUserDataToSupabase(userId: string, state: any) {
-  console.log("Saving data to Supabase for user:", userId);
+  console.log("DATASYNC: Saving data to Supabase for user:", userId);
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("User not authenticated or ID mismatch");
+    console.error("DATASYNC: User not authenticated or ID mismatch");
     toast.error("Authentication required to save data");
     throw new Error("Authentication required");
   }
@@ -24,6 +27,13 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       updated_at: new Date().toISOString()
     };
     
+    console.log("DATASYNC: Saving data:", {
+      productsCount: userData.products.length,
+      salesCount: userData.sales.length,
+      clientsCount: userData.clients.length,
+      paymentsCount: userData.payments.length
+    });
+    
     const { error } = await supabase
       .from('user_data')
       .upsert(userData as any, { 
@@ -32,26 +42,26 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       });
     
     if (error) {
-      console.error('Error saving data to Supabase:', error);
+      console.error('DATASYNC: Error saving data to Supabase:', error);
       toast.error("Failed to save your changes");
       throw error;
     } else {
-      console.log("Data successfully saved to Supabase");
+      console.log("DATASYNC: Data successfully saved to Supabase");
     }
   } catch (error) {
-    console.error('Error saving to Supabase:', error);
+    console.error('DATASYNC: Error saving to Supabase:', error);
     toast.error("Error saving your changes");
     throw error;
   }
 }
 
 export async function fetchUserDataFromSupabase(userId: string) {
-  console.log("Starting data sync for user:", userId);
+  console.log("DATASYNC: Starting data sync for user:", userId);
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("User not authenticated or ID mismatch");
+    console.error("DATASYNC: User not authenticated or ID mismatch");
     toast.error("Authentication required to load data");
     throw new Error("Authentication required");
   }
@@ -66,35 +76,40 @@ export async function fetchUserDataFromSupabase(userId: string) {
     
     if (error) {
       if (error.code === 'PGRST116') {
-        console.log("No existing data found for user");
+        console.log("DATASYNC: No existing data found for user");
         return null;
       } else {
-        console.error('Error fetching data:', error);
+        console.error('DATASYNC: Error fetching data:', error);
         toast.error("Failed to load your data");
         throw error;
       }
     } 
     
     if (data) {
-      console.log('Found existing data for user:', data);
+      console.log('DATASYNC: Found existing data for user:', {
+        productsCount: Array.isArray(data.products) ? data.products.length : 0,
+        salesCount: Array.isArray(data.sales) ? data.sales.length : 0,
+        clientsCount: Array.isArray(data.clients) ? data.clients.length : 0,
+        paymentsCount: Array.isArray(data.payments) ? data.payments.length : 0
+      });
       return data;
     }
     
     return null;
   } catch (error) {
-    console.error('Error fetching data from Supabase:', error);
+    console.error('DATASYNC: Error fetching data from Supabase:', error);
     toast.error("Error loading your data");
     throw error;
   }
 }
 
 export async function createEmptyUserData(userId: string) {
-  console.log("Creating empty user data record for user:", userId);
+  console.log("DATASYNC: Creating empty user data record for user:", userId);
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("User not authenticated or ID mismatch");
+    console.error("DATASYNC: User not authenticated or ID mismatch");
     toast.error("Authentication required to initialize data");
     throw new Error("Authentication required");
   }
@@ -113,11 +128,11 @@ export async function createEmptyUserData(userId: string) {
       .insert(userData as any);
       
     if (error) {
-      console.error('Error inserting empty data to Supabase:', error);
+      console.error('DATASYNC: Error inserting empty data to Supabase:', error);
       toast.error("Failed to initialize your data");
       throw error;
     } else {
-      console.log("Successfully created empty data record in Supabase");
+      console.log("DATASYNC: Successfully created empty data record in Supabase");
       return {
         products: [],
         sales: [],
@@ -126,26 +141,41 @@ export async function createEmptyUserData(userId: string) {
       };
     }
   } catch (error) {
-    console.error('Error creating empty user data:', error);
+    console.error('DATASYNC: Error creating empty user data:', error);
     toast.error("Failed to initialize your data");
     throw error;
   }
 }
 
 export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (data: any) => void) {
-  console.log("Setting up realtime subscription for user:", userId);
+  const subscriptionKey = `user_data_${userId}`;
   
-  // First unsubscribe from any existing channels to prevent duplicate subscriptions
-  try {
-    // Clean up any existing subscriptions
-    supabase.removeAllChannels();
-    console.log("Removed all existing channels before setting up new subscription");
-  } catch (e) {
-    console.error("Error removing existing channels:", e);
+  // Check if subscription already exists
+  if (activeSubscriptions.has(subscriptionKey)) {
+    console.log("DATASYNC: Subscription already exists for user:", userId);
+    return () => {
+      console.log("DATASYNC: Cleanup called for existing subscription");
+      activeSubscriptions.delete(subscriptionKey);
+      supabase.removeAllChannels();
+    };
   }
   
+  console.log("DATASYNC: Setting up NEW realtime subscription for user:", userId);
+  
+  // Clean up any existing channels to prevent duplicate subscriptions
+  try {
+    supabase.removeAllChannels();
+    activeSubscriptions.clear(); // Clear tracking as well
+    console.log("DATASYNC: Removed all existing channels before setting up new subscription");
+  } catch (e) {
+    console.error("DATASYNC: Error removing existing channels:", e);
+  }
+  
+  // Mark this subscription as active
+  activeSubscriptions.add(subscriptionKey);
+  
   const channel = supabase
-    .channel('user_data_changes')
+    .channel(`user_data_changes_${userId}`) // Make channel name unique per user
     .on(
       'postgres_changes',
       {
@@ -155,40 +185,57 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
         filter: `user_id=eq.${userId}`
       },
       (payload) => {
-        console.log("Received realtime update:", payload);
+        console.log("DATASYNC: Received realtime update:", {
+          userId,
+          updateTime: payload.new?.updated_at,
+          hasNewData: !!payload.new
+        });
+        
         if (payload.new) {
           // Check if update timestamp is recent to avoid processing stale updates
           const updateTime = new Date(payload.new.updated_at).getTime();
           const now = Date.now();
-          const isRecentUpdate = (now - updateTime) < 60000; // Within last minute
+          const isRecentUpdate = (now - updateTime) < 120000; // Within last 2 minutes
           
           if (isRecentUpdate) {
-            console.log("Processing update from another device");
+            console.log("DATASYNC: Processing update from another device");
             // The callback will update the store with the new data
             dataUpdateCallback(payload.new);
           } else {
-            console.log("Ignoring stale update");
+            console.log("DATASYNC: Ignoring stale update", {
+              updateTime: new Date(updateTime).toISOString(),
+              now: new Date(now).toISOString(),
+              ageMinutes: Math.round((now - updateTime) / 60000)
+            });
           }
         }
       }
     )
     .subscribe((status) => {
-      console.log("Realtime subscription status:", status);
+      console.log("DATASYNC: Realtime subscription status:", status, "for user:", userId);
       if (status === "SUBSCRIBED") {
-        console.log("Successfully subscribed to realtime updates for user:", userId);
+        console.log("DATASYNC: Successfully subscribed to realtime updates for user:", userId);
       } else if (status === "CHANNEL_ERROR") {
-        console.error("Error subscribing to realtime updates");
+        console.error("DATASYNC: Error subscribing to realtime updates");
+        // Mark subscription as failed
+        activeSubscriptions.delete(subscriptionKey);
         // Try to resubscribe after a delay
         setTimeout(() => {
-          console.log("Attempting to resubscribe to realtime updates");
-          channel.subscribe();
-        }, 5000);
+          console.log("DATASYNC: Attempting to resubscribe to realtime updates");
+          if (!activeSubscriptions.has(subscriptionKey)) {
+            setupRealtimeSubscription(userId, dataUpdateCallback);
+          }
+        }, 10000); // Wait 10 seconds before retry
+      } else if (status === "CLOSED") {
+        console.log("DATASYNC: Subscription closed for user:", userId);
+        activeSubscriptions.delete(subscriptionKey);
       }
     });
   
-  // Return unsubscribe function
+  // Return enhanced cleanup function
   return () => {
-    console.log("Removing realtime subscription");
+    console.log("DATASYNC: Removing realtime subscription for user:", userId);
+    activeSubscriptions.delete(subscriptionKey);
     supabase.removeChannel(channel);
   };
 }

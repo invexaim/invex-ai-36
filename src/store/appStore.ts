@@ -1,4 +1,3 @@
-
 import { AppState } from './types';
 import { toast } from "sonner";
 
@@ -20,16 +19,16 @@ const useAppStore = createPersistedStore<AppState>(
     const saveDataToSupabase = async () => {
       const { currentUser } = get();
       if (!currentUser) {
-        console.log("No current user, skipping data save");
+        console.log("STORE: No current user, skipping data save");
         return;
       }
       
       try {
-        console.log("Saving data to Supabase from store");
+        console.log("STORE: Saving data to Supabase from store");
         updateLastTimestamp(); // Mark this as a local update
         await saveUserDataToSupabase(currentUser.id, get());
       } catch (error) {
-        console.error('Error in saveDataToSupabase:', error);
+        console.error('STORE: Error in saveDataToSupabase:', error);
         throw error;
       }
     };
@@ -46,8 +45,7 @@ const useAppStore = createPersistedStore<AppState>(
     
     const expirySlice = createExpirySlice(set, get, store);
     
-    // Create sale slice with direct reference to client update function
-    // Pass the updateClientPurchase function with proper signature including transactionId
+    // ENHANCED: Create sale slice with improved transaction tracking
     const saleSlice = createSaleSlice(
       set, 
       get, 
@@ -61,29 +59,58 @@ const useAppStore = createPersistedStore<AppState>(
           )
         }));
       },
-      // CRITICAL: Pass the EXACT client update function with transaction ID support
+      // ENHANCED: Pass the client update function with better validation
       (clientName: string, amount: number, productName: string, quantity: number, transactionId?: string) => {
-        console.log("APP STORE: Routing client update with transaction ID:", { 
-          clientName, 
+        // Validate inputs before proceeding
+        if (!clientName || !clientName.trim()) {
+          console.log("STORE: Skipping client update - no client name");
+          return;
+        }
+        
+        if (typeof amount !== 'number' || amount <= 0) {
+          console.log("STORE: Skipping client update - invalid amount:", amount);
+          return;
+        }
+        
+        if (typeof quantity !== 'number' || quantity <= 0) {
+          console.log("STORE: Skipping client update - invalid quantity:", quantity);
+          return;
+        }
+        
+        console.log("STORE: Routing client update with transaction ID:", { 
+          clientName: clientName.trim(), 
           amount, 
           productName, 
           quantity, 
           transactionId 
         });
-        clientSlice.updateClientPurchase(clientName, amount, productName, quantity, transactionId);
+        
+        clientSlice.updateClientPurchase(clientName.trim(), amount, productName, quantity, transactionId);
       }
     );
     
+    // ENHANCED: Payment slice with better transaction management
     const paymentSlice = createPaymentSlice(
       set, 
       get,
       // Give payment slice access to update client - but don't double count sales
       (clientName: string, amount: number) => {
+        // Validate inputs
+        if (!clientName || !clientName.trim() || typeof amount !== 'number' || amount <= 0) {
+          console.log("STORE: Skipping payment client update - invalid inputs");
+          return;
+        }
+        
         // Generate unique transaction ID for payments
         const transactionId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        console.log("APP STORE: Processing payment with transaction ID:", { clientName, amount, transactionId });
+        console.log("STORE: Processing payment with transaction ID:", { 
+          clientName: clientName.trim(), 
+          amount, 
+          transactionId 
+        });
+        
         // Only update for actual payments, not sales
-        clientSlice.updateClientPurchase(clientName, amount, "Payment", 1, transactionId);
+        clientSlice.updateClientPurchase(clientName.trim(), amount, "Payment", 1, transactionId);
       }
     );
     
@@ -111,17 +138,21 @@ const useAppStore = createPersistedStore<AppState>(
       // Expiry slice
       ...expirySlice,
       
-      // Override set method for specific actions to trigger Supabase sync
+      // ENHANCED: Override set method for specific actions to trigger Supabase sync
       setProducts: (products) => {
+        console.log("STORE: Setting products:", products.length);
         setWithAutoSave({ products });
       },
       setSales: (sales) => {
+        console.log("STORE: Setting sales:", sales.length);
         setWithAutoSave({ sales });
       },
       setClients: (clients) => {
+        console.log("STORE: Setting clients:", clients.length);
         setWithAutoSave({ clients });
       },
       setPayments: (payments) => {
+        console.log("STORE: Setting payments:", payments.length);
         setWithAutoSave({ payments });
       },
       setPendingSalePayment: (sale) => {
@@ -141,35 +172,41 @@ const useAppStore = createPersistedStore<AppState>(
       // ENSURE recordSale is the primary function (no addSale wrapper)
       addSale: saleSlice.recordSale,
       
-      // Add debug function to clear processed transactions
+      // ENHANCED: Add debug function to clear processed transactions
       clearProcessedTransactions: () => {
-        console.log("APP STORE: Clearing processed transactions");
+        console.log("STORE: Clearing processed transactions");
         if (clientSlice.clearProcessedTransactions) {
           clientSlice.clearProcessedTransactions();
         }
       },
       
-      // Add function to recalculate client totals
+      // ENHANCED: Add function to recalculate client totals
       recalculateClientTotals: (clientId: number) => {
-        console.log("APP STORE: Recalculating client totals for:", clientId);
+        console.log("STORE: Recalculating client totals for:", clientId);
         if (clientSlice.recalculateClientTotals) {
           clientSlice.recalculateClientTotals(clientId);
         }
       },
       
-      // Set up realtime updates for the current user
+      // ENHANCED: Set up realtime updates with better cleanup
       setupRealtimeUpdates: (userId: string): (() => void) => {
-        console.log("Setting up realtime updates in store for user:", userId);
+        console.log("STORE: Setting up realtime updates for user:", userId);
         
         // Clean up any existing subscription
         if (realtimeUnsubscribe) {
+          console.log("STORE: Cleaning up existing subscription");
           realtimeUnsubscribe();
           realtimeUnsubscribe = null;
         }
         
         // Set up new subscription
         realtimeUnsubscribe = setupRealtimeSubscription(userId, (userData) => {
-          console.log("Receiving realtime update:", userData);
+          console.log("STORE: Receiving realtime update:", {
+            productsCount: Array.isArray(userData.products) ? userData.products.length : 0,
+            salesCount: Array.isArray(userData.sales) ? userData.sales.length : 0,
+            clientsCount: Array.isArray(userData.clients) ? userData.clients.length : 0,
+            paymentsCount: Array.isArray(userData.payments) ? userData.payments.length : 0
+          });
           
           // Process the update using our utility function
           processRealtimeUpdate(userData, get, set);
@@ -178,11 +215,12 @@ const useAppStore = createPersistedStore<AppState>(
         // Force a data sync on setup
         const { syncDataWithSupabase } = get();
         syncDataWithSupabase().catch(error => {
-          console.error("Error syncing data during realtime setup:", error);
+          console.error("STORE: Error syncing data during realtime setup:", error);
         });
         
         // Always return a cleanup function, even if realtimeUnsubscribe is null
         return () => {
+          console.log("STORE: Cleanup function called");
           if (realtimeUnsubscribe) {
             realtimeUnsubscribe();
             realtimeUnsubscribe = null;

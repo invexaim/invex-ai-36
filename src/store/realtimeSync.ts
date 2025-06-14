@@ -8,6 +8,12 @@ let lastUpdateTimestamp = Date.now();
 // Flag to control automatic syncing - Disabled by default
 let autoSyncEnabled = false;
 
+// Flag to track if we're currently processing a realtime update
+let isProcessingRealtimeUpdate = false;
+
+// Mutex to prevent concurrent state updates
+let updateMutex = false;
+
 /**
  * Configures a store for auto-saving with Supabase
  */
@@ -21,16 +27,19 @@ export function configureAutoSave(
     // Apply the state update
     set(fn);
     
-    // Only schedule a save operation if auto-sync is enabled and the user is logged in
-    if (autoSyncEnabled) {
+    // Only schedule a save operation if auto-sync is enabled, user is logged in, 
+    // and we're not processing a realtime update
+    if (autoSyncEnabled && !isProcessingRealtimeUpdate) {
       setTimeout(() => {
         const state = get();
-        if (state.currentUser) {
+        if (state.currentUser && !isProcessingRealtimeUpdate) {
+          console.log("AUTO-SAVE: Triggering auto-save after state change");
+          updateLastTimestamp(); // Mark this as a local update
           saveDataToSupabase().catch(error => {
             console.error("Error auto-saving data after state change:", error);
           });
         }
-      }, 300); // Reduce debounce time for faster sync
+      }, 500); // Increased debounce time for better stability
     }
   };
 
@@ -38,70 +47,96 @@ export function configureAutoSave(
 }
 
 /**
- * Processes real-time updates from Supabase
+ * Processes real-time updates from Supabase with improved deduplication
  */
 export function processRealtimeUpdate(
   userData: any, 
   get: () => AppState, 
   set: (state: any) => void
 ): boolean {
+  // Prevent concurrent updates
+  if (updateMutex) {
+    console.log("REALTIME: Update mutex active, skipping update");
+    return false;
+  }
+
   // If auto-sync is disabled, ignore updates
   if (!autoSyncEnabled) {
-    console.log("Ignoring update: auto-sync is disabled");
+    console.log("REALTIME: Ignoring update - auto-sync is disabled");
     return false;
   }
   
   // Check if this is a recent update from this device
   const currentTime = Date.now();
-  if (currentTime - lastUpdateTimestamp < 5000) {
-    console.log("Ignoring recent update from this device");
+  if (currentTime - lastUpdateTimestamp < 10000) { // Increased to 10 seconds
+    console.log("REALTIME: Ignoring recent update from this device");
     return false;
   }
   
-  // Compare local data with received data to prevent unnecessary updates
-  const products = Array.isArray(userData.products) ? userData.products : [];
-  const sales = Array.isArray(userData.sales) ? userData.sales : [];
-  const clients = Array.isArray(userData.clients) ? userData.clients : [];
-  const payments = Array.isArray(userData.payments) ? userData.payments : [];
+  // Set processing flag to prevent auto-save conflicts
+  isProcessingRealtimeUpdate = true;
+  updateMutex = true;
   
-  const currentState = get();
-  const hasDataChanged = 
-    JSON.stringify(products) !== JSON.stringify(currentState.products) ||
-    JSON.stringify(sales) !== JSON.stringify(currentState.sales) ||
-    JSON.stringify(clients) !== JSON.stringify(currentState.clients) ||
-    JSON.stringify(payments) !== JSON.stringify(currentState.payments);
+  try {
+    // Compare local data with received data to prevent unnecessary updates
+    const products = Array.isArray(userData.products) ? userData.products : [];
+    const sales = Array.isArray(userData.sales) ? userData.sales : [];
+    const clients = Array.isArray(userData.clients) ? userData.clients : [];
+    const payments = Array.isArray(userData.payments) ? userData.payments : [];
     
-  if (!hasDataChanged) {
-    console.log("No changes detected in realtime data, ignoring update");
-    return false;
-  }
-  
-  // Always ask user permission before applying changes from another device
-  if (confirm("Another device has updated your data. Would you like to sync these changes now?")) {
-    console.log("Updating store with realtime data:", { 
-      productsCount: products.length,
-      salesCount: sales.length,
-      clientsCount: clients.length,
-      paymentsCount: payments.length
-    });
+    const currentState = get();
     
-    set({
-      products,
-      sales,
-      clients,
-      payments
-    });
+    // Deep comparison to detect actual changes
+    const hasDataChanged = 
+      JSON.stringify(products) !== JSON.stringify(currentState.products) ||
+      JSON.stringify(sales) !== JSON.stringify(currentState.sales) ||
+      JSON.stringify(clients) !== JSON.stringify(currentState.clients) ||
+      JSON.stringify(payments) !== JSON.stringify(currentState.payments);
+      
+    if (!hasDataChanged) {
+      console.log("REALTIME: No changes detected, ignoring update");
+      return false;
+    }
     
-    toast.success("Data synchronized from another device", {
-      id: "realtime-sync",
-      duration: 2000
-    });
-    
-    return true;
-  } else {
-    // User rejected the sync, so we'll keep their local data
-    console.log("User rejected data sync from another device");
-    return false;
+    // Always ask user permission before applying changes from another device
+    if (confirm("Another device has updated your data. Would you like to sync these changes now?")) {
+      console.log("REALTIME: Updating store with realtime data:", { 
+        productsCount: products.length,
+        salesCount: sales.length,
+        clientsCount: clients.length,
+        paymentsCount: payments.length
+      });
+      
+      // Clear processed transactions to prevent conflicts with new data
+      const { clearProcessedTransactions } = get();
+      if (clearProcessedTransactions) {
+        clearProcessedTransactions();
+      }
+      
+      set({
+        products,
+        sales,
+        clients,
+        payments
+      });
+      
+      toast.success("Data synchronized from another device", {
+        id: "realtime-sync",
+        duration: 2000
+      });
+      
+      return true;
+    } else {
+      console.log("REALTIME: User rejected data sync from another device");
+      return false;
+    }
+  } finally {
+    // Always clear the processing flags
+    setTimeout(() => {
+      isProcessingRealtimeUpdate = false;
+      updateMutex = false;
+      console.log("REALTIME: Processing flags cleared");
+    }, 1000); // Clear after 1 second to ensure stability
   }
 }
 
@@ -110,6 +145,7 @@ export function processRealtimeUpdate(
  */
 export function updateLastTimestamp() {
   lastUpdateTimestamp = Date.now();
+  console.log("REALTIME: Updated last timestamp:", lastUpdateTimestamp);
 }
 
 /**
@@ -117,7 +153,7 @@ export function updateLastTimestamp() {
  */
 export function setAutoSync(enabled: boolean) {
   autoSyncEnabled = enabled;
-  console.log(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`);
+  console.log(`REALTIME: Auto-sync ${enabled ? 'enabled' : 'disabled'}`);
 }
 
 /**
@@ -125,4 +161,11 @@ export function setAutoSync(enabled: boolean) {
  */
 export function isAutoSyncEnabled() {
   return autoSyncEnabled;
+}
+
+/**
+ * Check if currently processing realtime update
+ */
+export function isProcessingRealtime() {
+  return isProcessingRealtimeUpdate;
 }
