@@ -34,11 +34,11 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     handleQuantityChange,
     handlePriceChange,
     getEstimateItemsInfo,
-    moveToNextEstimateItem
+    moveToNextEstimateItem,
+    isFromEstimate
   } = useSaleForm();
 
   const estimateInfo = getEstimateItemsInfo();
-  const isFromEstimate = !!pendingEstimateForSale;
 
   const { isSubmitting, handleAddSale } = useSaleSubmission({
     newSaleData,
@@ -59,8 +59,8 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   return (
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
-        {/* Estimate Info Card */}
-        {pendingEstimateForSale && (
+        {/* Only show estimate info card when actually from estimate */}
+        {isFromEstimate && pendingEstimateForSale && (
           <EstimateInfoCard 
             pendingEstimateForSale={pendingEstimateForSale}
             estimateInfo={estimateInfo}
