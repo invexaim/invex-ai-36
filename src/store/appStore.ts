@@ -131,8 +131,14 @@ const useAppStore = createPersistedStore<AppState>(
       // Payment slice with deletePayment explicitly included
       ...paymentSlice,
       deletePayment: paymentSlice.deletePayment,
-      // User slice
+      // User slice with enhanced sync method
       ...userSlice,
+      
+      // Override syncDataWithSupabase to support silent option
+      syncDataWithSupabase: async (options: { silent?: boolean } = {}) => {
+        return userSlice.syncDataWithSupabase(options);
+      },
+      
       // Company slice
       ...companySlice,
       // Expiry slice

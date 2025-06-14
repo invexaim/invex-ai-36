@@ -22,19 +22,19 @@ export const createUserSlice = (
   setIsLoading: (isLoading: boolean) => set({ isLoading }),
   
   clearLocalData: () => {
-    console.log("Clearing local state for UI refresh only, not affecting stored data");
+    console.log("USER: Clearing local state for UI refresh only, not affecting stored data");
     // Make sure to save data to Supabase before clearing local state
     const { currentUser } = get();
     if (currentUser) {
-      console.log("Saving data before logout");
+      console.log("USER: Saving data before logout");
       saveDataToSupabase()
         .then(() => {
-          console.log("Data saved successfully before logout");
+          console.log("USER: Data saved successfully before logout");
           // Only clear the user information, not the actual data
           set({ currentUser: null, isSignedIn: false });
         })
         .catch(error => {
-          console.error("Error saving data before logout:", error);
+          console.error("USER: Error saving data before logout:", error);
           // Even if there's an error, still clear user information
           set({ currentUser: null, isSignedIn: false });
         });
@@ -44,10 +44,12 @@ export const createUserSlice = (
     }
   },
   
-  syncDataWithSupabase: async () => {
+  syncDataWithSupabase: async (options: { silent?: boolean } = {}) => {
+    const { silent = false } = options;
     const { currentUser } = get();
+    
     if (!currentUser) {
-      console.log("No current user, skipping data sync");
+      console.log("USER: No current user, skipping data sync");
       return;
     }
     
@@ -64,7 +66,7 @@ export const createUserSlice = (
         
         if (localProducts.length > 0 || localSales.length > 0 || 
             localClients.length > 0 || localPayments.length > 0) {
-          console.log('Saving local data to Supabase for new user');
+          console.log('USER: Saving local data to Supabase for new user');
           await saveUserDataToSupabase(userId, get());
           return; // Return early as we're already using local data
         } else {
@@ -86,11 +88,12 @@ export const createUserSlice = (
           const clients = Array.isArray(userData.clients) ? userData.clients : [];
           const payments = Array.isArray(userData.payments) ? userData.payments : [];
           
-          console.log("Setting data from Supabase:", { 
+          console.log("USER: Setting data from Supabase:", { 
             productsCount: products.length,
             salesCount: sales.length,
             clientsCount: clients.length,
-            paymentsCount: payments.length
+            paymentsCount: payments.length,
+            silent
           });
           
           // Update store with fetched data
@@ -101,16 +104,22 @@ export const createUserSlice = (
             payments
           });
           
-          console.log("Data loaded successfully from Supabase");
+          if (!silent) {
+            console.log("USER: Data loaded successfully from Supabase");
+          }
         } catch (parseError) {
-          console.error('Error parsing data from Supabase:', parseError);
-          toast.error("Error parsing your data");
+          console.error('USER: Error parsing data from Supabase:', parseError);
+          if (!silent) {
+            toast.error("Error parsing your data");
+          }
           throw parseError;
         }
       }
     } catch (error) {
-      console.error('Error syncing data with Supabase:', error);
-      toast.error("Error synchronizing your data");
+      console.error('USER: Error syncing data with Supabase:', error);
+      if (!silent) {
+        toast.error("Error synchronizing your data");
+      }
       throw error;
     }
   },
@@ -118,14 +127,14 @@ export const createUserSlice = (
   saveDataToSupabase: async () => {
     const { currentUser } = get();
     if (!currentUser) {
-      console.log("No current user, skipping data save");
+      console.log("USER: No current user, skipping data save");
       return;
     }
     
     try {
       await saveUserDataToSupabase(currentUser.id, get());
     } catch (error) {
-      console.error('Error in saveDataToSupabase:', error);
+      console.error('USER: Error in saveDataToSupabase:', error);
       throw error;
     }
   },
