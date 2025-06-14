@@ -1,5 +1,5 @@
-
 import React from 'react';
+import useCompanyStore from '@/store/slices/companySlice';
 
 interface EstimateTermsSectionProps {
   estimate: any;
