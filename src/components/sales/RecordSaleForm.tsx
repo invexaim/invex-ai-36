@@ -1,108 +1,174 @@
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import EstimateInfoCard from "./form/EstimateInfoCard";
-import SaleFormContent from "./form/SaleFormContent";
-import { useSaleFormSimple } from "./hooks/useSaleFormSimple";
-import { useFormSubmission } from "./hooks/useFormSubmission";
+import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import ProductSelector from "./form/ProductSelector";
+import ClientSelector from "./form/ClientSelector";
+import SaleDetailsForm from "./form/SaleDetailsForm";
+import FormActions from "./form/FormActions";
+import { useSaleForm } from "./hooks/useSaleForm";
+import { validateSaleData, processSaleSubmission } from "./utils/saleProcessor";
 
 interface RecordSaleFormProps {
   onClose: () => void;
-  isFromEstimate?: boolean;
 }
 
-const RecordSaleForm = ({ onClose, isFromEstimate = false }: RecordSaleFormProps) => {
-  const { 
-    products, 
-    clients, 
-    addClient, 
-    pendingEstimateForSale,
-    recordSale 
-  } = useAppStore();
+const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
+  const navigate = useNavigate();
+  const store = useAppStore();
+  const { products, clients, recordSale, setPendingSalePayment, addClient } = store;
+  
+  console.log("RECORD SALE FORM: Component mounted with store functions:", {
+    recordSale: typeof recordSale,
+    setPendingSalePayment: typeof setPendingSalePayment,
+    productsCount: products?.length || 0,
+    clientsCount: clients?.length || 0,
+    storeKeys: Object.keys(store).filter(key => typeof store[key] === 'function')
+  });
   
   const {
     newSaleData,
     formErrors,
+    isSubmitting,
+    setIsSubmitting,
     validateForm,
     handleProductChange,
     handleClientChange,
     handleQuantityChange,
-    handlePriceChange,
-    estimateInfo,
-    moveToNextItem,
-    isInitialized
-  } = useSaleFormSimple(isFromEstimate);
+    handlePriceChange
+  } = useSaleForm();
 
-  const { isSubmitting, handleSubmit } = useFormSubmission(onClose, isFromEstimate);
+  const handleAddSale = async () => {
+    console.log("RECORD SALE FORM: Starting sale recording process");
+    console.log("RECORD SALE FORM: Sale data:", newSaleData);
+    console.log("RECORD SALE FORM: recordSale function type:", typeof recordSale);
+    
+    // Prevent double submissions
+    if (isSubmitting) {
+      console.log("RECORD SALE FORM: Already submitting, preventing duplicate");
+      toast.warning("Sale recording in progress, please wait...");
+      return;
+    }
 
-  // Simple validation - show error if critical data is missing
-  if (!products || products.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-600 mb-4">No products available</p>
-        <p className="text-sm text-muted-foreground">Please add products before recording sales.</p>
-        <Button onClick={onClose} className="mt-4">Close</Button>
-      </div>
-    );
-  }
+    // Validate basic requirements
+    if (!recordSale) {
+      console.error("RECORD SALE FORM: recordSale function is not available");
+      toast.error("Sale recording system is not available. Please refresh the page and try again.");
+      return;
+    }
 
-  if (!recordSale || typeof recordSale !== 'function') {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-600 mb-4">Sales system not ready</p>
-        <p className="text-sm text-muted-foreground">Please refresh the page and try again.</p>
-        <Button onClick={onClose} className="mt-4">Close</Button>
-      </div>
-    );
-  }
+    if (typeof recordSale !== 'function') {
+      console.error("RECORD SALE FORM: recordSale is not a function, type:", typeof recordSale);
+      toast.error("Sale recording function is invalid. Please refresh the page and try again.");
+      return;
+    }
+
+    // Validate the form
+    if (!validateForm()) {
+      console.log("RECORD SALE FORM: Form validation failed");
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    // Validate products availability
+    if (!products || products.length === 0) {
+      console.error("RECORD SALE FORM: No products available");
+      toast.error("No products available. Please add products first.");
+      return;
+    }
+
+    // Validate sale data and stock
+    const validation = validateSaleData(newSaleData, products, recordSale);
+    if (!validation.isValid) {
+      console.log("RECORD SALE FORM: Sale data validation failed");
+      return;
+    }
+
+    console.log("RECORD SALE FORM: All validations passed, proceeding with sale recording");
+    setIsSubmitting(true);
+    
+    try {
+      const result = await processSaleSubmission(newSaleData, recordSale);
+      
+      if (result.success && result.sale) {
+        console.log("RECORD SALE FORM: Sale recorded successfully:", result.sale);
+        
+        // Validate setPendingSalePayment function
+        if (typeof setPendingSalePayment !== 'function') {
+          console.error("RECORD SALE FORM: setPendingSalePayment is not a function");
+          toast.error("Cannot proceed to payment. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Store the sale details for the payment page
+        setPendingSalePayment(result.sale);
+        console.log("RECORD SALE FORM: Pending sale payment set");
+        
+        // Show success message
+        toast.success("Sale recorded successfully! Redirecting to payments...");
+        
+        // Close dialog first
+        onClose();
+        
+        // Navigate to payments page with a slight delay to ensure dialog closes
+        setTimeout(() => {
+          console.log("RECORD SALE FORM: Navigating to payments page");
+          navigate("/payments");
+        }, 100);
+        
+      } else {
+        console.error("RECORD SALE FORM: Sale recording failed:", result);
+        toast.error("Failed to record sale. Please check the details and try again.");
+      }
+    } catch (error) {
+      console.error("RECORD SALE FORM: Unexpected error during sale submission:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const selectedProduct = products?.find(p => p.product_id === newSaleData.product_id);
-
-  const onSubmit = async () => {
-    await handleSubmit(newSaleData, validateForm, estimateInfo, moveToNextItem);
-  };
 
   return (
     <ScrollArea className="h-[80vh]">
       <div className="grid gap-4 py-4 px-2 pr-4">
-        {isFromEstimate && pendingEstimateForSale && estimateInfo && (
-          <EstimateInfoCard 
-            pendingEstimateForSale={pendingEstimateForSale}
-            estimateInfo={estimateInfo}
-          />
-        )}
-        
-        <SaleFormContent
-          isFromEstimate={isFromEstimate}
-          estimateInfo={estimateInfo}
-          selectedProduct={selectedProduct}
+        <ProductSelector
           products={products || []}
-          clients={clients || []}
-          newSaleData={newSaleData}
-          formErrors={formErrors}
-          isSubmitting={isSubmitting}
+          selectedProductId={newSaleData.product_id}
           onProductChange={handleProductChange}
-          onClientChange={handleClientChange}
-          onQuantityChange={handleQuantityChange}
-          onPriceChange={handlePriceChange}
-          onAddClient={addClient}
+          error={formErrors.product_id}
+          disabled={isSubmitting}
         />
         
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={onSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Recording..." : 
-             estimateInfo && estimateInfo.hasMoreItems 
-               ? `Record Item ${estimateInfo.currentIndex + 1} & Continue`
-               : isFromEstimate
-               ? "Complete Estimate & Proceed to Payment"
-               : "Record Sale & Proceed to Payment"
-            }
-          </Button>
-        </div>
+        <ClientSelector
+          clients={clients || []}
+          selectedClientId={newSaleData.clientId}
+          selectedClientName={newSaleData.clientName}
+          onClientChange={handleClientChange}
+          onAddClient={addClient}
+          error={formErrors.clientName}
+          disabled={isSubmitting}
+        />
+        
+        <SaleDetailsForm
+          quantity={newSaleData.quantity_sold}
+          price={newSaleData.selling_price}
+          maxQuantity={selectedProduct ? parseInt(selectedProduct.units as string) : undefined}
+          onQuantityChange={handleQuantityChange}
+          onPriceChange={handlePriceChange}
+          quantityError={formErrors.quantity_sold}
+          priceError={formErrors.selling_price}
+          disabled={isSubmitting}
+        />
+        
+        <FormActions
+          onCancel={onClose}
+          onSubmit={handleAddSale}
+          isSubmitting={isSubmitting}
+        />
       </div>
     </ScrollArea>
   );

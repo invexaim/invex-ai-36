@@ -1,118 +1,275 @@
-
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import AuthService from '@/services/authService';
-import useAppStore from '@/store/appStore';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
+import useAppStore from "@/store/appStore";
+import AuthService from "@/services/authService";
+import { setAutoSync } from "@/store/realtimeSync";
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  loading: boolean;
-  authChecked: boolean;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+  authChecked: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  authChecked: false,
+});
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-// Export the same hook with different name for compatibility
-export function useAuthContext() {
-  return useAuth();
-}
+export const useAuthContext = () => useContext(AuthContext);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+// Enhanced session management utilities
+const SESSION_KEYS = {
+  INITIAL_LOAD_COMPLETE: 'invex_initial_load_complete',
+  LAST_SYNC_TIMESTAMP: 'invex_last_sync_timestamp',
+  WELCOME_SHOWN: 'invex_welcome_shown',
+  LAST_AUTH_CHANGE: 'invex_last_auth_change'
+};
+
+const hasInitialLoadCompleted = () => {
+  return sessionStorage.getItem(SESSION_KEYS.INITIAL_LOAD_COMPLETE) === 'true';
+};
+
+const markInitialLoadComplete = () => {
+  sessionStorage.setItem(SESSION_KEYS.INITIAL_LOAD_COMPLETE, 'true');
+};
+
+const getLastSyncTimestamp = (): number => {
+  const timestamp = sessionStorage.getItem(SESSION_KEYS.LAST_SYNC_TIMESTAMP);
+  return timestamp ? parseInt(timestamp, 10) : 0;
+};
+
+const updateLastSyncTimestamp = () => {
+  sessionStorage.setItem(SESSION_KEYS.LAST_SYNC_TIMESTAMP, Date.now().toString());
+};
+
+const getLastAuthChange = (): number => {
+  const timestamp = sessionStorage.getItem(SESSION_KEYS.LAST_AUTH_CHANGE);
+  return timestamp ? parseInt(timestamp, 10) : 0;
+};
+
+const updateLastAuthChange = () => {
+  sessionStorage.setItem(SESSION_KEYS.LAST_AUTH_CHANGE, Date.now().toString());
+};
+
+const clearSessionFlags = () => {
+  Object.values(SESSION_KEYS).forEach(key => {
+    sessionStorage.removeItem(key);
+  });
+};
+
+// Enhanced detection of genuine login vs session refresh
+const isGenuineAuthChange = (currentUser: User | null, wasSignedIn: boolean): boolean => {
+  const lastAuthChange = getLastAuthChange();
+  const timeSinceLastAuth = Date.now() - lastAuthChange;
+  
+  // If more than 5 minutes since last auth change, consider it genuine
+  if (timeSinceLastAuth > 300000) {
+    console.log("AUTH: Genuine auth change detected - significant time gap");
+    return true;
+  }
+  
+  // If user state actually changed (null to user or user to null), it's genuine
+  if ((!wasSignedIn && currentUser) || (wasSignedIn && !currentUser)) {
+    console.log("AUTH: Genuine auth change detected - user state changed");
+    return true;
+  }
+  
+  console.log("AUTH: Session refresh detected - not a genuine auth change");
+  return false;
+};
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const { setupRealtimeUpdates } = useAppStore();
+  const [wasSignedIn, setWasSignedIn] = useState(false);
+  
+  const setCurrentUser = useAppStore(state => state.setCurrentUser);
+  const syncDataWithSupabase = useAppStore(state => state.syncDataWithSupabase);
+  const clearLocalData = useAppStore(state => state.clearLocalData);
+  const setupRealtimeUpdates = useAppStore(state => state.setupRealtimeUpdates);
+  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
+
+  // Enhanced sync function with better conflict handling
+  const performDataSync = async (userId: string, options: { silent?: boolean; isInitialLoad?: boolean; force?: boolean } = {}) => {
+    const { silent = false, isInitialLoad = false, force = false } = options;
+    
+    try {
+      console.log("AUTH: Starting data sync:", { userId, silent, isInitialLoad, force });
+      
+      // Keep auto sync disabled by default to prevent aggressive syncing
+      setAutoSync(false);
+      
+      // Check if sync is actually needed
+      if (!force) {
+        const lastSyncTime = getLastSyncTimestamp();
+        const timeSinceLastSync = Date.now() - lastSyncTime;
+        
+        // Only sync if it's been more than 10 minutes since last sync (increased from 5 minutes)
+        if (timeSinceLastSync < 600000 && !isInitialLoad) {
+          console.log("AUTH: Skipping sync - recent sync detected", Math.round(timeSinceLastSync / 60000), "minutes ago");
+          return;
+        }
+      }
+      
+      await syncDataWithSupabase({ silent });
+      
+      // Update sync timestamp
+      updateLastSyncTimestamp();
+      
+      console.log("AUTH: Data synced successfully");
+      
+      // Only show toast for initial loads or explicit user actions
+      if (!silent) {
+        if (isInitialLoad) {
+          const welcomeShown = sessionStorage.getItem(SESSION_KEYS.WELCOME_SHOWN);
+          if (!welcomeShown) {
+            toast.success("Welcome! Your data has been loaded", { duration: 3000 });
+            sessionStorage.setItem(SESSION_KEYS.WELCOME_SHOWN, 'true');
+          }
+        } else {
+          // Reduced frequency of sync notifications
+          toast.success("Your data has been updated", { duration: 2000 });
+        }
+      }
+      
+    } catch (error) {
+      console.error("AUTH: Error syncing data:", error);
+      if (!silent) {
+        toast.error("Failed to load your data. Please refresh the page.", { duration: 5000 });
+      }
+      throw error;
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-
-    // Get initial session
-    const initializeAuth = async () => {
+    console.log("AUTH: Setting up auth state listeners...");
+    let realtimeCleanup: (() => void) | null = null;
+    
+    // First check for existing session to avoid race conditions
+    const checkSession = async () => {
       try {
-        const { session: initialSession } = await AuthService.getSession();
+        const { session, error } = await AuthService.getSession();
+        const currentUser = session?.user ?? null;
+        console.log("AUTH: Initial session check:", currentUser ? "User is logged in" : "No user session");
         
-        if (isMounted) {
-          setSession(initialSession);
-          setUser(initialSession?.user || null);
+        setUser(currentUser);
+        setCurrentUser(currentUser);
+        setWasSignedIn(!!currentUser);
+        
+        if (currentUser) {
+          const hasCompletedInitialLoad = hasInitialLoadCompleted();
+          const lastSyncTime = getLastSyncTimestamp();
+          const timeSinceLastSync = Date.now() - lastSyncTime;
+          const shouldSyncData = !hasCompletedInitialLoad || timeSinceLastSync > 600000; // 10 minutes (increased)
           
-          if (initialSession?.user) {
-            console.log('AUTH: User authenticated, setting up realtime updates');
-            setupRealtimeUpdates(initialSession.user.id);
+          if (shouldSyncData) {
+            console.log("AUTH: Performing initial data sync");
+            await performDataSync(currentUser.id, { 
+              silent: hasCompletedInitialLoad, 
+              isInitialLoad: !hasCompletedInitialLoad 
+            });
+            markInitialLoadComplete();
+          } else {
+            console.log("AUTH: Skipping data sync - recent sync detected");
+          }
+          
+          // Set up realtime updates but keep auto-sync disabled
+          const cleanup = setupRealtimeUpdates(currentUser.id);
+          if (typeof cleanup === 'function') {
+            realtimeCleanup = cleanup;
           }
         }
+        
+        setAuthChecked(true);
+        setIsLoading(false);
       } catch (error) {
-        console.error('AUTH: Error getting initial session:', error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-          setAuthChecked(true);
-        }
+        console.error("AUTH: Error checking session:", error);
+        setAuthChecked(true);
+        setIsLoading(false);
       }
     };
 
-    initializeAuth();
+    checkSession();
 
-    // Listen for auth changes
-    const subscription = AuthService.onAuthStateChange((user) => {
-      console.log('AUTH: Auth state change:', user?.id);
+    // Set up auth state listener with enhanced change detection
+    const subscription = AuthService.onAuthStateChange(async (currentUser) => {
+      console.log("AUTH: Auth state changed:", currentUser ? "User signed in" : "User signed out");
       
-      if (isMounted) {
-        setUser(user);
-        setSession(user ? { user } as Session : null);
+      // Check if this is a genuine auth change or just a session refresh
+      const isGenuine = isGenuineAuthChange(currentUser, wasSignedIn);
+      
+      setUser(currentUser);
+      setCurrentUser(currentUser);
+      
+      if (currentUser) {
+        setWasSignedIn(true);
         
-        if (user) {
-          console.log('AUTH: User signed in, setting up realtime updates');
-          setupRealtimeUpdates(user.id);
+        // Only sync for genuine login events, not session refreshes
+        if (isGenuine) {
+          updateLastAuthChange();
+          
+          const hasCompletedInitialLoad = hasInitialLoadCompleted();
+          
+          try {
+            console.log("AUTH: Genuine login detected, syncing data");
+            await performDataSync(currentUser.id, { 
+              silent: false, 
+              isInitialLoad: !hasCompletedInitialLoad,
+              force: true // Force sync for genuine logins
+            });
+            markInitialLoadComplete();
+          } catch (error) {
+            console.error("AUTH: Error syncing data after auth change:", error);
+          }
         } else {
-          console.log('AUTH: User signed out, cleaning up');
+          console.log("AUTH: Session refresh detected, skipping data sync");
+        }
+        
+        // Set up realtime updates after login but keep auto-sync disabled
+        if (realtimeCleanup) {
+          realtimeCleanup();
+        }
+        const cleanup = setupRealtimeUpdates(currentUser.id);
+        if (typeof cleanup === 'function') {
+          realtimeCleanup = cleanup;
+        }
+      } else {
+        setWasSignedIn(false);
+        
+        // Only clear data for genuine logout events
+        if (isGenuine) {
+          updateLastAuthChange();
+          console.log("AUTH: Genuine logout detected, clearing local data");
+          if (realtimeCleanup) {
+            realtimeCleanup();
+            realtimeCleanup = null;
+          }
+          clearLocalData();
+          clearSessionFlags();
+        } else {
+          console.log("AUTH: Session state change, not clearing data");
         }
       }
     });
 
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
+      if (realtimeCleanup) {
+        realtimeCleanup();
+      }
     };
-  }, [setupRealtimeUpdates]);
-
-  const signOut = async () => {
-    try {
-      await AuthService.signOut();
-      setUser(null);
-      setSession(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const value = {
-    user,
-    session,
-    loading,
-    authChecked,
-    isLoading: loading,
-    signOut,
-  };
+  }, [setCurrentUser, syncDataWithSupabase, clearLocalData, setupRealtimeUpdates, wasSignedIn]);
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, isLoading, authChecked }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};

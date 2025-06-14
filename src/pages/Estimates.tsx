@@ -13,7 +13,7 @@ interface Estimate {
   date: string;
   referenceNo: string;
   totalAmount: number;
-  status: "pending" | "accepted" | "rejected" | "completed";
+  status: "pending" | "accepted" | "rejected";
   validUntil: string;
   createdAt: string;
   items?: any[];
@@ -46,19 +46,6 @@ const Estimates = () => {
     // Default to empty array
     setEstimates([]);
   }, []);
-
-  const updateEstimateStatus = (estimateId: string, newStatus: "pending" | "accepted" | "rejected" | "completed") => {
-    console.log("Updating estimate status:", estimateId, "to", newStatus);
-    
-    const updatedEstimates = estimates.map(est => 
-      est.id === estimateId ? { ...est, status: newStatus } : est
-    );
-    
-    setEstimates(updatedEstimates);
-    localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
-    
-    console.log("Estimate status updated successfully");
-  };
 
   const handleCreateEstimate = (estimateData: any) => {
     const newEstimate = {
@@ -143,7 +130,6 @@ const Estimates = () => {
           onPrintEstimate={handlePrintEstimate}
           onDeleteEstimate={deleteEstimate}
           onEditEstimate={handleEditEstimate}
-          onUpdateEstimateStatus={updateEstimateStatus}
         />
       )}
 
