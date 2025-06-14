@@ -37,7 +37,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
       product_id: !newSaleData.product_id,
       quantity_sold: newSaleData.quantity_sold <= 0,
       selling_price: newSaleData.selling_price <= 0,
-      clientName: !newSaleData.clientName
+      clientName: !newSaleData.clientName.trim()
     };
     
     setFormErrors(errors);
@@ -46,24 +46,56 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   };
 
   const handleAddSale = async () => {
+    console.log("SALE FORM: Starting sale recording with data:", newSaleData);
+    
     // Prevent double submissions
     if (isSubmitting) {
+      console.log("SALE FORM: Already submitting, preventing duplicate");
       return;
     }
 
     // Validate the form
     if (!validateForm()) {
-      toast.error("Please fill in all required fields");
+      console.log("SALE FORM: Form validation failed");
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    // Check if product exists and has sufficient stock
+    const selectedProduct = products.find(p => p.product_id === newSaleData.product_id);
+    if (!selectedProduct) {
+      console.log("SALE FORM: Product not found");
+      toast.error("Selected product not found");
+      return;
+    }
+
+    const availableStock = parseInt(selectedProduct.units as string);
+    if (availableStock < newSaleData.quantity_sold) {
+      console.log("SALE FORM: Insufficient stock", { available: availableStock, requested: newSaleData.quantity_sold });
+      toast.error(`Insufficient stock. Available: ${availableStock}, Requested: ${newSaleData.quantity_sold}`);
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      console.log("SALE FORM: Starting sale recording process", newSaleData);
+      console.log("SALE FORM: Attempting to record sale", {
+        productId: newSaleData.product_id,
+        quantity: newSaleData.quantity_sold,
+        price: newSaleData.selling_price,
+        clientName: newSaleData.clientName
+      });
       
       // Record the sale using our store function
-      const recordedSale = recordSale(newSaleData);
+      const recordedSale = recordSale({
+        product_id: newSaleData.product_id,
+        quantity_sold: newSaleData.quantity_sold,
+        selling_price: newSaleData.selling_price,
+        clientId: newSaleData.clientId,
+        clientName: newSaleData.clientName.trim()
+      });
+      
+      console.log("SALE FORM: recordSale result:", recordedSale);
       
       if (recordedSale) {
         console.log("SALE FORM: Sale recorded successfully", recordedSale);
@@ -72,39 +104,34 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
         setPendingSalePayment(recordedSale);
         
         // Show success message
-        toast.success("Sale recorded! Redirecting to payments...");
+        toast.success("Sale recorded successfully! Redirecting to payments...");
         
-        // Reset form state
-        setNewSaleData({
-          product_id: 0,
-          quantity_sold: 1,
-          selling_price: 0,
-          clientId: 0,
-          clientName: "",
-        });
-        
-        // Navigate to payments page BEFORE closing dialog
-        console.log("SALE FORM: Navigating to payments page");
-        navigate("/payments");
-        
-        // Close dialog AFTER navigation
+        // Small delay to ensure state is updated
         setTimeout(() => {
-          onClose();
-        }, 100);
+          console.log("SALE FORM: Navigating to payments page");
+          navigate("/payments");
+          
+          // Close dialog after navigation
+          setTimeout(() => {
+            console.log("SALE FORM: Closing dialog");
+            onClose();
+          }, 100);
+        }, 500);
         
       } else {
-        console.error("SALE FORM: Failed to record sale - recordSale returned null");
-        toast.error("Failed to record sale. Please try again.");
+        console.error("SALE FORM: recordSale returned null or undefined");
+        toast.error("Failed to record sale. Please check the console for details.");
       }
     } catch (error) {
       console.error("SALE FORM: Error recording sale:", error);
-      toast.error("An error occurred while recording the sale");
+      toast.error(`Error recording sale: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleProductChange = (productId: number, price: number) => {
+    console.log("SALE FORM: Product changed", { productId, price });
     setNewSaleData({
       ...newSaleData,
       product_id: productId,
@@ -117,6 +144,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
   };
 
   const handleClientChange = (clientId: number, clientName: string) => {
+    console.log("SALE FORM: Client changed", { clientId, clientName });
     setNewSaleData({
       ...newSaleData,
       clientId: clientId,
@@ -125,7 +153,7 @@ const RecordSaleForm = ({ onClose }: RecordSaleFormProps) => {
     
     setFormErrors({
       ...formErrors,
-      clientName: !clientName
+      clientName: !clientName.trim()
     });
   };
 
