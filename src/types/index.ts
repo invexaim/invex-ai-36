@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -37,6 +36,7 @@ export interface Sale {
   clientId?: number;
   clientName?: string;
   relatedSaleId?: number;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface ProductPurchase {
@@ -44,6 +44,7 @@ export interface ProductPurchase {
   quantity: number;
   amount: number;
   purchaseDate: string;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface Client {
@@ -80,6 +81,7 @@ export interface Payment {
   city?: string;
   state?: string;
   pincode?: string;
+  transactionId?: string; // Add transaction ID for deduplication
 }
 
 export interface InventoryAnalysis {
