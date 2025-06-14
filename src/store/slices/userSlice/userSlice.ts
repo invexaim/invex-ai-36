@@ -110,19 +110,20 @@ export const createUserSlice = (
       } else {
         // If data exists in Supabase, use it to update local state
         try {
-          // Safely parse and set products, sales, clients, payments
+          // Safely parse and set products, sales, clients, payments, and productExpiries
           const products = Array.isArray(userData.products) ? userData.products : [];
           const sales = Array.isArray(userData.sales) ? userData.sales : [];
           const clients = Array.isArray(userData.clients) ? userData.clients : [];
           const payments = Array.isArray(userData.payments) ? userData.payments : [];
           const meetings = []; // Meetings are not stored in Supabase yet
-          const productExpiries = []; // Start with empty expiry data
+          const productExpiries = Array.isArray(userData.productExpiries) ? userData.productExpiries : [];
           
           console.log("USER: Setting data from Supabase:", { 
             productsCount: products.length,
             salesCount: sales.length,
             clientsCount: clients.length,
             paymentsCount: payments.length,
+            expiryCount: productExpiries.length,
             silent
           });
           

@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -163,91 +162,117 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       console.warn("DATASYNC: Could not parse local backup");
     }
     
-    // Try to fetch existing data from Supabase using RLS-protected query
-    const { data, error } = await supabase
+    // Fetch user data from the user_data table
+    const { data: userData, error: userDataError } = await supabase
       .from('user_data')
       .select('*')
       .eq('user_id', userId)
       .single();
     
-    if (error) {
-      if (error.code === 'PGRST116') {
-        console.log("DATASYNC: No existing data found for user");
-        
-        // If we have local backup, offer to restore it
-        if (localBackup && !options.skipConflictCheck) {
-          const shouldRestore = confirm(
-            "No data found on server, but you have local backup data. Would you like to restore it?"
-          );
-          
-          if (shouldRestore) {
-            console.log("DATASYNC: Restoring from local backup");
-            return {
-              products: localBackup.products || [],
-              sales: localBackup.sales || [],
-              clients: localBackup.clients || [],
-              payments: localBackup.payments || []
-            };
-          }
-        }
-        
-        return null;
-      } else {
-        console.error('DATASYNC: Error fetching data:', error);
-        if (!options.skipConflictCheck) {
-          toast.error("Failed to load your data");
-        }
-        throw error;
-      }
-    } 
+    // Fetch product expiry data from the product_expiry table
+    const { data: expiryData, error: expiryError } = await supabase
+      .from('product_expiry')
+      .select('*')
+      .eq('user_id', userId)
+      .order('expiry_date', { ascending: true });
     
-    if (data) {
-      console.log('DATASYNC: Found existing data for user:', {
-        productsCount: Array.isArray(data.products) ? data.products.length : 0,
-        salesCount: Array.isArray(data.sales) ? data.sales.length : 0,
-        clientsCount: Array.isArray(data.clients) ? data.clients.length : 0,
-        paymentsCount: Array.isArray(data.payments) ? data.payments.length : 0
-      });
-      
-      // Check for conflicts with local backup
-      if (localBackup && !options.skipConflictCheck) {
-        const conflicts = detectConflicts(localBackup, data);
-        
-        if (conflicts.length > 0) {
-          console.log("DATASYNC: Detected conflicts between local and remote data");
-          
-          const shouldResolveConflicts = confirm(
-            `Found differences between your local data and server data. ` +
-            `Would you like to automatically resolve conflicts? ` +
-            `(Your local changes will be preserved where possible)`
-          );
-          
-          if (shouldResolveConflicts) {
-            const resolvedData = resolveConflicts(conflicts);
-            
-            // Merge resolved data with remote data
-            const mergedData = {
-              products: resolvedData.products || data.products || [],
-              sales: resolvedData.sales || data.sales || [],
-              clients: resolvedData.clients || data.clients || [],
-              payments: resolvedData.payments || data.payments || []
-            };
-            
-            toast.success("Data conflicts resolved - local changes preserved");
-            return mergedData;
-          }
-        }
+    if (userDataError && userDataError.code !== 'PGRST116') {
+      console.error('DATASYNC: Error fetching user data:', userDataError);
+      if (!options.skipConflictCheck) {
+        toast.error("Failed to load your data");
       }
-      
-      // Clear backup after successful sync
-      if (localBackup) {
-        sessionStorage.removeItem('invex_data_backup');
-      }
-      
-      return data;
+      throw userDataError;
     }
     
-    return null;
+    if (expiryError) {
+      console.error('DATASYNC: Error fetching expiry data:', expiryError);
+      // Don't throw on expiry error, just log and continue with empty array
+    }
+    
+    const productExpiries = expiryData || [];
+    console.log("DATASYNC: Fetched expiry data:", productExpiries.length, "records");
+    
+    if (!userData) {
+      console.log("DATASYNC: No existing user data found");
+      
+      // If we have local backup, offer to restore it
+      if (localBackup && !options.skipConflictCheck) {
+        const shouldRestore = confirm(
+          "No data found on server, but you have local backup data. Would you like to restore it?"
+        );
+        
+        if (shouldRestore) {
+          console.log("DATASYNC: Restoring from local backup");
+          return {
+            products: localBackup.products || [],
+            sales: localBackup.sales || [],
+            clients: localBackup.clients || [],
+            payments: localBackup.payments || [],
+            productExpiries
+          };
+        }
+      }
+      
+      return {
+        products: [],
+        sales: [],
+        clients: [],
+        payments: [],
+        productExpiries
+      };
+    } 
+    
+    console.log('DATASYNC: Found existing data for user:', {
+      productsCount: Array.isArray(userData.products) ? userData.products.length : 0,
+      salesCount: Array.isArray(userData.sales) ? userData.sales.length : 0,
+      clientsCount: Array.isArray(userData.clients) ? userData.clients.length : 0,
+      paymentsCount: Array.isArray(userData.payments) ? userData.payments.length : 0,
+      expiryCount: productExpiries.length
+    });
+    
+    // Check for conflicts with local backup
+    if (localBackup && !options.skipConflictCheck) {
+      const conflicts = detectConflicts(localBackup, userData);
+      
+      if (conflicts.length > 0) {
+        console.log("DATASYNC: Detected conflicts between local and remote data");
+        
+        const shouldResolveConflicts = confirm(
+          `Found differences between your local data and server data. ` +
+          `Would you like to automatically resolve conflicts? ` +
+          `(Your local changes will be preserved where possible)`
+        );
+        
+        if (shouldResolveConflicts) {
+          const resolvedData = resolveConflicts(conflicts);
+          
+          // Merge resolved data with remote data
+          const mergedData = {
+            products: resolvedData.products || userData.products || [],
+            sales: resolvedData.sales || userData.sales || [],
+            clients: resolvedData.clients || userData.clients || [],
+            payments: resolvedData.payments || userData.payments || [],
+            productExpiries
+          };
+          
+          toast.success("Data conflicts resolved - local changes preserved");
+          return mergedData;
+        }
+      }
+    }
+    
+    // Clear backup after successful sync
+    if (localBackup) {
+      sessionStorage.removeItem('invex_data_backup');
+    }
+    
+    return {
+      products: userData.products || [],
+      sales: userData.sales || [],
+      clients: userData.clients || [],
+      payments: userData.payments || [],
+      productExpiries
+    };
   } catch (error) {
     console.error('DATASYNC: Error fetching data from Supabase:', error);
     if (!options.skipConflictCheck) {
@@ -291,7 +316,8 @@ export async function createEmptyUserData(userId: string) {
         products: [],
         sales: [],
         clients: [],
-        payments: []
+        payments: [],
+        productExpiries: []
       };
     }
   } catch (error) {

@@ -37,7 +37,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const { setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings } = useAppStore();
+  const { setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries } = useAppStore();
 
   // Function to clear all user data when switching users
   const clearUserData = () => {
@@ -47,6 +47,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setClients([]);
     setPayments([]);
     setMeetings([]);
+    setProductExpiries([]);
   };
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setMeetings, setProductExpiries, session?.user?.id]);
 
   const signOut = async () => {
     try {
