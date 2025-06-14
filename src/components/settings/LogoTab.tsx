@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, Signature } from "lucide-react";
-import useAppStore from "@/store/appStore";
+import useCompanyStore from "@/store/slices/companySlice";
 
 const LogoTab = () => {
-  const { logo, updateLogo } = useAppStore();
+  const { logo, updateLogo } = useCompanyStore();
   const [logoPreview, setLogoPreview] = useState<string>(logo.logoUrl);
-  const [signaturePreview, setSignaturePreview] = useState<string>(logo.signatureUrl);
+  const [signaturePreview, setSignaturePreview] = useState<string>(logo.signatureUrl || '');
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

@@ -186,10 +186,6 @@ export function PaymentReceiptPrint({
               </div>
             </div>
           </div>
-          
-          <div className="text-center text-xs text-gray-500 mt-8 pt-4 border-t border-gray-300">
-            <p>This is a computer generated receipt and does not require physical signature.</p>
-          </div>
         </div>
         
         <style>{`
