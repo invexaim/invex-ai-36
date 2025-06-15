@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dialog,
@@ -33,7 +32,7 @@ export const AddProductDialog = ({
   onOpenChange,
   onAddProduct,
 }: AddProductDialogProps) => {
-  const { categories = [], products } = useAppStore();
+  const { categories = [] } = useAppStore();
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date>();
   
@@ -94,14 +93,21 @@ export const AddProductDialog = ({
       return;
     }
 
-    // Submit product with expiry date
+    // Submit product with expiry date - this will now automatically create expiry record
     const productData = {
       ...formData,
       expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : undefined,
     };
     
+    console.log("ADD PRODUCT DIALOG: Submitting product with expiry:", productData);
     onAddProduct(productData);
-    toast.success("Product added successfully");
+    
+    // Show appropriate success message
+    if (expiryDate) {
+      toast.success("Product added and expiry record created successfully");
+    } else {
+      toast.success("Product added successfully");
+    }
     
     // Reset form and close dialog
     resetForm();
@@ -185,6 +191,11 @@ export const AddProductDialog = ({
                   />
                 </PopoverContent>
               </Popover>
+              {expiryDate && (
+                <p className="text-sm text-muted-foreground">
+                  This will automatically create an expiry record on the Expiry page.
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">

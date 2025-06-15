@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -60,6 +59,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       ...values,
       expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : "",
     };
+    console.log("PRODUCT FORM: Submitting with expiry:", formData);
     onSubmit(formData);
   };
 
@@ -153,6 +153,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
+              {expiryDate && (
+                <p className="text-sm text-muted-foreground">
+                  This will automatically create an expiry record.
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}
