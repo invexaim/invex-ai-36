@@ -8,6 +8,7 @@ import { BarChart } from "@/components/charts/BarChart";
 import { InsightsSection } from "@/components/products/InsightsSection";
 import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
+import UserProfile from "@/components/layout/UserProfile";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,15 +28,12 @@ const Dashboard = () => {
     .filter(sale => new Date(sale.sale_date).toDateString() === today)
     .reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
 
-  // Calculate low stock items
   const lowStockItems = products.filter(product => 
     parseInt(product.units as string) < product.reorder_level
   ).length;
 
-  // Calculate expiring soon items (7 days)
   const expiringSoonItems = getExpiringProducts(7).length;
   
-  // Calculate expired items
   const expiredItems = getExpiredProducts().length;
 
   const stats = [
@@ -65,7 +63,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Additional expiry stats for above charts section
   const expiryStats = [
     {
       title: "Expiring Products",
@@ -81,7 +78,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Prepare Daily Sales Trend data (last 7 days)
   const prepareDailySalesData = () => {
     const last7Days = [];
     const today = new Date();
@@ -146,11 +142,17 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's what's happening with your business today.
-        </p>
+      {/* Header with title and user profile */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back! Here's what's happening with your business today.
+          </p>
+        </div>
+        <div className="hidden md:block">
+          <UserProfile />
+        </div>
       </div>
 
       {/* Stats Grid - updated with expiry card */}
