@@ -1,49 +1,33 @@
-
 import { useState } from "react";
 import { MoreHorizontal, Trash2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Payment } from "@/types";
 import { PaymentReceiptPrint } from "./PaymentReceiptPrint";
-
 interface PaymentTableProps {
   payments: Payment[];
   onDeletePayment: (id: number) => void;
   onAddPayment: () => void;
 }
-
-const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableProps) => {
+const PaymentTable = ({
+  payments,
+  onDeletePayment,
+  onAddPayment
+}: PaymentTableProps) => {
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-
   const handlePrintPayment = (payment: Payment) => {
     setSelectedPayment(payment);
     setIsPrintDialogOpen(true);
   };
-
   if (payments.length === 0) {
-    return (
-      <div className="border border-gray-200 rounded-lg p-8 text-center">
+    return <div className="border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-gray-500 mb-4">No payments recorded yet</p>
         <Button onClick={onAddPayment}>Add First Payment</Button>
-      </div>
-    );
+      </div>;
   }
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -56,9 +40,7 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
         return "bg-gray-100 text-gray-800";
     }
   };
-
-  return (
-    <>
+  return <>
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
@@ -73,8 +55,7 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
             </TableRow>
           </TableHeader>
           <TableBody>
-            {payments.map((payment) => (
-              <TableRow key={payment.id}>
+            {payments.map(payment => <TableRow key={payment.id}>
                 <TableCell>
                   {new Date(payment.date).toLocaleDateString()}
                 </TableCell>
@@ -99,31 +80,16 @@ const PaymentTable = ({ payments, onDeletePayment, onAddPayment }: PaymentTableP
                         <Printer className="mr-2 h-4 w-4" />
                         Print Receipt
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDeletePayment(payment.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
+                      
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
-              </TableRow>
-            ))}
+              </TableRow>)}
           </TableBody>
         </Table>
       </div>
 
-      {selectedPayment && (
-        <PaymentReceiptPrint
-          open={isPrintDialogOpen}
-          onOpenChange={setIsPrintDialogOpen}
-          payment={selectedPayment}
-        />
-      )}
-    </>
-  );
+      {selectedPayment && <PaymentReceiptPrint open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen} payment={selectedPayment} />}
+    </>;
 };
-
 export default PaymentTable;
