@@ -14,9 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Product } from "@/types";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import useAppStore from "@/store/appStore";
 import { AddCategoryDialog } from "./AddCategoryDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface AddProductDialogProps {
   open: boolean;
@@ -31,6 +35,7 @@ export const AddProductDialog = ({
 }: AddProductDialogProps) => {
   const { categories = [], products } = useAppStore();
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [expiryDate, setExpiryDate] = useState<Date>();
   
   const [formData, setFormData] = useState({
     product_name: "",
@@ -64,6 +69,7 @@ export const AddProductDialog = ({
       units: "0",
       reorder_level: 5,
     });
+    setExpiryDate(undefined);
   };
 
   const handleSubmit = () => {
@@ -88,8 +94,13 @@ export const AddProductDialog = ({
       return;
     }
 
-    // Submit product
-    onAddProduct(formData);
+    // Submit product with expiry date
+    const productData = {
+      ...formData,
+      expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : undefined,
+    };
+    
+    onAddProduct(productData);
     toast.success("Product added successfully");
     
     // Reset form and close dialog
@@ -146,6 +157,34 @@ export const AddProductDialog = ({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Expiry Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {expiryDate ? format(expiryDate, "PPP") : <span>Pick expiry date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div className="space-y-2">

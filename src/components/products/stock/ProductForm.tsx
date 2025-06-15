@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,11 +9,16 @@ import { Label } from "@/components/ui/label";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   product_name: z.string().min(2, "Product name must be at least 2 characters"),
   category: z.string().min(1, "Category is required"),
+  expiry_date: z.string().optional(),
   price: z.string().min(1, "Price is required"),
   units: z.string().min(1, "Units is required"),
   reorder_level: z.string().optional(),
@@ -35,11 +40,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   onCancel,
   onOpenAddCategoryDialog
 }) => {
+  const [expiryDate, setExpiryDate] = useState<Date>();
+  
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       product_name: "",
       category: "",
+      expiry_date: "",
       price: "",
       units: "",
       reorder_level: "5",
@@ -47,9 +55,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     },
   });
 
+  const handleSubmit = (values: ProductFormValues) => {
+    const formData = {
+      ...values,
+      expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : "",
+    };
+    onSubmit(formData);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="product_name"
@@ -97,6 +113,46 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="expiry_date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Expiry Date (Optional)</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !expiryDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {expiryDate ? format(expiryDate, "PPP") : <span>Pick expiry date</span>}
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={(date) => {
+                      setExpiryDate(date);
+                      field.onChange(date ? date.toISOString().split('T')[0] : "");
+                    }}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}

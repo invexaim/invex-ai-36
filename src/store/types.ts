@@ -3,6 +3,7 @@ export interface Product {
   product_id: number;
   product_name: string;
   category: string;
+  expiry_date?: string; // Add optional expiry date field
   price: number;
   units: string;
   reorder_level: number;
