@@ -5,8 +5,8 @@ import { AppState } from './types';
 // Variable to store the timestamp of the last update from this device
 let lastUpdateTimestamp = Date.now();
 
-// Flag to control automatic syncing - Disabled by default
-let autoSyncEnabled = false;
+// Flag to control automatic syncing - ENABLED by default
+let autoSyncEnabled = true;
 
 // Flag to track if we're currently processing a realtime update
 let isProcessingRealtimeUpdate = false;
@@ -25,6 +25,12 @@ let userActivityTimeout: NodeJS.Timeout | null = null;
 // Local data backup for conflict resolution
 let localDataBackup: any = null;
 
+// Enhanced logging function
+const logDataEvent = (event: string, details?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[DATA-SYNC ${timestamp}] ${event}`, details || '');
+};
+
 /**
  * Initialize tab visibility tracking
  */
@@ -33,7 +39,7 @@ const initializeTabVisibility = () => {
     document.addEventListener('visibilitychange', () => {
       isTabVisible = !document.hidden;
       lastTabVisibilityChange = Date.now();
-      console.log("REALTIME: Tab visibility changed to:", isTabVisible ? "visible" : "hidden");
+      logDataEvent("Tab visibility changed", { isVisible: isTabVisible });
     });
   }
 };
@@ -50,7 +56,7 @@ const trackUserActivity = () => {
   
   // Clear activity flag after 30 seconds of inactivity
   userActivityTimeout = setTimeout(() => {
-    console.log("REALTIME: User activity timeout reached");
+    logDataEvent("User activity timeout reached");
   }, 30000);
 };
 
@@ -70,27 +76,27 @@ if (typeof document !== 'undefined') {
 const shouldIgnoreUpdate = (userData: any): boolean => {
   const currentTime = Date.now();
   
-  // Ignore if tab was recently switched (within 60 seconds)
-  if (currentTime - lastTabVisibilityChange < 60000) {
-    console.log("REALTIME: Ignoring update - recent tab visibility change");
+  // Ignore if tab was recently switched (within 30 seconds - reduced from 60)
+  if (currentTime - lastTabVisibilityChange < 30000) {
+    logDataEvent("Ignoring update - recent tab visibility change", {
+      timeSinceChange: currentTime - lastTabVisibilityChange
+    });
     return true;
   }
   
-  // Ignore if this is a recent update from this device (increased to 60 seconds)
-  if (currentTime - lastUpdateTimestamp < 60000) {
-    console.log("REALTIME: Ignoring recent update from this device");
+  // Ignore if this is a recent update from this device (reduced to 30 seconds)
+  if (currentTime - lastUpdateTimestamp < 30000) {
+    logDataEvent("Ignoring recent update from this device", {
+      timeSinceLastUpdate: currentTime - lastUpdateTimestamp
+    });
     return true;
   }
   
-  // Ignore if user was recently active (within 10 seconds)
-  if (currentTime - lastUserActivity < 10000) {
-    console.log("REALTIME: Ignoring update - recent user activity");
-    return true;
-  }
-  
-  // Ignore if auto-sync is disabled
-  if (!autoSyncEnabled) {
-    console.log("REALTIME: Ignoring update - auto-sync is disabled");
+  // Ignore if user was recently active (within 5 seconds - reduced from 10)
+  if (currentTime - lastUserActivity < 5000) {
+    logDataEvent("Ignoring update - recent user activity", {
+      timeSinceActivity: currentTime - lastUserActivity
+    });
     return true;
   }
   
@@ -108,7 +114,12 @@ const createLocalDataBackup = (currentState: AppState): void => {
     payments: [...(currentState.payments || [])],
     timestamp: Date.now()
   };
-  console.log("REALTIME: Created local data backup");
+  logDataEvent("Created local data backup", {
+    productsCount: localDataBackup.products.length,
+    salesCount: localDataBackup.sales.length,
+    clientsCount: localDataBackup.clients.length,
+    paymentsCount: localDataBackup.payments.length
+  });
 };
 
 /**
@@ -116,20 +127,29 @@ const createLocalDataBackup = (currentState: AppState): void => {
  */
 const intelligentMerge = (localData: any, remoteData: any): any => {
   if (!localData || !remoteData) {
+    logDataEvent("Merge: using available data", {
+      hasLocal: !!localData,
+      hasRemote: !!remoteData
+    });
     return remoteData || localData;
   }
   
   // For now, prefer local data if it has more recent changes
-  // This can be enhanced with more sophisticated merge logic
   const localTimestamp = localData.timestamp || 0;
   const remoteTimestamp = new Date(remoteData.updated_at || 0).getTime();
   
   if (localTimestamp > remoteTimestamp) {
-    console.log("REALTIME: Local data is more recent, keeping local changes");
+    logDataEvent("Merge: keeping local data (more recent)", {
+      localTime: new Date(localTimestamp).toISOString(),
+      remoteTime: new Date(remoteTimestamp).toISOString()
+    });
     return localData;
   }
   
-  console.log("REALTIME: Remote data is more recent, using remote data");
+  logDataEvent("Merge: using remote data (more recent)", {
+    localTime: new Date(localTimestamp).toISOString(),
+    remoteTime: new Date(remoteTimestamp).toISOString()
+  });
   return remoteData;
 };
 
@@ -162,11 +182,13 @@ const hasMeaningfulChanges = (localData: any, remoteData: any): boolean => {
   );
   
   if (hasDifferentCounts) {
-    console.log("REALTIME: Detected meaningful changes in data counts");
+    logDataEvent("Detected meaningful changes in data counts", {
+      local: localCounts,
+      remote: remoteCounts
+    });
     return true;
   }
   
-  // Additional deep comparison can be added here if needed
   return false;
 };
 
@@ -190,19 +212,25 @@ export function configureAutoSave(
     // Track this as user activity
     trackUserActivity();
     
-    // Only schedule a save operation if auto-sync is enabled, user is logged in, 
-    // and we're not processing a realtime update
+    // Schedule a save operation if auto-sync is enabled and user is logged in
     if (autoSyncEnabled && !isProcessingRealtimeUpdate) {
       setTimeout(() => {
         const state = get();
         if (state.currentUser && !isProcessingRealtimeUpdate) {
-          console.log("AUTO-SAVE: Triggering auto-save after state change");
+          logDataEvent("AUTO-SAVE: Triggering auto-save after state change");
           updateLastTimestamp(); // Mark this as a local update
           saveDataToSupabase().catch(error => {
+            logDataEvent("AUTO-SAVE: Error saving data", { error: error.message });
             console.error("Error auto-saving data after state change:", error);
           });
         }
-      }, 1000); // Increased debounce time for better stability
+      }, 500); // Reduced debounce time for more responsive saving
+    } else {
+      logDataEvent("AUTO-SAVE: Skipped", {
+        autoSyncEnabled,
+        isProcessingRealtimeUpdate,
+        hasCurrentUser: !!get().currentUser
+      });
     }
   };
 
@@ -219,7 +247,7 @@ export function processRealtimeUpdate(
 ): boolean {
   // Prevent concurrent updates
   if (updateMutex) {
-    console.log("REALTIME: Update mutex active, skipping update");
+    logDataEvent("Update mutex active, skipping update");
     return false;
   }
 
@@ -245,7 +273,7 @@ export function processRealtimeUpdate(
     
     // Check for meaningful changes
     if (!hasMeaningfulChanges(currentState, userData)) {
-      console.log("REALTIME: No meaningful changes detected, ignoring update");
+      logDataEvent("No meaningful changes detected, ignoring update");
       return false;
     }
     
@@ -255,7 +283,7 @@ export function processRealtimeUpdate(
     
     if (isUserActive && hasLocalChanges) {
       // User is actively working and has recent local changes
-      console.log("REALTIME: User is active with local changes, deferring sync");
+      logDataEvent("User is active with local changes, deferring sync");
       
       // Show a non-intrusive notification
       toast.info("Data updated on another device. Changes will sync when you're done.", {
@@ -267,7 +295,12 @@ export function processRealtimeUpdate(
     }
     
     // For background updates when user is not active, apply changes silently
-    console.log("REALTIME: Applying background sync update");
+    logDataEvent("Applying background sync update", {
+      productsCount: products.length,
+      salesCount: sales.length,
+      clientsCount: clients.length,
+      paymentsCount: payments.length
+    });
     
     // Use intelligent merge instead of direct overwrite
     const mergedData = {
@@ -291,6 +324,7 @@ export function processRealtimeUpdate(
         id: "background-sync",
         duration: 2000
       });
+      logDataEvent("Successfully applied realtime update");
     }
     
     return true;
@@ -299,8 +333,8 @@ export function processRealtimeUpdate(
     setTimeout(() => {
       isProcessingRealtimeUpdate = false;
       updateMutex = false;
-      console.log("REALTIME: Processing flags cleared");
-    }, 2000); // Increased to 2 seconds for better stability
+      logDataEvent("Processing flags cleared");
+    }, 1000); // Reduced to 1 second for better responsiveness
   }
 }
 
@@ -309,7 +343,7 @@ export function processRealtimeUpdate(
  */
 export function updateLastTimestamp() {
   lastUpdateTimestamp = Date.now();
-  console.log("REALTIME: Updated last timestamp:", lastUpdateTimestamp);
+  logDataEvent("Updated last timestamp", { timestamp: new Date(lastUpdateTimestamp).toISOString() });
 }
 
 /**
@@ -317,7 +351,7 @@ export function updateLastTimestamp() {
  */
 export function setAutoSync(enabled: boolean) {
   autoSyncEnabled = enabled;
-  console.log(`REALTIME: Auto-sync ${enabled ? 'enabled' : 'disabled'}`);
+  logDataEvent(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`);
 }
 
 /**
@@ -359,7 +393,10 @@ export function forceSyncWithConfirmation(
     );
     
     if (shouldSync) {
+      logDataEvent("User confirmed force sync");
       return processRealtimeUpdate(remoteData, get, set);
+    } else {
+      logDataEvent("User cancelled force sync");
     }
   }
   

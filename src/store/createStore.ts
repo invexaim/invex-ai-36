@@ -17,27 +17,33 @@ export function createPersistedStore<T extends AppState>(
       {
         name: 'invex-store', // Name for the persisted storage
         partialize: (state) => {
-          // Only persist user-independent preferences, not user data
-          // User data should come from Supabase, not localStorage
+          // Keep UI preferences and minimal data for faster startup
+          // Supabase is now the primary data store
           const { 
             currentUser, 
-            pendingSalePayment, 
-            products, 
-            sales, 
-            clients, 
-            payments,
-            meetings,
+            pendingSalePayment,
             ...rest 
           } = state;
+          
+          console.log('[STORE-PERSIST] Saving to localStorage:', {
+            hasCurrentUser: !!currentUser,
+            productsCount: (state.products || []).length,
+            salesCount: (state.sales || []).length,
+            clientsCount: (state.clients || []).length,
+            paymentsCount: (state.payments || []).length
+          });
+          
           return {
-            // Keep only UI preferences and non-user-specific data
+            // Keep UI preferences and settings
             ...rest,
-            // Reset user data to empty arrays for new sessions
-            products: [],
-            sales: [],
-            clients: [],
-            payments: [],
-            meetings: []
+            // Keep user reference for auth state
+            currentUser,
+            // Keep data in localStorage as backup, but Supabase is primary
+            products: state.products || [],
+            sales: state.sales || [],
+            clients: state.clients || [],
+            payments: state.payments || [],
+            meetings: state.meetings || []
           };
         },
       }

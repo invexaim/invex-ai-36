@@ -1,8 +1,15 @@
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 // Track active subscriptions to prevent duplicates
 let activeSubscriptions = new Set<string>();
+
+// Enhanced logging function
+const logDataSyncEvent = (event: string, details?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[DATA-SYNC ${timestamp}] ${event}`, details || '');
+};
 
 // Enhanced conflict detection and resolution
 interface DataConflict {
@@ -51,10 +58,16 @@ const resolveConflicts = (conflicts: DataConflict[]): any => {
     
     if (localCount >= remoteCount) {
       resolved[conflict.field] = conflict.local;
-      console.log(`DATASYNC: Resolved conflict for ${conflict.field} - keeping local data (${localCount} items)`);
+      logDataSyncEvent(`Resolved conflict for ${conflict.field} - keeping local data`, {
+        localCount,
+        remoteCount
+      });
     } else {
       resolved[conflict.field] = conflict.remote;
-      console.log(`DATASYNC: Resolved conflict for ${conflict.field} - using remote data (${remoteCount} items)`);
+      logDataSyncEvent(`Resolved conflict for ${conflict.field} - using remote data`, {
+        localCount,
+        remoteCount
+      });
     }
   });
   
@@ -62,12 +75,16 @@ const resolveConflicts = (conflicts: DataConflict[]): any => {
 };
 
 export async function saveUserDataToSupabase(userId: string, state: any) {
-  console.log("DATASYNC: Saving data to Supabase for user:", userId);
+  logDataSyncEvent("Starting save to Supabase", { userId });
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch");
+    logDataSyncEvent("User not authenticated or ID mismatch", { 
+      hasUser: !!user, 
+      requestedUserId: userId, 
+      actualUserId: user?.id 
+    });
     toast.error("Authentication required to save data");
     throw new Error("Authentication required");
   }
@@ -85,8 +102,9 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
     // Save backup to sessionStorage for recovery
     try {
       sessionStorage.setItem('invex_data_backup', JSON.stringify(backupData));
+      logDataSyncEvent("Created backup in sessionStorage");
     } catch (e) {
-      console.warn("DATASYNC: Could not save backup to sessionStorage");
+      logDataSyncEvent("Could not save backup to sessionStorage", { error: e.message });
     }
     
     // Get current data to save
@@ -99,7 +117,7 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       updated_at: new Date().toISOString()
     };
     
-    console.log("DATASYNC: Saving data:", {
+    logDataSyncEvent("Saving data to Supabase", {
       productsCount: userData.products.length,
       salesCount: userData.sales.length,
       clientsCount: userData.clients.length,
@@ -114,35 +132,45 @@ export async function saveUserDataToSupabase(userId: string, state: any) {
       });
     
     if (error) {
-      console.error('DATASYNC: Error saving data to Supabase:', error);
+      logDataSyncEvent('Error saving data to Supabase', { error: error.message });
       
       // Try to restore from backup
       const backup = sessionStorage.getItem('invex_data_backup');
       if (backup) {
-        console.log("DATASYNC: Data save failed, backup available for recovery");
+        logDataSyncEvent("Data save failed, backup available for recovery");
       }
       
       toast.error("Failed to save your changes - data backed up locally");
       throw error;
     } else {
-      console.log("DATASYNC: Data successfully saved to Supabase");
+      logDataSyncEvent("Data successfully saved to Supabase");
       // Clear backup after successful save
       sessionStorage.removeItem('invex_data_backup');
+      
+      // Show success toast
+      toast.success("Changes saved", {
+        id: "data-saved",
+        duration: 2000
+      });
     }
   } catch (error) {
-    console.error('DATASYNC: Error saving to Supabase:', error);
+    logDataSyncEvent('Error saving to Supabase', { error: error.message });
     toast.error("Error saving your changes - data backed up locally");
     throw error;
   }
 }
 
 export async function fetchUserDataFromSupabase(userId: string, options: { skipConflictCheck?: boolean } = {}) {
-  console.log("DATASYNC: Starting data sync for user:", userId);
+  logDataSyncEvent("Starting data fetch from Supabase", { userId, options });
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch");
+    logDataSyncEvent("User not authenticated or ID mismatch for fetch", {
+      hasUser: !!user,
+      requestedUserId: userId,
+      actualUserId: user?.id
+    });
     if (!options.skipConflictCheck) {
       toast.error("Authentication required to load data");
     }
@@ -156,10 +184,12 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       const backup = sessionStorage.getItem('invex_data_backup');
       if (backup) {
         localBackup = JSON.parse(backup);
-        console.log("DATASYNC: Found local backup data");
+        logDataSyncEvent("Found local backup data", {
+          backupAge: Date.now() - localBackup.timestamp
+        });
       }
     } catch (e) {
-      console.warn("DATASYNC: Could not parse local backup");
+      logDataSyncEvent("Could not parse local backup", { error: e.message });
     }
     
     // Fetch user data from the user_data table
@@ -177,7 +207,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       .order('expiry_date', { ascending: true });
     
     if (userDataError && userDataError.code !== 'PGRST116') {
-      console.error('DATASYNC: Error fetching user data:', userDataError);
+      logDataSyncEvent('Error fetching user data', { error: userDataError.message });
       if (!options.skipConflictCheck) {
         toast.error("Failed to load your data");
       }
@@ -185,15 +215,15 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
     }
     
     if (expiryError) {
-      console.error('DATASYNC: Error fetching expiry data:', expiryError);
+      logDataSyncEvent('Error fetching expiry data', { error: expiryError.message });
       // Don't throw on expiry error, just log and continue with empty array
     }
     
     const productExpiries = expiryData || [];
-    console.log("DATASYNC: Fetched expiry data:", productExpiries.length, "records");
+    logDataSyncEvent("Fetched expiry data", { expiryCount: productExpiries.length });
     
     if (!userData) {
-      console.log("DATASYNC: No existing user data found");
+      logDataSyncEvent("No existing user data found");
       
       // If we have local backup, offer to restore it
       if (localBackup && !options.skipConflictCheck) {
@@ -202,7 +232,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
         );
         
         if (shouldRestore) {
-          console.log("DATASYNC: Restoring from local backup");
+          logDataSyncEvent("Restoring from local backup");
           return {
             products: localBackup.products || [],
             sales: localBackup.sales || [],
@@ -222,7 +252,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       };
     } 
     
-    console.log('DATASYNC: Found existing data for user:', {
+    logDataSyncEvent('Found existing data for user', {
       productsCount: Array.isArray(userData.products) ? userData.products.length : 0,
       salesCount: Array.isArray(userData.sales) ? userData.sales.length : 0,
       clientsCount: Array.isArray(userData.clients) ? userData.clients.length : 0,
@@ -235,7 +265,9 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       const conflicts = detectConflicts(localBackup, userData);
       
       if (conflicts.length > 0) {
-        console.log("DATASYNC: Detected conflicts between local and remote data");
+        logDataSyncEvent("Detected conflicts between local and remote data", {
+          conflictCount: conflicts.length
+        });
         
         const shouldResolveConflicts = confirm(
           `Found differences between your local data and server data. ` +
@@ -264,6 +296,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
     // Clear backup after successful sync
     if (localBackup) {
       sessionStorage.removeItem('invex_data_backup');
+      logDataSyncEvent("Cleared local backup after successful sync");
     }
     
     return {
@@ -274,7 +307,7 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
       productExpiries
     };
   } catch (error) {
-    console.error('DATASYNC: Error fetching data from Supabase:', error);
+    logDataSyncEvent('Error fetching data from Supabase', { error: error.message });
     if (!options.skipConflictCheck) {
       toast.error("Error loading your data");
     }
@@ -283,12 +316,16 @@ export async function fetchUserDataFromSupabase(userId: string, options: { skipC
 }
 
 export async function createEmptyUserData(userId: string) {
-  console.log("DATASYNC: Creating empty user data record for user:", userId);
+  logDataSyncEvent("Creating empty user data record", { userId });
   
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== userId) {
-    console.error("DATASYNC: User not authenticated or ID mismatch");
+    logDataSyncEvent("User not authenticated or ID mismatch for create", {
+      hasUser: !!user,
+      requestedUserId: userId,
+      actualUserId: user?.id
+    });
     toast.error("Authentication required to initialize data");
     throw new Error("Authentication required");
   }
@@ -307,11 +344,11 @@ export async function createEmptyUserData(userId: string) {
       .insert(userData as any);
       
     if (error) {
-      console.error('DATASYNC: Error inserting empty data to Supabase:', error);
+      logDataSyncEvent('Error inserting empty data to Supabase', { error: error.message });
       toast.error("Failed to initialize your data");
       throw error;
     } else {
-      console.log("DATASYNC: Successfully created empty data record in Supabase");
+      logDataSyncEvent("Successfully created empty data record in Supabase");
       return {
         products: [],
         sales: [],
@@ -321,7 +358,7 @@ export async function createEmptyUserData(userId: string) {
       };
     }
   } catch (error) {
-    console.error('DATASYNC: Error creating empty user data:', error);
+    logDataSyncEvent('Error creating empty user data', { error: error.message });
     toast.error("Failed to initialize your data");
     throw error;
   }
@@ -332,23 +369,23 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
   
   // Check if subscription already exists
   if (activeSubscriptions.has(subscriptionKey)) {
-    console.log("DATASYNC: Subscription already exists for user:", userId);
+    logDataSyncEvent("Subscription already exists for user", { userId });
     return () => {
-      console.log("DATASYNC: Cleanup called for existing subscription");
+      logDataSyncEvent("Cleanup called for existing subscription");
       activeSubscriptions.delete(subscriptionKey);
       supabase.removeAllChannels();
     };
   }
   
-  console.log("DATASYNC: Setting up NEW realtime subscription for user:", userId);
+  logDataSyncEvent("Setting up NEW realtime subscription for user", { userId });
   
   // Clean up any existing channels to prevent duplicate subscriptions
   try {
     supabase.removeAllChannels();
     activeSubscriptions.clear(); // Clear tracking as well
-    console.log("DATASYNC: Removed all existing channels before setting up new subscription");
+    logDataSyncEvent("Removed all existing channels before setting up new subscription");
   } catch (e) {
-    console.error("DATASYNC: Error removing existing channels:", e);
+    logDataSyncEvent("Error removing existing channels", { error: e.message });
   }
   
   // Mark this subscription as active
@@ -365,7 +402,7 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
         filter: `user_id=eq.${userId}`
       },
       (payload) => {
-        console.log("DATASYNC: Received realtime update:", {
+        logDataSyncEvent("Received realtime update", {
           userId,
           updateTime: payload.new?.updated_at,
           hasNewData: !!payload.new
@@ -375,21 +412,18 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
           // Enhanced time checking for realtime updates
           const updateTime = new Date(payload.new.updated_at).getTime();
           const now = Date.now();
-          const isRecentUpdate = (now - updateTime) < 300000; // Within last 5 minutes (increased)
+          const isRecentUpdate = (now - updateTime) < 300000; // Within last 5 minutes
           
           if (isRecentUpdate) {
-            console.log("DATASYNC: Processing update from another device");
-            
-            // Enhanced update processing with better filtering
-            const timeSinceUpdate = now - updateTime;
-            console.log("DATASYNC: Update is", Math.round(timeSinceUpdate / 1000), "seconds old");
+            logDataSyncEvent("Processing update from another device", {
+              updateAge: Math.round((now - updateTime) / 1000)
+            });
             
             // The callback will update the store with the new data
             dataUpdateCallback(payload.new);
           } else {
-            console.log("DATASYNC: Ignoring stale update", {
+            logDataSyncEvent("Ignoring stale update", {
               updateTime: new Date(updateTime).toISOString(),
-              now: new Date(now).toISOString(),
               ageMinutes: Math.round((now - updateTime) / 60000)
             });
           }
@@ -397,30 +431,32 @@ export function setupRealtimeSubscription(userId: string, dataUpdateCallback: (d
       }
     )
     .subscribe((status) => {
-      console.log("DATASYNC: Realtime subscription status:", status, "for user:", userId);
+      logDataSyncEvent("Realtime subscription status", { status, userId });
       if (status === "SUBSCRIBED") {
-        console.log("DATASYNC: Successfully subscribed to realtime updates for user:", userId);
+        logDataSyncEvent("Successfully subscribed to realtime updates", { userId });
       } else if (status === "CHANNEL_ERROR") {
-        console.error("DATASYNC: Error subscribing to realtime updates");
+        logDataSyncEvent("Error subscribing to realtime updates");
         // Mark subscription as failed
         activeSubscriptions.delete(subscriptionKey);
         // Enhanced retry logic with exponential backoff
         const retryDelay = Math.min(30000, 5000 * Math.pow(2, activeSubscriptions.size)); // Max 30 seconds
         setTimeout(() => {
-          console.log("DATASYNC: Attempting to resubscribe to realtime updates after", retryDelay / 1000, "seconds");
+          logDataSyncEvent("Attempting to resubscribe to realtime updates", {
+            delaySeconds: retryDelay / 1000
+          });
           if (!activeSubscriptions.has(subscriptionKey)) {
             setupRealtimeSubscription(userId, dataUpdateCallback);
           }
         }, retryDelay);
       } else if (status === "CLOSED") {
-        console.log("DATASYNC: Subscription closed for user:", userId);
+        logDataSyncEvent("Subscription closed for user", { userId });
         activeSubscriptions.delete(subscriptionKey);
       }
     });
   
   // Return enhanced cleanup function
   return () => {
-    console.log("DATASYNC: Removing realtime subscription for user:", userId);
+    logDataSyncEvent("Removing realtime subscription for user", { userId });
     activeSubscriptions.delete(subscriptionKey);
     supabase.removeChannel(channel);
   };

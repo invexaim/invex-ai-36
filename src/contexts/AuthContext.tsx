@@ -39,20 +39,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { 
     setupRealtimeUpdates, 
     syncDataWithSupabase, 
-    setProducts, 
-    setSales, 
-    setClients, 
-    setPayments, 
-    setCurrentUser // Add this import from the store
+    setCurrentUser,
+    saveDataToSupabase // Add this to save data before clearing
   } = useAppStore();
 
-  const clearUserData = () => {
-    console.log('AUTH: Clearing all user data for user switch');
-    setProducts([]);
-    setSales([]);
-    setClients([]);
-    setPayments([]);
-    setCurrentUser(null); // Clear current user in store
+  // Enhanced logging for auth events
+  const logAuthEvent = (event: string, details?: any) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[AUTH ${timestamp}] ${event}`, details || '');
+  };
+
+  const clearUserData = async () => {
+    const currentState = useAppStore.getState();
+    
+    // Only save if we have a current user and some data to save
+    if (currentState.currentUser && (
+      (currentState.products || []).length > 0 ||
+      (currentState.sales || []).length > 0 ||
+      (currentState.clients || []).length > 0 ||
+      (currentState.payments || []).length > 0
+    )) {
+      try {
+        logAuthEvent('Saving data before clearing user data');
+        await saveDataToSupabase();
+        logAuthEvent('Data saved successfully before clearing');
+      } catch (error) {
+        logAuthEvent('Error saving data before clearing', { error: error.message });
+        console.error("Error saving data before clearing:", error);
+      }
+    }
+    
+    logAuthEvent('Clearing all user data');
+    // Clear current user in store
+    setCurrentUser(null);
   };
 
   useEffect(() => {
@@ -60,6 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const initializeAuth = async () => {
       try {
+        logAuthEvent('Initializing auth');
         const { session: initialSession } = await AuthService.getSession();
         
         if (isMounted) {
@@ -68,27 +88,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
           
           // Update store's currentUser
           if (initialSession?.user) {
-            console.log('AUTH: User authenticated, updating store currentUser');
+            logAuthEvent('User authenticated, updating store currentUser', { 
+              userId: initialSession.user.id 
+            });
             setCurrentUser(initialSession.user);
-            clearUserData();
+            
+            // Delay data sync to prevent race conditions
             setTimeout(async () => {
               try {
                 await syncDataWithSupabase();
                 setupRealtimeUpdates(initialSession.user.id);
               } catch (error) {
-                console.error('AUTH: Error syncing data on init:', error);
+                logAuthEvent('Error syncing data on init', { error: error.message });
               }
             }, 100);
           } else {
             setCurrentUser(null);
+            logAuthEvent('No authenticated user found');
           }
         }
       } catch (error) {
-        console.error('AUTH: Error getting initial session:', error);
+        logAuthEvent('Error getting initial session', { error: error.message });
       } finally {
         if (isMounted) {
           setLoading(false);
           setAuthChecked(true);
+          logAuthEvent('Auth initialization complete');
         }
       }
     };
@@ -96,7 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initializeAuth();
 
     const subscription = AuthService.onAuthStateChange((user) => {
-      console.log('AUTH: Auth state change:', user?.id);
+      logAuthEvent('Auth state change detected', { userId: user?.id || 'null' });
       
       if (isMounted) {
         const previousUserId = session?.user?.id;
@@ -107,23 +132,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // Update store's currentUser
         setCurrentUser(user);
-        console.log('AUTH: Updated store currentUser:', user?.id || 'null');
         
         if (user && newUserId !== previousUserId) {
-          console.log('AUTH: New user signed in, clearing data and syncing');
-          clearUserData();
-          setCurrentUser(user); // Set again after clearing
+          logAuthEvent('New user signed in, syncing data', { 
+            previousUserId, 
+            newUserId 
+          });
+          
+          // Only clear data if it's a different user
+          if (previousUserId && previousUserId !== newUserId) {
+            clearUserData();
+          }
+          
+          setCurrentUser(user); // Set again after potential clearing
           
           setTimeout(async () => {
             try {
               await syncDataWithSupabase();
               setupRealtimeUpdates(user.id);
             } catch (error) {
-              console.error('AUTH: Error syncing data for new user:', error);
+              logAuthEvent('Error syncing data for new user', { error: error.message });
             }
           }, 100);
         } else if (!user) {
-          console.log('AUTH: User signed out, clearing data');
+          logAuthEvent('User signed out, clearing data');
           clearUserData();
         }
       }
@@ -133,15 +165,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setupRealtimeUpdates, syncDataWithSupabase, setProducts, setSales, setClients, setPayments, setCurrentUser, session?.user?.id]);
+  }, [setupRealtimeUpdates, syncDataWithSupabase, setCurrentUser, saveDataToSupabase]);
 
   const signOut = async () => {
     try {
-      clearUserData();
+      logAuthEvent('Sign out initiated');
+      await clearUserData();
       await AuthService.signOut();
       setUser(null);
       setSession(null);
+      logAuthEvent('Sign out completed');
     } catch (error) {
+      logAuthEvent('Error signing out', { error: error.message });
       console.error('Error signing out:', error);
     }
   };

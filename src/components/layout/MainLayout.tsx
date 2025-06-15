@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
+import { DataSyncStatus } from "./DataSyncStatus";
 import { SidebarItemType } from "./types";
 import {
   LayoutDashboard,
@@ -52,10 +53,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   const handleLogout = async () => {
     try {
-      console.log("MainLayout logout triggered");
+      console.log("[LAYOUT] Logout triggered");
       await clearLocalData();
     } catch (error) {
-      console.error("Error during logout in MainLayout:", error);
+      console.error("[LAYOUT] Error during logout:", error);
     }
   };
 
@@ -74,6 +75,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       />
       
       <div className="md:ml-64">
+        {/* Add sync status indicator */}
+        <div className="fixed top-4 right-4 z-50">
+          <DataSyncStatus />
+        </div>
+        
         <div className="p-6">
           {children}
         </div>
