@@ -75,8 +75,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       />
       
       <div className="md:ml-64">
-        {/* Add sync status indicator */}
-        <div className="fixed top-4 right-4 z-50">
+        {/* Move sync status indicator higher up */}
+        <div className="fixed top-2 right-4 z-50">
           <DataSyncStatus />
         </div>
         
