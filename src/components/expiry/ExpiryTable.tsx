@@ -10,9 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Calendar, Edit, Trash2 } from "lucide-react";
+import { AlertTriangle, Calendar, Trash2 } from "lucide-react";
 import { ProductExpiry } from "@/types";
-import { EditExpiryDialog } from "./EditExpiryDialog";
 
 interface ExpiryTableProps {
   expiries: ProductExpiry[];
@@ -21,8 +20,6 @@ interface ExpiryTableProps {
 }
 
 export const ExpiryTable = ({ expiries, onUpdateExpiry, onDeleteExpiry }: ExpiryTableProps) => {
-  const [editingExpiry, setEditingExpiry] = useState<ProductExpiry | null>(null);
-
   const getStatusBadgeVariant = (status: string, expiryDate: string) => {
     if (status === 'disposed') return 'secondary';
     if (status === 'expired') return 'destructive';
@@ -52,6 +49,10 @@ export const ExpiryTable = ({ expiries, onUpdateExpiry, onDeleteExpiry }: Expiry
     return new Date(dateString).toLocaleDateString();
   };
 
+  const handleDispose = (expiry: ProductExpiry) => {
+    onUpdateExpiry(expiry.id, { status: 'disposed' });
+  };
+
   if (expiries.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -62,69 +63,53 @@ export const ExpiryTable = ({ expiries, onUpdateExpiry, onDeleteExpiry }: Expiry
   }
 
   return (
-    <>
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Batch Number</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Expiry Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+    <div className="border rounded-lg">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Product</TableHead>
+            <TableHead>Batch Number</TableHead>
+            <TableHead>Quantity</TableHead>
+            <TableHead>Expiry Date</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Notes</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expiries.map((expiry) => (
+            <TableRow key={expiry.id}>
+              <TableCell className="font-medium">{expiry.product_name}</TableCell>
+              <TableCell>{expiry.batch_number || '-'}</TableCell>
+              <TableCell>{expiry.quantity}</TableCell>
+              <TableCell>{formatDate(expiry.expiry_date)}</TableCell>
+              <TableCell>
+                <Badge 
+                  variant={getStatusBadgeVariant(expiry.status, expiry.expiry_date)}
+                  className="flex items-center gap-1 w-fit"
+                >
+                  {getStatusIcon(expiry.status, expiry.expiry_date)}
+                  {expiry.status.charAt(0).toUpperCase() + expiry.status.slice(1)}
+                </Badge>
+              </TableCell>
+              <TableCell className="max-w-xs truncate">
+                {expiry.notes || '-'}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDispose(expiry)}
+                  disabled={expiry.status === 'disposed'}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Dispose
+                </Button>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {expiries.map((expiry) => (
-              <TableRow key={expiry.id}>
-                <TableCell className="font-medium">{expiry.product_name}</TableCell>
-                <TableCell>{expiry.batch_number || '-'}</TableCell>
-                <TableCell>{expiry.quantity}</TableCell>
-                <TableCell>{formatDate(expiry.expiry_date)}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={getStatusBadgeVariant(expiry.status, expiry.expiry_date)}
-                    className="flex items-center gap-1 w-fit"
-                  >
-                    {getStatusIcon(expiry.status, expiry.expiry_date)}
-                    {expiry.status.charAt(0).toUpperCase() + expiry.status.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="max-w-xs truncate">
-                  {expiry.notes || '-'}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingExpiry(expiry)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDeleteExpiry(expiry.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      <EditExpiryDialog
-        expiry={editingExpiry}
-        open={!!editingExpiry}
-        onOpenChange={(open) => !open && setEditingExpiry(null)}
-        onUpdateExpiry={onUpdateExpiry}
-      />
-    </>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
