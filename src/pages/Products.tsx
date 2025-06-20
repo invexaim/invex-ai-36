@@ -144,13 +144,6 @@ const Products = ({ filterType = "all" }: ProductsProps) => {
           </div>
         </div>
       )}
-
-      {/* Add product dialog */}
-      <AddProductDialog
-        open={showAddProductDialog}
-        onOpenChange={setShowAddProductDialog}
-        onAddProduct={addProduct}
-      />
     </div>
   );
 };
