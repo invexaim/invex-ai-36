@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
+import AddProduct from "@/pages/AddProduct";
 import Sales from "@/pages/Sales";
 import History from "@/pages/History";
 import Payments from "@/pages/Payments";
@@ -111,6 +112,12 @@ export const Router = () => {
             <MainLayout>
               <Products />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/products/add" element={
+          <ProtectedRoute>
+            <AddProduct />
           </ProtectedRoute>
         } />
         

@@ -37,7 +37,14 @@ export const ExpiryDateField = ({ expiryDate, onExpiryDateChange }: ExpiryDateFi
             onSelect={onExpiryDateChange}
             disabled={(date) => date < new Date()}
             initialFocus
-            className={cn("p-3 pointer-events-auto")}
+            className="p-3 pointer-events-auto"
+            classNames={{
+              head_row: "flex w-full",
+              head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center",
+              row: "flex w-full mt-2",
+              cell: "text-center text-sm p-0 relative flex-1 h-9 w-9",
+              day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground",
+            }}
           />
         </PopoverContent>
       </Popover>

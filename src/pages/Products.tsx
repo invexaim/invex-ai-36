@@ -1,11 +1,11 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { StatsCards } from "@/components/products/StatsCards";
 import { ProductsTable } from "@/components/products/ProductsTable";
 import { StockPredictor } from "@/components/products/StockPredictor";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsightsSection } from "@/components/products/InsightsSection";
-import { AddProductDialog } from "@/components/products/AddProductDialog";
 import useAppStore from "@/store/appStore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -16,12 +16,12 @@ interface ProductsProps {
 }
 
 const Products = ({ filterType = "all" }: ProductsProps) => {
-  const { products, importProductsFromCSV, addProduct } = useAppStore();
+  const navigate = useNavigate();
+  const { products, importProductsFromCSV } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("inventory");
-  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
 
   // Auto-set to Inventory tab if low-stock filter is active
   useState(() => {
@@ -69,7 +69,7 @@ const Products = ({ filterType = "all" }: ProductsProps) => {
         </div>
         
         <div className="flex gap-2">
-          <Button onClick={() => setShowAddProductDialog(true)}>
+          <Button onClick={() => navigate("/products/add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
