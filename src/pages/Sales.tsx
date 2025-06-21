@@ -1,15 +1,21 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import useAppStore from "@/store/appStore";
 import SalesHeader from "@/components/sales/SalesHeader";
 import SalesListSection from "@/components/sales/SalesListSection";
 
 const Sales = () => {
+  const navigate = useNavigate();
   const { products, sales, deleteSale, pendingEstimateForSale, setPendingEstimateForSale } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleOpenRecordSale = () => {
+    navigate("/sales/record");
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -25,7 +31,7 @@ const Sales = () => {
       <SalesHeader 
         productsExist={products.length > 0} 
         isRecordSaleOpen={false}
-        onOpenRecordSale={() => {}}
+        onOpenRecordSale={handleOpenRecordSale}
         onCloseRecordSale={() => {}}
       />
       <SalesListSection

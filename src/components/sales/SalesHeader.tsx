@@ -26,12 +26,10 @@ const SalesHeader = ({
           <p className="text-muted-foreground">Record and manage your sales transactions</p>
         </div>
         
-        {productsExist && (
-          <Button onClick={onOpenRecordSale} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Record Sale
-          </Button>
-        )}
+        <Button onClick={onOpenRecordSale} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Record Sale
+        </Button>
       </div>
 
       {!productsExist && (
@@ -39,11 +37,15 @@ const SalesHeader = ({
           <CardHeader>
             <CardTitle>No Products Available</CardTitle>
             <CardDescription>
-              You need to add products before you can record sales.
+              You don't have any products yet, but you can still record a sale or add products first.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.href = '/products'}>
+          <CardContent className="flex gap-2">
+            <Button onClick={onOpenRecordSale} variant="default">
+              <Plus className="h-4 w-4 mr-2" />
+              Record Sale
+            </Button>
+            <Button onClick={() => window.location.href = '/products'} variant="outline">
               Go to Products
             </Button>
           </CardContent>
