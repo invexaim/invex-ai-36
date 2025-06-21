@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { ExpiryHeader } from "@/components/expiry/ExpiryHeader";
 import { ExpiryStats } from "@/components/expiry/ExpiryStats";
 import { ExpiryTable } from "@/components/expiry/ExpiryTable";
@@ -10,6 +10,7 @@ const Expiry = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const { 
     productExpiries, 
@@ -29,6 +30,10 @@ const Expiry = () => {
       setStatusFilter('expired');
     }
   }, [searchParams]);
+
+  const handleAddExpiry = () => {
+    navigate("/expiry/add");
+  };
 
   // Filter expiries based on search and status
   const filteredExpiries = productExpiries.filter(expiry => {
@@ -59,6 +64,7 @@ const Expiry = () => {
   return (
     <div className="space-y-6">
       <ExpiryHeader 
+        onAddExpiry={handleAddExpiry}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         statusFilter={statusFilter}

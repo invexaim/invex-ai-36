@@ -24,6 +24,9 @@ const Sales = () => {
     <div className="space-y-8 animate-fade-in">
       <SalesHeader 
         productsExist={products.length > 0} 
+        isRecordSaleOpen={false}
+        onOpenRecordSale={() => {}}
+        onCloseRecordSale={() => {}}
       />
       <SalesListSection
         sales={filteredSales}

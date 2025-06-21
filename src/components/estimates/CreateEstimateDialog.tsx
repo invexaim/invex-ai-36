@@ -24,6 +24,7 @@ interface CreateEstimateDialogProps {
   onEstimateCreated?: (estimateData: any) => void;
   prefilledClientName?: string;
   editingEstimate?: any;
+  isFullPage?: boolean;
 }
 
 interface EstimateForm {
@@ -48,7 +49,8 @@ export function CreateEstimateDialog({
   onOpenChange,
   onEstimateCreated,
   prefilledClientName,
-  editingEstimate
+  editingEstimate,
+  isFullPage = false
 }: CreateEstimateDialogProps) {
   const [items, setItems] = useState<EstimateItem[]>([
     { id: 1, name: "", quantity: 1, price: 0, total: 0 },
@@ -123,6 +125,38 @@ export function CreateEstimateDialog({
     setItems([{ id: 1, name: "", quantity: 1, price: 0, total: 0 }]);
   };
 
+  const FormContent = () => (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <EstimateFormHeader control={form.control} />
+        
+        <EstimateItemsSection 
+          items={items}
+          setItems={setItems}
+        />
+        
+        <EstimateNotesSection control={form.control} />
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {editingEstimate ? "Update Estimate" : "Create Estimate"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+
+  if (isFullPage) {
+    return (
+      <ScrollArea className="h-[70vh] pr-4">
+        <FormContent />
+      </ScrollArea>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
@@ -133,27 +167,7 @@ export function CreateEstimateDialog({
         </DialogHeader>
         
         <ScrollArea className="h-[70vh] pr-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <EstimateFormHeader control={form.control} />
-              
-              <EstimateItemsSection 
-                items={items}
-                setItems={setItems}
-              />
-              
-              <EstimateNotesSection control={form.control} />
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingEstimate ? "Update Estimate" : "Create Estimate"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <FormContent />
         </ScrollArea>
       </DialogContent>
     </Dialog>
