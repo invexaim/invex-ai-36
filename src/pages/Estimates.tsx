@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { EstimatesHeader } from '@/components/estimates/EstimatesHeader';
 import { EstimatesEmptyState } from '@/components/estimates/EstimatesEmptyState';
@@ -6,6 +5,7 @@ import { EstimatesTable } from '@/components/estimates/EstimatesTable';
 import { EstimatesAboutSection } from '@/components/estimates/EstimatesAboutSection';
 import { CreateEstimateDialog } from '@/components/estimates/CreateEstimateDialog';
 import { EstimatePrint } from '@/components/estimates/EstimatePrint';
+import { useNavigate } from 'react-router-dom';
 
 interface Estimate {
   id: string;
@@ -23,10 +23,11 @@ interface Estimate {
 
 const Estimates = () => {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
+  const navigate = useNavigate();
 
   // Load estimates from localStorage
   useEffect(() => {
@@ -60,28 +61,6 @@ const Estimates = () => {
     console.log("Estimate status updated successfully");
   };
 
-  const handleCreateEstimate = (estimateData: any) => {
-    const newEstimate = {
-      id: estimateData.referenceNo || `EST-${Date.now().toString().slice(-6)}`,
-      clientName: estimateData.clientName,
-      date: estimateData.date,
-      referenceNo: estimateData.referenceNo || `EST-${Date.now().toString().slice(-6)}`,
-      totalAmount: estimateData.totalAmount || 0,
-      status: estimateData.status || "pending",
-      validUntil: estimateData.validUntil,
-      createdAt: estimateData.createdAt || new Date().toISOString(),
-      items: estimateData.items,
-      notes: estimateData.notes,
-      terms: estimateData.terms,
-    };
-    
-    const updatedEstimates = [newEstimate, ...estimates];
-    setEstimates(updatedEstimates);
-    
-    // Store locally
-    localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
-  };
-
   const handleUpdateEstimate = (estimateData: any) => {
     const updatedEstimate = {
       ...editingEstimate,
@@ -111,6 +90,10 @@ const Estimates = () => {
     localStorage.setItem('estimates', JSON.stringify(updatedEstimates));
   };
 
+  const handleCreateEstimate = () => {
+    navigate('/estimates/create');
+  };
+
   const handlePrintEstimate = (estimate: Estimate) => {
     setSelectedEstimate(estimate);
     setIsPrintDialogOpen(true);
@@ -118,25 +101,15 @@ const Estimates = () => {
 
   const handleEditEstimate = (estimate: Estimate) => {
     setEditingEstimate(estimate);
-    setIsDialogOpen(true);
-  };
-
-  const handleOpenCreateDialog = () => {
-    setEditingEstimate(null);
-    setIsDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-    setEditingEstimate(null);
+    setIsEditDialogOpen(true);
   };
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <EstimatesHeader onCreateEstimate={handleOpenCreateDialog} />
+      <EstimatesHeader onCreateEstimate={handleCreateEstimate} />
 
       {estimates.length === 0 ? (
-        <EstimatesEmptyState onCreateEstimate={handleOpenCreateDialog} />
+        <EstimatesEmptyState onCreateEstimate={handleCreateEstimate} />
       ) : (
         <EstimatesTable 
           estimates={estimates}
@@ -149,12 +122,14 @@ const Estimates = () => {
 
       <EstimatesAboutSection />
       
-      <CreateEstimateDialog 
-        open={isDialogOpen} 
-        onOpenChange={handleDialogClose}
-        onEstimateCreated={editingEstimate ? handleUpdateEstimate : handleCreateEstimate}
-        editingEstimate={editingEstimate}
-      />
+      {editingEstimate && (
+        <CreateEstimateDialog 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen}
+          onEstimateCreated={handleUpdateEstimate}
+          editingEstimate={editingEstimate}
+        />
+      )}
       
       {selectedEstimate && (
         <EstimatePrint

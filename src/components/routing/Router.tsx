@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -5,17 +6,23 @@ import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import AddProduct from "@/pages/AddProduct";
 import Sales from "@/pages/Sales";
+import RecordSale from "@/pages/RecordSale";
 import History from "@/pages/History";
 import Payments from "@/pages/Payments";
+import AddPayment from "@/pages/AddPayment";
 import Clients from "@/pages/Clients";
+import AddClient from "@/pages/AddClient";
 import ClientDetail from "@/pages/ClientDetail";
 import Stock from "@/pages/Stock";
 import Estimates from "@/pages/Estimates";
+import CreateEstimate from "@/pages/CreateEstimate";
 import Delivery from "@/pages/Delivery";
+import CreateChallan from "@/pages/CreateChallan";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import Settings from "@/pages/Settings";
 import Expiry from "@/pages/Expiry";
+import AddExpiry from "@/pages/AddExpiry";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -128,6 +135,12 @@ export const Router = () => {
             </MainLayout>
           </ProtectedRoute>
         } />
+
+        <Route path="/sales/record" element={
+          <ProtectedRoute>
+            <RecordSale />
+          </ProtectedRoute>
+        } />
         
         <Route path="/history" element={
           <ProtectedRoute>
@@ -144,12 +157,24 @@ export const Router = () => {
             </MainLayout>
           </ProtectedRoute>
         } />
+
+        <Route path="/payments/add" element={
+          <ProtectedRoute>
+            <AddPayment />
+          </ProtectedRoute>
+        } />
         
         <Route path="/clients" element={
           <ProtectedRoute>
             <MainLayout>
               <Clients />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/clients/add" element={
+          <ProtectedRoute>
+            <AddClient />
           </ProtectedRoute>
         } />
         
@@ -168,6 +193,12 @@ export const Router = () => {
             </MainLayout>
           </ProtectedRoute>
         } />
+
+        <Route path="/estimates/create" element={
+          <ProtectedRoute>
+            <CreateEstimate />
+          </ProtectedRoute>
+        } />
         
         <Route path="/delivery" element={
           <ProtectedRoute>
@@ -176,12 +207,24 @@ export const Router = () => {
             </MainLayout>
           </ProtectedRoute>
         } />
+
+        <Route path="/delivery/create" element={
+          <ProtectedRoute>
+            <CreateChallan />
+          </ProtectedRoute>
+        } />
         
         <Route path="/expiry" element={
           <ProtectedRoute>
             <MainLayout>
               <Expiry />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/expiry/add" element={
+          <ProtectedRoute>
+            <AddExpiry />
           </ProtectedRoute>
         } />
         
