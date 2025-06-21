@@ -22,6 +22,7 @@ interface AddExpiryDialogProps {
   onOpenChange: (open: boolean) => void;
   onAddExpiry: (expiry: any) => void;
   products: Product[];
+  isFullPage?: boolean;
 }
 
 export const AddExpiryDialog = ({
@@ -29,6 +30,7 @@ export const AddExpiryDialog = ({
   onOpenChange,
   onAddExpiry,
   products,
+  isFullPage = false
 }: AddExpiryDialogProps) => {
   const [formData, setFormData] = useState({
     product_id: "",
@@ -105,6 +107,94 @@ export const AddExpiryDialog = ({
     onOpenChange(false);
   };
 
+  const FormContent = () => (
+    <div className="grid gap-4 py-4">
+      <div className="space-y-2">
+        <Label htmlFor="product_id">Product</Label>
+        <Select value={formData.product_id} onValueChange={handleProductChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a product" />
+          </SelectTrigger>
+          <SelectContent>
+            {products.map((product) => (
+              <SelectItem key={product.product_id} value={product.product_id.toString()}>
+                {product.product_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="expiry_date">Expiry Date</Label>
+        <Input
+          id="expiry_date"
+          name="expiry_date"
+          type="date"
+          value={formData.expiry_date}
+          onChange={handleChange}
+          min={new Date().toISOString().split('T')[0]}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="batch_number">Batch Number (Optional)</Label>
+        <Input
+          id="batch_number"
+          name="batch_number"
+          value={formData.batch_number}
+          onChange={handleChange}
+          placeholder="Enter batch number"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="quantity">Quantity</Label>
+        <Input
+          id="quantity"
+          name="quantity"
+          type="number"
+          min="1"
+          value={formData.quantity}
+          onChange={handleChange}
+          placeholder="Enter quantity"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes (Optional)</Label>
+        <Textarea
+          id="notes"
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          placeholder="Additional notes about this batch"
+          rows={3}
+        />
+      </div>
+    </div>
+  );
+
+  const FormActions = () => (
+    <DialogFooter>
+      <Button variant="outline" onClick={() => onOpenChange(false)}>
+        Cancel
+      </Button>
+      <Button onClick={handleSubmit}>
+        Add Expiry
+      </Button>
+    </DialogFooter>
+  );
+
+  if (isFullPage) {
+    return (
+      <div className="space-y-6">
+        <FormContent />
+        <FormActions />
+      </div>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
@@ -117,79 +207,8 @@ export const AddExpiryDialog = ({
             Track the expiration date of your products to maintain quality and reduce waste.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="product_id">Product</Label>
-            <Select value={formData.product_id} onValueChange={handleProductChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a product" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.product_id} value={product.product_id.toString()}>
-                    {product.product_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="expiry_date">Expiry Date</Label>
-            <Input
-              id="expiry_date"
-              name="expiry_date"
-              type="date"
-              value={formData.expiry_date}
-              onChange={handleChange}
-              min={new Date().toISOString().split('T')[0]}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="batch_number">Batch Number (Optional)</Label>
-            <Input
-              id="batch_number"
-              name="batch_number"
-              value={formData.batch_number}
-              onChange={handleChange}
-              placeholder="Enter batch number"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={handleChange}
-              placeholder="Enter quantity"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              placeholder="Additional notes about this batch"
-              rows={3}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>
-            Add Expiry
-          </Button>
-        </DialogFooter>
+        <FormContent />
+        <FormActions />
       </DialogContent>
     </Dialog>
   );

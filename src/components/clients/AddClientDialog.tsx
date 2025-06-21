@@ -19,12 +19,14 @@ interface AddClientDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onAddClient: (client: Omit<Client, "id" | "totalPurchases" | "totalSpent" | "lastPurchase">) => void;
+  isFullPage?: boolean;
 }
 
 export const AddClientDialog = ({ 
   isOpen, 
   onOpenChange, 
-  onAddClient 
+  onAddClient,
+  isFullPage = false
 }: AddClientDialogProps) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -88,6 +90,87 @@ export const AddClientDialog = ({
     onOpenChange(false);
   };
 
+  const FormContent = () => (
+    <div className="grid gap-4 py-4">
+      {/* Client Basic Details */}
+      <div className="space-y-2">
+        <Label htmlFor="name">Full Name</Label>
+        <Input
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Enter client's full name"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="email">Email Address</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Enter client's email"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="phone">Phone Number</Label>
+        <Input
+          id="phone"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          placeholder="Enter client's phone number"
+        />
+      </div>
+
+      {/* GST Section with Address and Company Name */}
+      <GSTLookupSection
+        gstNumber={formData.gstNumber}
+        companyName={formData.companyName}
+        address={formData.address}
+        city={formData.city}
+        state={formData.state}
+        pincode={formData.pincode}
+        onChange={handleChange}
+        onGSTDetailsUpdate={handleGSTDetailsUpdate}
+        error={false}
+        isLoading={isGSTLoading}
+        setIsLoading={setIsGSTLoading}
+      />
+    </div>
+  );
+
+  const FormActions = () => (
+    <DialogFooter>
+      <Button 
+        variant="outline" 
+        onClick={() => onOpenChange(false)}
+        className="w-full sm:w-auto"
+      >
+        Cancel
+      </Button>
+      <Button 
+        onClick={handleSubmit}
+        className="w-full sm:w-auto"
+      >
+        <User className="mr-2 h-4 w-4" /> Add Client
+      </Button>
+    </DialogFooter>
+  );
+
+  if (isFullPage) {
+    return (
+      <div className="space-y-6">
+        <FormContent />
+        <FormActions />
+      </div>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -97,72 +180,8 @@ export const AddClientDialog = ({
             Enter the details for the new client below.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {/* Client Basic Details */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter client's full name"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter client's email"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter client's phone number"
-            />
-          </div>
-
-          {/* GST Section with Address and Company Name */}
-          <GSTLookupSection
-            gstNumber={formData.gstNumber}
-            companyName={formData.companyName}
-            address={formData.address}
-            city={formData.city}
-            state={formData.state}
-            pincode={formData.pincode}
-            onChange={handleChange}
-            onGSTDetailsUpdate={handleGSTDetailsUpdate}
-            error={false}
-            isLoading={isGSTLoading}
-            setIsLoading={setIsGSTLoading}
-          />
-        </div>
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            className="w-full sm:w-auto"
-          >
-            <User className="mr-2 h-4 w-4" /> Add Client
-          </Button>
-        </DialogFooter>
+        <FormContent />
+        <FormActions />
       </DialogContent>
     </Dialog>
   );

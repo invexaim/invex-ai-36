@@ -22,6 +22,7 @@ interface CreateChallanDialogProps {
   onOpenChange: (open: boolean) => void;
   onChallanCreated?: (challanData: any) => void;
   editData?: any;
+  isFullPage?: boolean;
 }
 
 interface ChallanForm {
@@ -45,6 +46,7 @@ export function CreateChallanDialog({
   onOpenChange,
   onChallanCreated,
   editData,
+  isFullPage = false
 }: CreateChallanDialogProps) {
   const [items, setItems] = useState<ChallanItem[]>([
     { id: 1, productId: 0, name: "", quantity: 1 },
@@ -133,6 +135,40 @@ export function CreateChallanDialog({
     setItems([{ id: 1, productId: 0, name: "", quantity: 1 }]);
   };
 
+  const FormContent = () => (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <ChallanBasicDetails form={form} />
+        
+        <ChallanItemsSection 
+          items={items}
+          onAddItem={addItem}
+          onRemoveItem={removeItem}
+          onUpdateItem={updateItem}
+        />
+        
+        <ChallanAdditionalDetails form={form} />
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {editData ? "Update Delivery Challan" : "Create Delivery Challan"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+
+  if (isFullPage) {
+    return (
+      <ScrollArea className="h-[70vh] pr-4">
+        <FormContent />
+      </ScrollArea>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
@@ -143,29 +179,7 @@ export function CreateChallanDialog({
         </DialogHeader>
         
         <ScrollArea className="h-[70vh] pr-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <ChallanBasicDetails form={form} />
-              
-              <ChallanItemsSection 
-                items={items}
-                onAddItem={addItem}
-                onRemoveItem={removeItem}
-                onUpdateItem={updateItem}
-              />
-              
-              <ChallanAdditionalDetails form={form} />
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editData ? "Update Delivery Challan" : "Create Delivery Challan"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <FormContent />
         </ScrollArea>
       </DialogContent>
     </Dialog>

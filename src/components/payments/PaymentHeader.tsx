@@ -1,12 +1,23 @@
 
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface PaymentHeaderProps {
-  onAddPayment: () => void;
+  onAddPayment?: () => void;
 }
 
 const PaymentHeader = ({ onAddPayment }: PaymentHeaderProps) => {
+  const navigate = useNavigate();
+
+  const handleAddClick = () => {
+    if (onAddPayment) {
+      onAddPayment();
+    } else {
+      navigate("/payments/add");
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
@@ -16,7 +27,7 @@ const PaymentHeader = ({ onAddPayment }: PaymentHeaderProps) => {
         </p>
       </div>
       <Button
-        onClick={onAddPayment}
+        onClick={handleAddClick}
         className="self-start sm:self-auto"
       >
         <Plus className="mr-2 h-4 w-4" /> New Payment

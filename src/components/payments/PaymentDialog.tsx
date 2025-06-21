@@ -18,6 +18,7 @@ interface PaymentDialogProps {
   onCancel: () => void;
   clients: Client[];
   pendingSalePayment?: Sale | null;
+  isFullPage?: boolean;
 }
 
 const PaymentDialog = ({
@@ -26,7 +27,8 @@ const PaymentDialog = ({
   onSubmit,
   onCancel,
   clients,
-  pendingSalePayment
+  pendingSalePayment,
+  isFullPage = false
 }: PaymentDialogProps) => {
   const { currentUser } = useAppStore();
   
@@ -139,6 +141,70 @@ const PaymentDialog = ({
     }
   }, [pendingSalePayment]);
 
+  const FormContent = () => (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {validationErrors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <ul className="text-sm text-red-600">
+            {validationErrors.map((error, index) => (
+              <li key={index}>• {error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Client Section */}
+      <PaymentClientSection 
+        clientName={formData.clientName} 
+        clients={clients} 
+        onChange={handleChange} 
+        error={errors.clientName} 
+      />
+      
+      {/* GST Section - positioned between client and description */}
+      <GSTLookupSection
+        gstNumber={formData.gstNumber}
+        companyName={formData.companyName}
+        address={formData.address}
+        city={formData.city}
+        state={formData.state}
+        pincode={formData.pincode}
+        onChange={handleChange}
+        onGSTDetailsUpdate={handleGSTDetailsUpdate}
+        error={errors.gstNumber}
+        isLoading={isGSTLoading}
+        setIsLoading={setIsGSTLoading}
+      />
+      
+      {/* Payment Details Section */}
+      <PaymentDetailsSection 
+        description={formData.description} 
+        amount={formData.amount} 
+        method={formData.method} 
+        status={formData.status} 
+        onChange={handleChange} 
+        errors={{
+          description: errors.description,
+          amount: errors.amount,
+          method: errors.method
+        }} 
+      />
+      
+      <div className="flex justify-end space-x-3 pt-6">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Adding..." : "Add Payment"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (isFullPage) {
+    return <FormContent />;
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -146,63 +212,7 @@ const PaymentDialog = ({
           <DialogTitle>Add New Payment</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {validationErrors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <ul className="text-sm text-red-600">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>• {error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Client Section */}
-          <PaymentClientSection 
-            clientName={formData.clientName} 
-            clients={clients} 
-            onChange={handleChange} 
-            error={errors.clientName} 
-          />
-          
-          {/* GST Section - positioned between client and description */}
-          <GSTLookupSection
-            gstNumber={formData.gstNumber}
-            companyName={formData.companyName}
-            address={formData.address}
-            city={formData.city}
-            state={formData.state}
-            pincode={formData.pincode}
-            onChange={handleChange}
-            onGSTDetailsUpdate={handleGSTDetailsUpdate}
-            error={errors.gstNumber}
-            isLoading={isGSTLoading}
-            setIsLoading={setIsGSTLoading}
-          />
-          
-          {/* Payment Details Section */}
-          <PaymentDetailsSection 
-            description={formData.description} 
-            amount={formData.amount} 
-            method={formData.method} 
-            status={formData.status} 
-            onChange={handleChange} 
-            errors={{
-              description: errors.description,
-              amount: errors.amount,
-              method: errors.method
-            }} 
-          />
-          
-          <div className="flex justify-end space-x-3 pt-6">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Payment"}
-            </Button>
-          </div>
-        </form>
+        <FormContent />
       </DialogContent>
     </Dialog>
   );

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MoreHorizontal, Trash2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,28 +7,45 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Payment } from "@/types";
 import { PaymentReceiptPrint } from "./PaymentReceiptPrint";
+import { useNavigate } from "react-router-dom";
+
 interface PaymentTableProps {
   payments: Payment[];
   onDeletePayment: (id: number) => void;
-  onAddPayment: () => void;
+  onAddPayment?: () => void;
 }
+
 const PaymentTable = ({
   payments,
   onDeletePayment,
   onAddPayment
 }: PaymentTableProps) => {
+  const navigate = useNavigate();
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+
   const handlePrintPayment = (payment: Payment) => {
     setSelectedPayment(payment);
     setIsPrintDialogOpen(true);
   };
+
+  const handleAddClick = () => {
+    if (onAddPayment) {
+      onAddPayment();
+    } else {
+      navigate("/payments/add");
+    }
+  };
+
   if (payments.length === 0) {
-    return <div className="border border-gray-200 rounded-lg p-8 text-center">
+    return (
+      <div className="border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-gray-500 mb-4">No payments recorded yet</p>
-        <Button onClick={onAddPayment}>Add First Payment</Button>
-      </div>;
+        <Button onClick={handleAddClick}>Add First Payment</Button>
+      </div>
+    );
   }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -40,7 +58,9 @@ const PaymentTable = ({
         return "bg-gray-100 text-gray-800";
     }
   };
-  return <>
+
+  return (
+    <>
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
@@ -55,7 +75,8 @@ const PaymentTable = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {payments.map(payment => <TableRow key={payment.id}>
+            {payments.map(payment => (
+              <TableRow key={payment.id}>
                 <TableCell>
                   {new Date(payment.date).toLocaleDateString()}
                 </TableCell>
@@ -80,16 +101,24 @@ const PaymentTable = ({
                         <Printer className="mr-2 h-4 w-4" />
                         Print Receipt
                       </DropdownMenuItem>
-                      
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
-              </TableRow>)}
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
 
-      {selectedPayment && <PaymentReceiptPrint open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen} payment={selectedPayment} />}
-    </>;
+      {selectedPayment && (
+        <PaymentReceiptPrint 
+          open={isPrintDialogOpen} 
+          onOpenChange={setIsPrintDialogOpen} 
+          payment={selectedPayment} 
+        />
+      )}
+    </>
+  );
 };
+
 export default PaymentTable;
