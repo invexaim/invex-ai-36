@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -16,7 +15,8 @@ import {
   BarChart3,
   FileText,
   Truck,
-  Calendar
+  Calendar,
+  ShoppingBag
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -34,6 +34,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard", href: "/dashboard" },
     { icon: <Package className="w-5 h-5" />, label: "Products", href: "/products" },
     { icon: <ShoppingCart className="w-5 h-5" />, label: "Sales", href: "/sales" },
+    { icon: <ShoppingBag className="w-5 h-5" />, label: "Purchases", href: "/purchases" },
     { icon: <History className="w-5 h-5" />, label: "History", href: "/history" },
     { icon: <CreditCard className="w-5 h-5" />, label: "Payments", href: "/payments" },
     { icon: <Users className="w-5 h-5" />, label: "Clients", href: "/clients" },

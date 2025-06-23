@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -7,6 +6,7 @@ import Products from "@/pages/Products";
 import AddProduct from "@/pages/AddProduct";
 import Sales from "@/pages/Sales";
 import RecordSale from "@/pages/RecordSale";
+import Purchases from "@/pages/Purchases";
 import History from "@/pages/History";
 import Payments from "@/pages/Payments";
 import AddPayment from "@/pages/AddPayment";
@@ -23,6 +23,10 @@ import Auth from "@/pages/Auth";
 import Settings from "@/pages/Settings";
 import Expiry from "@/pages/Expiry";
 import AddExpiry from "@/pages/AddExpiry";
+import PurchaseOrders from "@/pages/PurchaseOrders";
+import PurchaseReturns from "@/pages/PurchaseReturns";
+import SupplierManagement from "@/pages/SupplierManagement";
+import PurchaseList from "@/pages/PurchaseList";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -139,6 +143,46 @@ export const Router = () => {
         <Route path="/sales/record" element={
           <ProtectedRoute>
             <RecordSale />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/purchases" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Purchases />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/purchases/orders" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PurchaseOrders />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/purchases/returns" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PurchaseReturns />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/purchases/suppliers" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SupplierManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/purchases/list" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PurchaseList />
+            </MainLayout>
           </ProtectedRoute>
         } />
         
