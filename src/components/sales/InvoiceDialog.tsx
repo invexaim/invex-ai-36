@@ -12,9 +12,9 @@ import {
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EstimateFormHeader } from "@/components/estimates/form/EstimateFormHeader";
+import { InvoiceFormHeader } from "./form/InvoiceFormHeader";
 import { EstimateItemsSection } from "@/components/estimates/form/EstimateItemsSection";
-import { EstimateNotesSection } from "@/components/estimates/form/EstimateNotesSection";
+import { InvoiceNotesSection } from "./form/InvoiceNotesSection";
 
 interface InvoiceDialogProps {
   open: boolean;
@@ -127,7 +127,7 @@ export function InvoiceDialog({
         <ScrollArea className="h-[70vh] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <EstimateFormHeader control={form.control} />
+              <InvoiceFormHeader control={form.control} />
               
               <EstimateItemsSection 
                 items={items}
@@ -157,7 +157,7 @@ export function InvoiceDialog({
                 </div>
               </div>
               
-              <EstimateNotesSection control={form.control} />
+              <InvoiceNotesSection control={form.control} />
               
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
