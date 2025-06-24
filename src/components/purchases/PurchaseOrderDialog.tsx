@@ -21,6 +21,7 @@ interface PurchaseOrderDialogProps {
   onOpenChange: (open: boolean) => void;
   onPurchaseOrderCreated?: (purchaseOrderData: any) => void;
   editingPurchaseOrder?: any;
+  isFullScreen?: boolean;
 }
 
 interface PurchaseOrderForm {
@@ -47,7 +48,8 @@ export function PurchaseOrderDialog({
   open,
   onOpenChange,
   onPurchaseOrderCreated,
-  editingPurchaseOrder
+  editingPurchaseOrder,
+  isFullScreen = false
 }: PurchaseOrderDialogProps) {
   const [items, setItems] = useState<PurchaseOrderItem[]>([
     { id: 1, name: "", quantity: 1, price: 0, gstRate: 18, total: 0 },
@@ -101,6 +103,11 @@ export function PurchaseOrderDialog({
       createdAt: editingPurchaseOrder?.createdAt || new Date().toISOString(),
     };
     
+    // Save to localStorage for purchase history
+    const existingPurchases = JSON.parse(localStorage.getItem('purchaseOrders') || '[]');
+    const updatedPurchases = [purchaseOrderData, ...existingPurchases];
+    localStorage.setItem('purchaseOrders', JSON.stringify(updatedPurchases));
+    
     console.log(editingPurchaseOrder ? "Updating purchase order:" : "Creating purchase order:", purchaseOrderData);
     toast.success(editingPurchaseOrder ? "Purchase order updated successfully" : "Purchase order created successfully");
     
@@ -112,6 +119,65 @@ export function PurchaseOrderDialog({
     form.reset();
     setItems([{ id: 1, name: "", quantity: 1, price: 0, gstRate: 18, total: 0 }]);
   };
+
+  if (isFullScreen) {
+    return (
+      <div className="w-full max-w-none">
+        <div className="p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold">
+              {editingPurchaseOrder ? "Edit Purchase Order" : "Create New Purchase Order"}
+            </h2>
+          </div>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <PurchaseOrderHeader control={form.control} />
+              
+              <PurchaseOrderItems 
+                items={items}
+                setItems={setItems}
+              />
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>₹{calculateSubtotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>GST:</span>
+                    <span>₹{calculateGST().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Discount:</span>
+                    <span>₹{form.watch("discount")?.toFixed(2) || "0.00"}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total:</span>
+                    <span>₹{calculateTotal().toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <PurchaseOrderNotes control={form.control} />
+              
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingPurchaseOrder ? "Update Purchase Order" : "Create Purchase Order"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
