@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -27,6 +28,10 @@ import PurchaseOrders from "@/pages/PurchaseOrders";
 import PurchaseReturns from "@/pages/PurchaseReturns";
 import SupplierManagement from "@/pages/SupplierManagement";
 import PurchaseList from "@/pages/PurchaseList";
+import SalesInvoices from "@/pages/SalesInvoices";
+import SalesReturns from "@/pages/SalesReturns";
+import SalesGST from "@/pages/SalesGST";
+import SalesDiscounts from "@/pages/SalesDiscounts";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface

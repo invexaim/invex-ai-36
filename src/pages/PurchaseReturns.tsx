@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Search, RotateCcw, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { PurchaseReturnDialog } from "@/components/purchases/PurchaseReturnDialog";
 
 interface PurchaseReturn {
   id: string;
@@ -21,12 +22,17 @@ interface PurchaseReturn {
 const PurchaseReturns = () => {
   const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
 
   const filteredReturns = purchaseReturns.filter((returnItem) =>
     returnItem.returnNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     returnItem.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     returnItem.purchaseOrderNo.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleReturnCreated = (returnData: any) => {
+    setPurchaseReturns(prev => [returnData, ...prev]);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,7 +62,7 @@ const PurchaseReturns = () => {
                 Track and manage all returns to suppliers
               </CardDescription>
             </div>
-            <Button>
+            <Button onClick={() => setIsReturnDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Return
             </Button>
@@ -86,7 +92,7 @@ const PurchaseReturns = () => {
                 }
               </p>
               {purchaseReturns.length === 0 && (
-                <Button>
+                <Button onClick={() => setIsReturnDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Return
                 </Button>
@@ -146,6 +152,12 @@ const PurchaseReturns = () => {
           )}
         </CardContent>
       </Card>
+
+      <PurchaseReturnDialog
+        open={isReturnDialogOpen}
+        onOpenChange={setIsReturnDialogOpen}
+        onReturnCreated={handleReturnCreated}
+      />
     </div>
   );
 };
