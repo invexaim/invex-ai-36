@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -148,6 +147,31 @@ export const Router = () => {
         <Route path="/sales/record" element={
           <ProtectedRoute>
             <RecordSale />
+          </ProtectedRoute>
+        } />
+
+        {/* New Sales Routes */}
+        <Route path="/sales/invoices" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SalesInvoices />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/sales/invoices/new" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SalesInvoices />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/sales/returns" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <SalesReturns />
+            </MainLayout>
           </ProtectedRoute>
         } />
         

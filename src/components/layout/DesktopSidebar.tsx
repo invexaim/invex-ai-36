@@ -2,18 +2,30 @@
 import { Moon, Sun, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarItem from "./SidebarItem";
+import DropdownSidebarItem from "./DropdownSidebarItem";
 import { SidebarItemType } from "./types";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import AuthService from "@/services/authService";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
+
+interface DropdownMenuItemType {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+}
+
+interface DropdownSidebarItemType {
+  icon: React.ReactNode;
+  label: string;
+  items: DropdownMenuItemType[];
+  href?: string;
+}
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
+  dropdownItems: DropdownSidebarItemType[];
   currentPath: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -22,6 +34,7 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar = ({
   sidebarItems,
+  dropdownItems,
   currentPath,
   theme,
   toggleTheme,
@@ -33,8 +46,6 @@ const DesktopSidebar = ({
     companyName,
     setCompanyName
   } = useAppStore();
-  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
-  const [tempCompanyName, setTempCompanyName] = useState(companyName);
 
   const handleLogout = async () => {
     try {
@@ -59,11 +70,6 @@ const DesktopSidebar = ({
     }
   };
 
-  const handleSaveCompanyName = () => {
-    setCompanyName(tempCompanyName);
-    setIsCompanyDialogOpen(false);
-  };
-
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border hidden md:flex flex-col">
       <div className="px-4 py-6 border-b">
@@ -77,6 +83,16 @@ const DesktopSidebar = ({
             label={item.label} 
             href={item.href} 
             isActive={currentPath === item.href} 
+          />
+        ))}
+        
+        {dropdownItems.map(dropdownItem => (
+          <DropdownSidebarItem
+            key={dropdownItem.label}
+            icon={dropdownItem.icon}
+            label={dropdownItem.label}
+            items={dropdownItem.items}
+            isActive={dropdownItem.href ? currentPath === dropdownItem.href : false}
           />
         ))}
         

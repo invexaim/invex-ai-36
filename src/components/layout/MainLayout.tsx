@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -16,7 +17,11 @@ import {
   FileText,
   Truck,
   Calendar,
-  ShoppingBag
+  ShoppingBag,
+  Plus,
+  List,
+  RotateCcw,
+  UsersIcon
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -33,15 +38,36 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const sidebarItems: SidebarItemType[] = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard", href: "/dashboard" },
     { icon: <Package className="w-5 h-5" />, label: "Products", href: "/products" },
-    { icon: <ShoppingCart className="w-5 h-5" />, label: "Sales", href: "/sales" },
-    { icon: <ShoppingBag className="w-5 h-5" />, label: "Purchases", href: "/purchases" },
-    { icon: <History className="w-5 h-5" />, label: "History", href: "/history" },
+    { icon: <History className="w-5 h-5" />, label: "History", href: "/history" },  
     { icon: <CreditCard className="w-5 h-5" />, label: "Payments", href: "/payments" },
     { icon: <Users className="w-5 h-5" />, label: "Clients", href: "/clients" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Stock", href: "/stock" },
     { icon: <FileText className="w-5 h-5" />, label: "Estimates", href: "/estimates" },
     { icon: <Truck className="w-5 h-5" />, label: "Delivery", href: "/delivery" },
     { icon: <Calendar className="w-5 h-5" />, label: "Expiry", href: "/expiry" },
+  ];
+
+  const dropdownItems = [
+    {
+      icon: <ShoppingCart className="w-5 h-5" />,
+      label: "Sales",
+      items: [
+        { icon: <Plus className="w-4 h-4" />, label: "New Invoice", href: "/sales/invoices/new" },
+        { icon: <List className="w-4 h-4" />, label: "Invoice List", href: "/sales/invoices" },
+        { icon: <RotateCcw className="w-4 h-4" />, label: "Sales Returns", href: "/sales/returns" },
+        { icon: <UsersIcon className="w-4 h-4" />, label: "Customers", href: "/clients" },
+      ]
+    },
+    {
+      icon: <ShoppingBag className="w-5 h-5" />,
+      label: "Purchases", 
+      items: [
+        { icon: <Plus className="w-4 h-4" />, label: "New Purchase", href: "/purchases/orders" },
+        { icon: <List className="w-4 h-4" />, label: "Purchase List", href: "/purchases/list" },
+        { icon: <RotateCcw className="w-4 h-4" />, label: "Purchase Returns", href: "/purchases/returns" },
+        { icon: <UsersIcon className="w-4 h-4" />, label: "Supplier Management", href: "/purchases/suppliers" },
+      ]
+    }
   ];
 
   useEffect(() => {
@@ -69,6 +95,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="min-h-screen bg-background text-foreground">
       <DesktopSidebar
         sidebarItems={sidebarItems}
+        dropdownItems={dropdownItems}
         currentPath={location.pathname}
         theme={theme as 'light' | 'dark'}
         toggleTheme={toggleTheme}
@@ -88,6 +115,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
       <MobileNavigation
         sidebarItems={sidebarItems}
+        dropdownItems={dropdownItems}
         currentPath={location.pathname}
         theme={theme as 'light' | 'dark'}
         toggleTheme={toggleTheme}

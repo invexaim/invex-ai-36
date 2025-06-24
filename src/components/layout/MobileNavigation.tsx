@@ -3,6 +3,7 @@ import { Moon, Sun, Menu, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SidebarItem from "./SidebarItem";
+import DropdownSidebarItem from "./DropdownSidebarItem";
 import UserProfile from "./UserProfile";
 import { SidebarItemType } from "./types";
 import { useState } from "react";
@@ -10,18 +11,23 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import useAppStore from "@/store/appStore";
 import AuthService from "@/services/authService";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+interface DropdownMenuItemType {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+}
+
+interface DropdownSidebarItemType {
+  icon: React.ReactNode;
+  label: string;
+  items: DropdownMenuItemType[];
+  href?: string;
+}
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
+  dropdownItems: DropdownSidebarItemType[];
   currentPath: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -30,6 +36,7 @@ interface MobileNavigationProps {
 
 const MobileNavigation = ({
   sidebarItems,
+  dropdownItems,
   currentPath,
   theme,
   toggleTheme,
@@ -39,8 +46,6 @@ const MobileNavigation = ({
   const navigate = useNavigate();
   const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
   const { companyName, setCompanyName } = useAppStore();
-  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
-  const [tempCompanyName, setTempCompanyName] = useState(companyName);
   
   const handleItemClick = () => {
     setOpen(false);
@@ -71,11 +76,6 @@ const MobileNavigation = ({
       toast.error("Failed to log out. Please try again.");
     }
   };
-
-  const handleSaveCompanyName = () => {
-    setCompanyName(tempCompanyName);
-    setIsCompanyDialogOpen(false);
-  };
   
   return (
     <div className="fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between z-10 md:hidden px-4 bg-background">
@@ -95,6 +95,16 @@ const MobileNavigation = ({
                 <div key={item.href} onClick={handleItemClick}>
                   <SidebarItem icon={item.icon} label={item.label} href={item.href} isActive={currentPath === item.href} />
                 </div>
+              ))}
+              
+              {dropdownItems.map(dropdownItem => (
+                <DropdownSidebarItem
+                  key={dropdownItem.label}
+                  icon={dropdownItem.icon}
+                  label={dropdownItem.label}
+                  items={dropdownItem.items}
+                  isActive={dropdownItem.href ? currentPath === dropdownItem.href : false}
+                />
               ))}
               
               {/* Settings navigation item */}
