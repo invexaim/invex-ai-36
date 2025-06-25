@@ -9,6 +9,7 @@ import { CoreRoutes } from "./routes/CoreRoutes";
 import { SalesRoutes } from "./routes/SalesRoutes";
 import { PurchaseRoutes } from "./routes/PurchaseRoutes";
 import { ExpenseRoutes } from "./routes/ExpenseRoutes";
+import { ReportRoutes } from "./routes/ReportRoutes";
 import { StockRoutes } from "./routes/StockRoutes";
 import { ClientRoutes } from "./routes/ClientRoutes";
 import { PaymentRoutes } from "./routes/PaymentRoutes";
@@ -53,6 +54,7 @@ export const Router = () => {
         {SalesRoutes()}
         {PurchaseRoutes()}
         {ExpenseRoutes()}
+        {ReportRoutes()}
         {StockRoutes()}
         {ClientRoutes()}
         {PaymentRoutes()}

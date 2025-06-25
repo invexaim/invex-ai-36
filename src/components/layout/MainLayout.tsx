@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -27,7 +28,11 @@ import {
   CheckCircle,
   Receipt,
   FolderOpen,
-  Tags
+  Tags,
+  FileBarChart,
+  TrendingUp,
+  DollarSign,
+  Building
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -81,6 +86,22 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         { icon: <List className="w-4 h-4" />, label: "Expense List", href: "/expense/list" },
         { icon: <Tags className="w-4 h-4" />, label: "Expense Category", href: "/expense/category" },
         { icon: <FolderOpen className="w-4 h-4" />, label: "Category List", href: "/expense/category-list" },
+      ]
+    },
+    {
+      icon: <FileBarChart className="w-5 h-5" />,
+      label: "Reports",
+      items: [
+        { icon: <TrendingUp className="w-4 h-4" />, label: "Daily Sales", href: "/reports/daily-sales" },
+        { icon: <BarChart3 className="w-4 h-4" />, label: "Monthly Sales", href: "/reports/monthly-sales" },
+        { icon: <FileText className="w-4 h-4" />, label: "Yearly Sales", href: "/reports/yearly-sales" },
+        { icon: <RotateCcw className="w-4 h-4" />, label: "Sales Returns", href: "/reports/sales-returns" },
+        { icon: <ShoppingBag className="w-4 h-4" />, label: "Purchase Returns", href: "/reports/purchase-returns" },
+        { icon: <Package className="w-4 h-4" />, label: "Stock Reports", href: "/reports/stock" },
+        { icon: <DollarSign className="w-4 h-4" />, label: "Profit & Loss", href: "/reports/profit-loss" },
+        { icon: <Receipt className="w-4 h-4" />, label: "GST Reports", href: "/reports/gst" },
+        { icon: <Building className="w-4 h-4" />, label: "Supplier Reports", href: "/reports/suppliers" },
+        { icon: <Tags className="w-4 h-4" />, label: "Expense Reports", href: "/reports/expenses" },
       ]
     },
     {
