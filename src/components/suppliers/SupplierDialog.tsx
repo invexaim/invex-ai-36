@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -19,6 +18,7 @@ interface SupplierDialogProps {
   onOpenChange: (open: boolean) => void;
   onSupplierCreated?: (supplierData: any) => void;
   editingSupplier?: any;
+  isFullScreen?: boolean;
 }
 
 interface SupplierForm {
@@ -34,7 +34,8 @@ export function SupplierDialog({
   open,
   onOpenChange,
   onSupplierCreated,
-  editingSupplier
+  editingSupplier,
+  isFullScreen = false
 }: SupplierDialogProps) {
   const form = useForm<SupplierForm>({
     defaultValues: {
@@ -70,7 +71,7 @@ export function SupplierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={isFullScreen ? "w-full h-full max-w-none max-h-none m-0 rounded-none" : "sm:max-w-[600px]"}>
         <DialogHeader>
           <DialogTitle>
             {editingSupplier ? "Edit Supplier" : "Add New Supplier"}

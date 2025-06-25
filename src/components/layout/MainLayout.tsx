@@ -21,7 +21,11 @@ import {
   Plus,
   List,
   RotateCcw,
-  UsersIcon
+  UsersIcon,
+  AlertTriangle,
+  AlertCircle,
+  Clock,
+  CheckCircle
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -41,7 +45,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { icon: <History className="w-5 h-5" />, label: "History", href: "/history" },  
     { icon: <CreditCard className="w-5 h-5" />, label: "Payments", href: "/payments" },
     { icon: <Users className="w-5 h-5" />, label: "Clients", href: "/clients" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Stock", href: "/stock" },
     { icon: <FileText className="w-5 h-5" />, label: "Estimates", href: "/estimates" },
     { icon: <Truck className="w-5 h-5" />, label: "Delivery", href: "/delivery" },
     { icon: <Calendar className="w-5 h-5" />, label: "Expiry", href: "/expiry" },
@@ -66,6 +69,17 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         { icon: <List className="w-4 h-4" />, label: "Purchase List", href: "/purchases/list" },
         { icon: <RotateCcw className="w-4 h-4" />, label: "Purchase Returns", href: "/purchases/returns" },
         { icon: <UsersIcon className="w-4 h-4" />, label: "Supplier Management", href: "/purchases/suppliers" },
+      ]
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "Stock",
+      items: [
+        { icon: <CheckCircle className="w-4 h-4" />, label: "In Stock", href: "/stock/in-stock" },
+        { icon: <AlertTriangle className="w-4 h-4" />, label: "Low Stock", href: "/stock/low-stock" },
+        { icon: <AlertCircle className="w-4 h-4" />, label: "Stock Out", href: "/stock/stock-out" },
+        { icon: <Clock className="w-4 h-4" />, label: "Short Expiry", href: "/stock/short-expiry" },
+        { icon: <AlertTriangle className="w-4 h-4" />, label: "Expiry", href: "/stock/expiry" },
       ]
     }
   ];

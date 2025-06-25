@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ReactNode } from "react";
 import MainLayout from "../layout/MainLayout";
@@ -31,6 +32,17 @@ import SalesInvoices from "@/pages/SalesInvoices";
 import SalesReturns from "@/pages/SalesReturns";
 import SalesGST from "@/pages/SalesGST";
 import SalesDiscounts from "@/pages/SalesDiscounts";
+import CreatePurchaseOrder from "@/pages/CreatePurchaseOrder";
+import CreatePurchaseReturn from "@/pages/CreatePurchaseReturn";
+import CreateSupplier from "@/pages/CreateSupplier";
+
+// Stock subpages
+import InStock from "@/pages/stock/InStock";
+import LowStock from "@/pages/stock/LowStock";
+import StockOut from "@/pages/stock/StockOut";
+import ShortExpiry from "@/pages/stock/ShortExpiry";
+import ExpiryStock from "@/pages/stock/Expiry";
+
 import { useAuthContext } from "@/contexts/AuthContext";
 
 // Define the ProtectedRoute props interface
@@ -191,6 +203,12 @@ export const Router = () => {
           </ProtectedRoute>
         } />
 
+        <Route path="/purchases/orders/create" element={
+          <ProtectedRoute>
+            <CreatePurchaseOrder />
+          </ProtectedRoute>
+        } />
+
         <Route path="/purchases/returns" element={
           <ProtectedRoute>
             <MainLayout>
@@ -199,11 +217,23 @@ export const Router = () => {
           </ProtectedRoute>
         } />
 
+        <Route path="/purchases/returns/create" element={
+          <ProtectedRoute>
+            <CreatePurchaseReturn />
+          </ProtectedRoute>
+        } />
+
         <Route path="/purchases/suppliers" element={
           <ProtectedRoute>
             <MainLayout>
               <SupplierManagement />
             </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/purchases/suppliers/create" element={
+          <ProtectedRoute>
+            <CreateSupplier />
           </ProtectedRoute>
         } />
 
@@ -251,10 +281,45 @@ export const Router = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="/stock" element={
+        {/* Stock Routes */}
+        <Route path="/stock" element={<Navigate to="/stock/in-stock" replace />} />
+        
+        <Route path="/stock/in-stock" element={
           <ProtectedRoute>
             <MainLayout>
-              <Stock />
+              <InStock />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/stock/low-stock" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <LowStock />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/stock/stock-out" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <StockOut />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/stock/short-expiry" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ShortExpiry />
+            </MainLayout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/stock/expiry" element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ExpiryStock />
             </MainLayout>
           </ProtectedRoute>
         } />
