@@ -19,6 +19,7 @@ interface PurchaseReturnDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onReturnCreated?: (returnData: any) => void;
+  isFullScreen?: boolean;
 }
 
 interface ReturnForm {
@@ -43,7 +44,8 @@ const returnReasons = [
 export function PurchaseReturnDialog({
   open,
   onOpenChange,
-  onReturnCreated
+  onReturnCreated,
+  isFullScreen = false
 }: PurchaseReturnDialogProps) {
   const form = useForm<ReturnForm>({
     defaultValues: {
@@ -79,7 +81,7 @@ export function PurchaseReturnDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={isFullScreen ? "w-full h-full max-w-none max-h-none m-0 rounded-none" : "sm:max-w-[600px]"}>
         <DialogHeader>
           <DialogTitle>Create Purchase Return</DialogTitle>
         </DialogHeader>
