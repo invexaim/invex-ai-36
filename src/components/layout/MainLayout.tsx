@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -25,7 +24,10 @@ import {
   AlertTriangle,
   AlertCircle,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Receipt,
+  FolderOpen,
+  Tags
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -69,6 +71,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         { icon: <List className="w-4 h-4" />, label: "Purchase List", href: "/purchases/list" },
         { icon: <RotateCcw className="w-4 h-4" />, label: "Purchase Returns", href: "/purchases/returns" },
         { icon: <UsersIcon className="w-4 h-4" />, label: "Supplier Management", href: "/purchases/suppliers" },
+      ]
+    },
+    {
+      icon: <Receipt className="w-5 h-5" />,
+      label: "Expense",
+      items: [
+        { icon: <Plus className="w-4 h-4" />, label: "Expense New", href: "/expense/new" },
+        { icon: <List className="w-4 h-4" />, label: "Expense List", href: "/expense/list" },
+        { icon: <Tags className="w-4 h-4" />, label: "Expense Category", href: "/expense/category" },
+        { icon: <FolderOpen className="w-4 h-4" />, label: "Category List", href: "/expense/category-list" },
       ]
     },
     {
