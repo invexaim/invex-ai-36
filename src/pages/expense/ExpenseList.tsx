@@ -57,7 +57,7 @@ const mockExpenses = [
 const ExpenseList = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
 
   const categories = [...new Set(mockExpenses.map(expense => expense.category))];
@@ -66,7 +66,7 @@ const ExpenseList = () => {
     const matchesSearch = expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          expense.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          expense.expenseNo.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || expense.category === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
     const matchesDate = !dateFilter || expense.date.includes(dateFilter);
     
     return matchesSearch && matchesCategory && matchesDate;
@@ -157,7 +157,7 @@ const ExpenseList = () => {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
@@ -233,7 +233,7 @@ const ExpenseList = () => {
               <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Expenses Found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || categoryFilter || dateFilter 
+                {searchQuery || categoryFilter !== "all" || dateFilter 
                   ? "No expenses match your search criteria." 
                   : "No expenses have been recorded yet."}
               </p>
