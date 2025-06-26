@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -14,6 +13,7 @@ import { StockRoutes } from "./routes/StockRoutes";
 import { ClientRoutes } from "./routes/ClientRoutes";
 import { PaymentRoutes } from "./routes/PaymentRoutes";
 import { DeliveryRoutes } from "./routes/DeliveryRoutes";
+import { SupportRoutes } from "./routes/SupportRoutes";
 
 export const Router = () => {
   let authContextValue;
@@ -59,6 +59,8 @@ export const Router = () => {
         {ClientRoutes()}
         {PaymentRoutes()}
         {DeliveryRoutes()}
+        
+        {SupportRoutes()}
         
         <Route path="*" element={<NotFound />} />
       </Routes>

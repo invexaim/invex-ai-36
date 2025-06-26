@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -32,7 +31,8 @@ import {
   FileBarChart,
   TrendingUp,
   DollarSign,
-  Building
+  Building,
+  MessageSquare
 } from "lucide-react";
 import useAppStore from "@/store/appStore";
 
@@ -113,6 +113,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         { icon: <AlertCircle className="w-4 h-4" />, label: "Stock Out", href: "/stock/stock-out" },
         { icon: <Clock className="w-4 h-4" />, label: "Short Expiry", href: "/stock/short-expiry" },
         { icon: <AlertTriangle className="w-4 h-4" />, label: "Expiry", href: "/stock/expiry" },
+      ]
+    },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "Support",
+      items: [
+        { icon: <AlertCircle className="w-4 h-4" />, label: "Complaint Raise", href: "/support/complaint-raise" },
+        { icon: <Clock className="w-4 h-4" />, label: "Complaint Status", href: "/support/complaint-status" },
+        { icon: <MessageSquare className="w-4 h-4" />, label: "Feedback", href: "/support/feedback" },
+        { icon: <Users className="w-4 h-4" />, label: "Customer Care", href: "/support/customer-care" },
       ]
     }
   ];

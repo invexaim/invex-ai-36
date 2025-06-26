@@ -1,4 +1,3 @@
-
 import { AppState } from './types';
 import { createPersistedStore } from './createStore';
 import { createStoreConfiguration } from './config/storeConfig';
@@ -36,6 +35,8 @@ const useAppStore = createPersistedStore<AppState>(
       ...slices.meetingSlice,
       // Expiry slice
       ...slices.expirySlice,
+      // Support slice
+      ...slices.supportSlice,
       // Store methods - these OVERRIDE any slice methods with same names
       ...storeMethods,
       // EXPLICITLY ensure recordSale is from storeMethods

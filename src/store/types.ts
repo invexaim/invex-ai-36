@@ -272,8 +272,9 @@ export interface CompanyState {
 }
 
 import { MeetingState } from './slices/meetingSlice';
+import { SupportState } from './slices/supportSlice';
 
-export interface AppState extends ProductState, ClientState, SaleState, PaymentState, UserState, CompanyState, MeetingState {
+export interface AppState extends ProductState, ClientState, SaleState, PaymentState, UserState, CompanyState, MeetingState, SupportState {
   // Expiry state
   productExpiries: ProductExpiry[];
   setProductExpiries: (expiries: ProductExpiry[]) => void;
