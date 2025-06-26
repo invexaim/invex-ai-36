@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import useAppStore from '@/store/appStore';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 const GSTReports = () => {
-  const { sales, purchases } = useAppStore();
+  const { sales } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [gstData, setGstData] = useState({
     collected: [],
@@ -26,50 +25,39 @@ const GSTReports = () => {
     const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
     const endDate = endOfMonth(startDate);
 
-    // Calculate GST collected from sales
+    // Calculate GST collected from sales using sale_date
     const periodSales = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.sale_date);
       return saleDate >= startDate && saleDate <= endDate;
     });
 
     const gstCollected = periodSales.map(sale => {
-      const baseAmount = sale.totalAmount / 1.18; // Assuming 18% GST
-      const gstAmount = sale.totalAmount - baseAmount;
+      const totalAmount = sale.selling_price * sale.quantity_sold;
+      const baseAmount = totalAmount / 1.18; // Assuming 18% GST
+      const gstAmount = totalAmount - baseAmount;
       return {
-        invoiceNumber: sale.invoiceNumber,
-        clientName: sale.clientName,
-        date: sale.date,
+        invoiceNumber: `INV-${sale.sale_id}`,
+        clientName: sale.clientName || 'Walk-in Customer',
+        date: sale.sale_date,
         baseAmount: baseAmount,
         gstAmount: gstAmount,
-        totalAmount: sale.totalAmount,
+        totalAmount: totalAmount,
         gstRate: 18
       };
     });
 
-    // Calculate GST paid on purchases (mock data)
-    const mockPurchases = [
+    // Mock GST paid data
+    const gstPaid = [
       {
         purchaseNumber: 'PUR-001',
         supplierName: 'ABC Suppliers',
         date: new Date().toISOString(),
+        baseAmount: 10000,
+        gstAmount: 1800,
         totalAmount: 11800,
         gstRate: 18
       }
     ];
-
-    const gstPaid = (purchases || mockPurchases).map(purchase => {
-      const baseAmount = purchase.totalAmount / 1.18;
-      const gstAmount = purchase.totalAmount - baseAmount;
-      return {
-        purchaseNumber: purchase.purchaseNumber || 'N/A',
-        supplierName: purchase.supplierName || 'Unknown',
-        date: purchase.date,
-        baseAmount: baseAmount,
-        gstAmount: gstAmount,
-        totalAmount: purchase.totalAmount,
-        gstRate: purchase.gstRate || 18
-      };
-    });
 
     const totalCollected = gstCollected.reduce((sum, item) => sum + item.gstAmount, 0);
     const totalPaid = gstPaid.reduce((sum, item) => sum + item.gstAmount, 0);
@@ -83,7 +71,7 @@ const GSTReports = () => {
         netPayable: totalCollected - totalPaid
       }
     });
-  }, [sales, purchases, selectedMonth]);
+  }, [sales, selectedMonth]);
 
   const collectedColumns = [
     {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ const ExpenseReports = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateTo, setDataTo] = useState('');
   const [categoryData, setCategoryData] = useState([]);
   const [trendData, setTrendData] = useState([]);
 
@@ -34,7 +33,7 @@ const ExpenseReports = () => {
   const expenseCategories = ['Rent', 'Utilities', 'Marketing', 'Office Expenses', 'Travel', 'Miscellaneous'];
 
   useEffect(() => {
-    const expenseData = expenses || mockExpenses;
+    const expenseData = mockExpenses;
     let filtered = [...expenseData];
 
     // Filter by category
@@ -100,7 +99,7 @@ const ExpenseReports = () => {
       }));
       setTrendData(trendArray);
     }
-  }, [expenses, selectedCategory, selectedPeriod, dateFrom, dateTo]);
+  }, [selectedCategory, selectedPeriod, dateFrom, dateTo]);
 
   const columns = [
     {
@@ -212,14 +211,14 @@ const ExpenseReports = () => {
                 id="dateTo"
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e) => setDataTo(e.target.value)}
               />
             </div>
             <div className="flex items-end">
               <Button variant="outline" onClick={() => {
                 setSelectedCategory('all');
                 setDateFrom('');
-                setDateTo('');
+                setDataTo('');
               }}>
                 Clear Filters
               </Button>

@@ -20,9 +20,9 @@ const YearlySales = () => {
     const startDate = startOfYear(new Date(year, 0, 1));
     const endDate = endOfYear(startDate);
 
-    // Filter sales by selected year
+    // Filter sales by selected year using sale_date
     const filteredSales = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.sale_date);
       return saleDate >= startDate && saleDate <= endDate;
     });
 
@@ -32,12 +32,12 @@ const YearlySales = () => {
     const months = eachMonthOfInterval({ start: startDate, end: endDate });
     const monthlyBreakdown = months.map(month => {
       const monthSales = filteredSales.filter(sale => {
-        const saleDate = new Date(sale.date);
+        const saleDate = new Date(sale.sale_date);
         return saleDate.getMonth() === month.getMonth();
       });
       return {
         month: format(month, 'MMM'),
-        sales: monthSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+        sales: monthSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0),
         count: monthSales.length
       };
     });
@@ -47,12 +47,12 @@ const YearlySales = () => {
     const prevYearStart = startOfYear(new Date(year - 1, 0, 1));
     const prevYearEnd = endOfYear(prevYearStart);
     const prevYearSales = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.sale_date);
       return saleDate >= prevYearStart && saleDate <= prevYearEnd;
     });
 
-    const currentYearTotal = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const prevYearTotal = prevYearSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const currentYearTotal = filteredSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
+    const prevYearTotal = prevYearSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
     const growthPercentage = prevYearTotal > 0 ? ((currentYearTotal - prevYearTotal) / prevYearTotal) * 100 : 0;
 
     setPreviousYearComparison({
@@ -62,12 +62,12 @@ const YearlySales = () => {
     });
   }, [sales, selectedYear]);
 
-  const totalSales = yearlyData.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const totalSales = yearlyData.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
   const totalInvoices = yearlyData.length;
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Month', 'Sales Amount', 'Invoice Count'],
+      ['Month', 'Sales Amount', 'Sales Count'],
       ...monthlyBreakdown.map(month => [
         month.month,
         month.sales,
@@ -83,7 +83,7 @@ const YearlySales = () => {
     a.click();
   };
 
-  const availableYears = Array.from(new Set(sales.map(sale => new Date(sale.date).getFullYear())))
+  const availableYears = Array.from(new Set(sales.map(sale => new Date(sale.sale_date).getFullYear())))
     .sort((a, b) => b - a);
 
   return (
@@ -127,7 +127,7 @@ const YearlySales = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl">{totalInvoices}</CardTitle>
-            <CardDescription>Total Invoices</CardDescription>
+            <CardDescription>Total Sales</CardDescription>
           </CardHeader>
         </Card>
 

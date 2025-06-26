@@ -21,30 +21,28 @@ const MonthlySales = () => {
     const startDate = startOfMonth(new Date(parseInt(year), parseInt(month) - 1));
     const endDate = endOfMonth(startDate);
 
-    // Filter sales by selected month
+    // Filter sales by selected month using sale_date
     const filteredSales = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.sale_date);
       return saleDate >= startDate && saleDate <= endDate;
     });
 
     setMonthlyData(filteredSales);
 
-    // Calculate top selling products
+    // Calculate top selling products based on product_id
     const productSales = {};
     filteredSales.forEach(sale => {
-      sale.items?.forEach(item => {
-        if (productSales[item.productId]) {
-          productSales[item.productId].quantity += item.quantity;
-          productSales[item.productId].revenue += item.quantity * item.price;
-        } else {
-          const product = products.find(p => p.id === item.productId);
-          productSales[item.productId] = {
-            name: product?.name || 'Unknown Product',
-            quantity: item.quantity,
-            revenue: item.quantity * item.price
-          };
-        }
-      });
+      if (productSales[sale.product_id]) {
+        productSales[sale.product_id].quantity += sale.quantity_sold;
+        productSales[sale.product_id].revenue += sale.quantity_sold * sale.selling_price;
+      } else {
+        const product = products.find(p => p.product_id === sale.product_id);
+        productSales[sale.product_id] = {
+          name: product?.product_name || 'Unknown Product',
+          quantity: sale.quantity_sold,
+          revenue: sale.quantity_sold * sale.selling_price
+        };
+      }
     });
 
     const topProductsArray = Object.values(productSales)
@@ -56,18 +54,18 @@ const MonthlySales = () => {
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     const trends = days.map(day => {
       const daySales = filteredSales.filter(sale => 
-        format(new Date(sale.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+        format(new Date(sale.sale_date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
       );
       return {
         date: format(day, 'dd'),
-        sales: daySales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+        sales: daySales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0),
         count: daySales.length
       };
     });
     setDailyTrends(trends);
   }, [sales, products, selectedMonth]);
 
-  const totalSales = monthlyData.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const totalSales = monthlyData.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
   const totalInvoices = monthlyData.length;
 
   const columns = [
@@ -151,7 +149,7 @@ const MonthlySales = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl">{totalInvoices}</CardTitle>
-            <CardDescription>Total Invoices</CardDescription>
+            <CardDescription>Total Sales</CardDescription>
           </CardHeader>
         </Card>
 

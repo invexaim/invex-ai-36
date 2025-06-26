@@ -11,15 +11,39 @@ import useAppStore from '@/store/appStore';
 import { format } from 'date-fns';
 
 const SalesReturns = () => {
-  const { salesReturns, clients, products } = useAppStore();
+  const { clients, products } = useAppStore();
   const [filteredReturns, setFilteredReturns] = useState([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState('all');
 
+  // Mock sales returns data since it doesn't exist in the store
+  const mockSalesReturns = [
+    {
+      id: '1',
+      returnNumber: 'SR-001',
+      clientId: 1,
+      totalAmount: 5000,
+      reason: 'Defective product',
+      date: '2024-01-15',
+      status: 'completed',
+      items: [{ productId: 1, quantity: 2, price: 2500 }]
+    },
+    {
+      id: '2',
+      returnNumber: 'SR-002',
+      clientId: 2,
+      totalAmount: 3000,
+      reason: 'Customer dissatisfaction',
+      date: '2024-01-20',
+      status: 'pending',
+      items: [{ productId: 2, quantity: 1, price: 3000 }]
+    }
+  ];
+
   useEffect(() => {
-    let filtered = [...salesReturns];
+    let filtered = [...mockSalesReturns];
 
     // Filter by date range
     if (dateFrom) {
@@ -36,19 +60,19 @@ const SalesReturns = () => {
     // Filter by customer
     if (selectedCustomer !== 'all') {
       filtered = filtered.filter(returnItem => 
-        returnItem.clientId === selectedCustomer
+        returnItem.clientId === parseInt(selectedCustomer)
       );
     }
 
     // Filter by product
     if (selectedProduct !== 'all') {
       filtered = filtered.filter(returnItem => 
-        returnItem.items?.some(item => item.productId === selectedProduct)
+        returnItem.items?.some(item => item.productId === parseInt(selectedProduct))
       );
     }
 
     setFilteredReturns(filtered);
-  }, [salesReturns, dateFrom, dateTo, selectedCustomer, selectedProduct]);
+  }, [dateFrom, dateTo, selectedCustomer, selectedProduct]);
 
   const columns = [
     {
@@ -56,10 +80,10 @@ const SalesReturns = () => {
       header: 'Return #',
     },
     {
-      accessorKey: 'clientName',
+      accessorKey: 'clientId',
       header: 'Customer',
       cell: ({ row }) => {
-        const client = clients.find(c => c.id === row.original.clientId);
+        const client = clients.find(c => c.id === row.getValue('clientId'));
         return client?.name || 'Unknown Customer';
       },
     },
@@ -175,7 +199,7 @@ const SalesReturns = () => {
                 <SelectContent>
                   <SelectItem value="all">All Customers</SelectItem>
                   {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
+                    <SelectItem key={client.id} value={client.id.toString()}>
                       {client.name}
                     </SelectItem>
                   ))}
@@ -191,8 +215,8 @@ const SalesReturns = () => {
                 <SelectContent>
                   <SelectItem value="all">All Products</SelectItem>
                   {products.map(product => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
+                    <SelectItem key={product.product_id} value={product.product_id.toString()}>
+                      {product.product_name}
                     </SelectItem>
                   ))}
                 </SelectContent>

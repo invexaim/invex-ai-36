@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Download, Building, TrendingUp } from 'lucide-react';
 import useAppStore from '@/store/appStore';
 
 const SupplierReports = () => {
-  const { purchases, payments, purchaseReturns } = useAppStore();
+  const { payments } = useAppStore();
   const [selectedSupplier, setSelectedSupplier] = useState('all');
   const [supplierData, setSupplierData] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -21,7 +20,7 @@ const SupplierReports = () => {
     { id: 'sup3', name: 'DEF Enterprises', contact: '9876543212', email: 'def@enterprises.com' }
   ];
 
-  // Mock purchase and payment data
+  // Mock purchase data
   const mockPurchases = [
     { id: '1', supplierId: 'sup1', amount: 50000, date: '2024-01-15', status: 'completed' },
     { id: '2', supplierId: 'sup2', amount: 30000, date: '2024-01-20', status: 'completed' },
@@ -29,8 +28,8 @@ const SupplierReports = () => {
   ];
 
   const mockPayments = [
-    { id: '1', supplierId: 'sup1', amount: 45000, date: '2024-01-20', type: 'purchase_payment' },
-    { id: '2', supplierId: 'sup2', amount: 30000, date: '2024-01-25', type: 'purchase_payment' }
+    { id: '1', supplierId: 'sup1', amount: 45000, date: '2024-01-20' },
+    { id: '2', supplierId: 'sup2', amount: 30000, date: '2024-01-25' }
   ];
 
   const mockReturns = [
@@ -38,19 +37,15 @@ const SupplierReports = () => {
   ];
 
   useEffect(() => {
-    const purchaseData = purchases || mockPurchases;
-    const paymentData = payments?.filter(p => p.type === 'purchase_payment') || mockPayments;
-    const returnData = purchaseReturns || mockReturns;
-
     let suppliers = mockSuppliers;
     if (selectedSupplier !== 'all') {
       suppliers = suppliers.filter(supplier => supplier.id === selectedSupplier);
     }
 
     const supplierAnalysis = suppliers.map(supplier => {
-      const supplierPurchases = purchaseData.filter(p => p.supplierId === supplier.id);
-      const supplierPayments = paymentData.filter(p => p.supplierId === supplier.id);
-      const supplierReturns = returnData.filter(r => r.supplierId === supplier.id);
+      const supplierPurchases = mockPurchases.filter(p => p.supplierId === supplier.id);
+      const supplierPayments = mockPayments.filter(p => p.supplierId === supplier.id);
+      const supplierReturns = mockReturns.filter(r => r.supplierId === supplier.id);
 
       const totalPurchases = supplierPurchases.reduce((sum, p) => sum + p.amount, 0);
       const totalPayments = supplierPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -83,7 +78,7 @@ const SupplierReports = () => {
       purchases: supplier.totalPurchases,
       payments: supplier.totalPayments
     })));
-  }, [purchases, payments, purchaseReturns, selectedSupplier]);
+  }, [payments, selectedSupplier]);
 
   const columns = [
     {

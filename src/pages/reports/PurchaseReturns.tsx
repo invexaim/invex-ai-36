@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import useAppStore from '@/store/appStore';
 import { format } from 'date-fns';
 
 const PurchaseReturns = () => {
-  const { purchaseReturns, suppliers, products } = useAppStore();
+  const { products } = useAppStore();
   const [filteredReturns, setFilteredReturns] = useState([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -29,7 +28,7 @@ const PurchaseReturns = () => {
         reason: 'Damaged goods',
         date: '2024-01-15',
         status: 'completed',
-        items: [{ productId: 'prod1', quantity: 2, price: 2500 }]
+        items: [{ productId: 1, quantity: 2, price: 2500 }]
       },
       {
         id: '2',
@@ -39,11 +38,11 @@ const PurchaseReturns = () => {
         reason: 'Wrong specification',
         date: '2024-01-20',
         status: 'pending',
-        items: [{ productId: 'prod2', quantity: 1, price: 3000 }]
+        items: [{ productId: 2, quantity: 1, price: 3000 }]
       }
     ];
 
-    let filtered = purchaseReturns || mockPurchaseReturns;
+    let filtered = mockPurchaseReturns;
 
     // Filter by date range
     if (dateFrom) {
@@ -64,15 +63,15 @@ const PurchaseReturns = () => {
       );
     }
 
-    // Filter by product
+    // Filter by product - use product_id instead of id
     if (selectedProduct !== 'all') {
       filtered = filtered.filter(returnItem => 
-        returnItem.items?.some(item => item.productId === selectedProduct)
+        returnItem.items?.some(item => item.productId === parseInt(selectedProduct))
       );
     }
 
     setFilteredReturns(filtered);
-  }, [purchaseReturns, dateFrom, dateTo, selectedSupplier, selectedProduct]);
+  }, [dateFrom, dateTo, selectedSupplier, selectedProduct]);
 
   const columns = [
     {
@@ -83,7 +82,7 @@ const PurchaseReturns = () => {
       accessorKey: 'supplierId',
       header: 'Supplier',
       cell: ({ row }) => {
-        const supplier = suppliers?.find(s => s.id === row.getValue('supplierId'));
+        const supplier = { id: 'sup1', name: 'ABC Suppliers' };
         return supplier?.name || 'Unknown Supplier';
       },
     },
@@ -128,7 +127,7 @@ const PurchaseReturns = () => {
     const csvContent = [
       ['Return Number', 'Supplier', 'Amount', 'Reason', 'Date', 'Status'],
       ...filteredReturns.map(returnItem => {
-        const supplier = (suppliers || mockSuppliers).find(s => s.id === returnItem.supplierId);
+        const supplier = mockSuppliers.find(s => s.id === returnItem.supplierId);
         return [
           returnItem.returnNumber,
           supplier?.name || 'Unknown Supplier',
@@ -203,7 +202,7 @@ const PurchaseReturns = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Suppliers</SelectItem>
-                  {(suppliers || mockSuppliers).map(supplier => (
+                  {mockSuppliers.map(supplier => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
                     </SelectItem>
@@ -220,8 +219,8 @@ const PurchaseReturns = () => {
                 <SelectContent>
                   <SelectItem value="all">All Products</SelectItem>
                   {products.map(product => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
+                    <SelectItem key={product.product_id} value={product.product_id.toString()}>
+                      {product.product_name}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -1,4 +1,3 @@
-
 export interface Product {
   product_id: number;
   product_name: string;
@@ -284,6 +283,13 @@ export interface AppState extends ProductState, ClientState, SaleState, PaymentS
   loadProductExpiries: () => Promise<void>;
   getExpiringProducts: (daysAhead?: number) => ProductExpiry[];
   getExpiredProducts: () => ProductExpiry[];
+  
+  // Additional properties for reports
+  expenses?: any[];
+  purchases?: any[];
+  purchaseReturns?: any[];
+  salesReturns?: any[];
+  suppliers?: any[];
 }
 
 // Add this helper function to check if a value is a valid user data row

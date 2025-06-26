@@ -18,50 +18,52 @@ const DailySales = () => {
   const [totalInvoices, setTotalInvoices] = useState(0);
 
   useEffect(() => {
-    // Filter sales by selected date
+    // Filter sales by selected date - using sale_date instead of date
     const filteredSales = sales.filter(sale => 
-      format(new Date(sale.date), 'yyyy-MM-dd') === selectedDate
+      format(new Date(sale.sale_date), 'yyyy-MM-dd') === selectedDate
     );
 
     setDailyData(filteredSales);
-    setTotalSales(filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0));
+    // Calculate total using selling_price * quantity_sold instead of totalAmount
+    setTotalSales(filteredSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0));
     setTotalInvoices(filteredSales.length);
   }, [sales, selectedDate]);
 
   const columns = [
     {
-      accessorKey: 'invoiceNumber',
-      header: 'Invoice #',
+      accessorKey: 'sale_id',
+      header: 'Sale ID',
     },
     {
       accessorKey: 'clientName',
       header: 'Customer',
+      cell: ({ row }) => row.original.clientName || 'Walk-in Customer',
     },
     {
-      accessorKey: 'totalAmount',
+      accessorKey: 'selling_price',
       header: 'Amount',
-      cell: ({ row }) => `₹${row.getValue('totalAmount').toLocaleString()}`,
+      cell: ({ row }) => `₹${(row.getValue('selling_price') * row.original.quantity_sold).toLocaleString()}`,
     },
     {
-      accessorKey: 'date',
+      accessorKey: 'sale_date',
       header: 'Time',
-      cell: ({ row }) => format(new Date(row.getValue('date')), 'HH:mm'),
+      cell: ({ row }) => format(new Date(row.getValue('sale_date')), 'HH:mm'),
     },
   ];
 
   const chartData = dailyData.map((sale, index) => ({
-    name: `Invoice ${index + 1}`,
-    amount: sale.totalAmount,
+    name: `Sale ${index + 1}`,
+    amount: sale.selling_price * sale.quantity_sold,
   }));
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Invoice Number', 'Customer', 'Amount', 'Time'],
+      ['Sale ID', 'Customer', 'Amount', 'Time'],
       ...dailyData.map(sale => [
-        sale.invoiceNumber,
-        sale.clientName,
-        sale.totalAmount,
-        format(new Date(sale.date), 'HH:mm')
+        sale.sale_id,
+        sale.clientName || 'Walk-in Customer',
+        sale.selling_price * sale.quantity_sold,
+        format(new Date(sale.sale_date), 'HH:mm')
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -113,7 +115,7 @@ const DailySales = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl">{totalInvoices}</CardTitle>
-            <CardDescription>Total Invoices</CardDescription>
+            <CardDescription>Total Sales</CardDescription>
           </CardHeader>
         </Card>
 

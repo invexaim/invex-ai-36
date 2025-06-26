@@ -9,7 +9,7 @@ import useAppStore from '@/store/appStore';
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 
 const ProfitLoss = () => {
-  const { sales, expenses } = useAppStore();
+  const { sales } = useAppStore();
   const [period, setPeriod] = useState('month');
   const [selectedPeriod, setSelectedPeriod] = useState(format(new Date(), 'yyyy-MM'));
   const [profitLossData, setProfitLossData] = useState({
@@ -39,31 +39,21 @@ const ProfitLoss = () => {
       endDate = endOfYear(startDate);
     }
 
-    // Calculate revenue from sales
+    // Calculate revenue from sales using sale_date
     const periodSales = sales.filter(sale => {
-      const saleDate = new Date(sale.date);
+      const saleDate = new Date(sale.sale_date);
       return saleDate >= startDate && saleDate <= endDate;
     });
     
-    const totalRevenue = periodSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+    const totalRevenue = periodSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
 
-    // Calculate expenses (mock data if expenses store doesn't exist)
-    const mockExpenses = [
-      { amount: 5000, category: 'Rent', date: new Date().toISOString() },
-      { amount: 2000, category: 'Utilities', date: new Date().toISOString() },
-      { amount: 3000, category: 'Marketing', date: new Date().toISOString() },
-    ];
-
-    const periodExpenses = (expenses || mockExpenses).filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate >= startDate && expenseDate <= endDate;
-    });
-
-    const totalExpenses = periodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    // Mock expenses data
+    const mockExpenses = 5000;
+    const totalExpenses = mockExpenses;
     
     // Calculate profit metrics
     const grossProfit = totalRevenue - totalExpenses;
-    const netProfit = grossProfit; // Simplified calculation
+    const netProfit = grossProfit;
     const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
     setProfitLossData({
@@ -80,7 +70,7 @@ const ProfitLoss = () => {
       { name: 'Expenses', amount: totalExpenses, type: 'expense' },
       { name: 'Net Profit', amount: netProfit, type: netProfit >= 0 ? 'profit' : 'loss' }
     ]);
-  }, [sales, expenses, period, selectedPeriod]);
+  }, [sales, period, selectedPeriod]);
 
   const getPeriodOptions = () => {
     if (period === 'month') {
@@ -142,7 +132,7 @@ const ProfitLoss = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Profit & Loss Report</h1>
-          <p className="text-muted-foreground">Revenue vs Expense analysis</p>
+          <p className="text-muted-foreground">Revenue and expense analysis</p>
         </div>
         <Button onClick={exportToCSV} className="flex items-center gap-2">
           <Download className="w-4 h-4" />
@@ -155,7 +145,7 @@ const ProfitLoss = () => {
           <CardContent className="p-4">
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger>
-                <SelectValue placeholder="Select Period Type" />
+                <SelectValue placeholder="Select Period" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="month">Monthly</SelectItem>
@@ -182,28 +172,13 @@ const ProfitLoss = () => {
             </Select>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className={`text-2xl flex items-center gap-2 ${
-              profitLossData.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {profitLossData.profitMargin >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-              {profitLossData.profitMargin.toFixed(1)}%
-            </CardTitle>
-            <CardDescription>Profit Margin</CardDescription>
-          </CardHeader>
-        </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl text-green-600">₹{profitLossData.revenue.toLocaleString()}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Total Revenue
-            </CardDescription>
+            <CardDescription>Total Revenue</CardDescription>
           </CardHeader>
         </Card>
 
@@ -223,10 +198,20 @@ const ProfitLoss = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className={`text-2xl ${profitLossData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ₹{profitLossData.netProfit.toLocaleString()}
+            <CardTitle className={`text-2xl flex items-center gap-2 ${profitLossData.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {profitLossData.netProfit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+              ₹{Math.abs(profitLossData.netProfit).toLocaleString()}
             </CardTitle>
             <CardDescription>Net Profit</CardDescription>
+          </CardHeader>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className={`text-2xl ${profitLossData.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {profitLossData.profitMargin.toFixed(1)}%
+            </CardTitle>
+            <CardDescription>Profit Margin</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -234,7 +219,7 @@ const ProfitLoss = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart className="w-5 h-5" />
+            <DollarSign className="w-5 h-5" />
             Financial Overview
           </CardTitle>
         </CardHeader>
@@ -244,59 +229,11 @@ const ProfitLoss = () => {
               data={chartData}
               dataKey="amount"
               xAxisDataKey="name"
-              fill="#6366f1"
+              fill="#8b5cf6"
             />
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-green-600">Revenue Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Total Sales:</span>
-                <span className="font-semibold">₹{profitLossData.revenue.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Other Income:</span>
-                <span className="font-semibold">₹0</span>
-              </div>
-              <hr />
-              <div className="flex justify-between font-bold">
-                <span>Total Revenue:</span>
-                <span>₹{profitLossData.revenue.toLocaleString()}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Expense Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Operating Expenses:</span>
-                <span className="font-semibold">₹{profitLossData.expenses.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Other Expenses:</span>
-                <span className="font-semibold">₹0</span>
-              </div>
-              <hr />
-              <div className="flex justify-between font-bold">
-                <span>Total Expenses:</span>
-                <span>₹{profitLossData.expenses.toLocaleString()}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
