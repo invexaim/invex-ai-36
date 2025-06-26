@@ -52,7 +52,7 @@ const UserManagementTab = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'salesperson' as const,
+    role: 'salesperson' as 'admin' | 'manager' | 'salesperson',
     permissions: {
       products: false,
       sales: false,
@@ -187,7 +187,7 @@ const UserManagementTab = () => {
                 
                 <div>
                   <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: any) => setFormData(prev => ({ ...prev, role: value }))}>
+                  <Select value={formData.role} onValueChange={(value: 'admin' | 'manager' | 'salesperson') => setFormData(prev => ({ ...prev, role: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
@@ -320,7 +320,7 @@ const UserManagementTab = () => {
               
               <div>
                 <Label htmlFor="editRole">Role</Label>
-                <Select value={formData.role} onValueChange={(value: any) => setFormData(prev => ({ ...prev, role: value }))}>
+                <Select value={formData.role} onValueChange={(value: 'admin' | 'manager' | 'salesperson') => setFormData(prev => ({ ...prev, role: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
