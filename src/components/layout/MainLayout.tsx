@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import DesktopSidebar from "./DesktopSidebar";
 import MobileNavigation from "./MobileNavigation";
 import { DataSyncStatus } from "./DataSyncStatus";
+import NotificationCenter from "./NotificationCenter";
 import { SidebarItemType } from "./types";
 import {
   LayoutDashboard,
@@ -160,9 +162,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       />
       
       <div className="md:ml-64">
-        {/* Move sync status indicator higher up */}
-        <div className="fixed top-2 right-4 z-50">
+        {/* Enhanced header with notification center */}
+        <div className="fixed top-2 right-4 z-50 flex items-center gap-2">
           <DataSyncStatus />
+          <NotificationCenter />
         </div>
         
         <div className="p-6">

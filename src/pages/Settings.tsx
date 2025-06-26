@@ -9,6 +9,8 @@ import LogoTab from "@/components/settings/LogoTab";
 import DefaultsTab from "@/components/settings/DefaultsTab";
 import DocumentsTab from "@/components/settings/DocumentsTab";
 import CustomFieldsTab from "@/components/settings/CustomFieldsTab";
+import UserManagementTab from "@/components/settings/UserManagementTab";
+import ChangePasswordTab from "@/components/settings/ChangePasswordTab";
 
 const Settings = () => {
   return (
@@ -41,13 +43,15 @@ const Settings = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="address">Address</TabsTrigger>
               <TabsTrigger value="logo">Logo</TabsTrigger>
               <TabsTrigger value="defaults">Defaults</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
               <TabsTrigger value="custom-fields">Custom Fields</TabsTrigger>
+              <TabsTrigger value="user-management">Users</TabsTrigger>
+              <TabsTrigger value="change-password">Password</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="mt-6">
@@ -72,6 +76,14 @@ const Settings = () => {
             
             <TabsContent value="custom-fields" className="mt-6">
               <CustomFieldsTab />
+            </TabsContent>
+            
+            <TabsContent value="user-management" className="mt-6">
+              <UserManagementTab />
+            </TabsContent>
+            
+            <TabsContent value="change-password" className="mt-6">
+              <ChangePasswordTab />
             </TabsContent>
           </Tabs>
         </CardContent>

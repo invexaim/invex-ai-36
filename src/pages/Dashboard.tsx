@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Package, Users, CreditCard, TrendingUp, Calendar, AlertTriangle, ShoppingCart, Bell } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
@@ -226,75 +225,6 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
-
-      {/* Comprehensive Notification Panel */}
-      {(pendingReturns > 0 || creditDues > 0 || expiringSoonItems > 0 || expiredItems > 0) && (
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-orange-200">
-              <Bell className="h-5 w-5" />
-              Notifications Center
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pendingReturns > 0 && (
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-sm">
-                    <strong>{pendingReturns}</strong> pending returns require attention
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => navigate("/purchases/returns")}>
-                  View Returns
-                </Button>
-              </div>
-            )}
-            
-            {creditDues > 0 && (
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm">
-                    <strong>{creditDues}</strong> credit dues pending collection
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => navigate("/payments")}>
-                  View Payments
-                </Button>
-              </div>
-            )}
-            
-            {expiringSoonItems > 0 && (
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">
-                    <strong>{expiringSoonItems}</strong> products expiring within 7 days
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => navigate("/expiry?filter=expiring")}>
-                  View Expiring
-                </Button>
-              </div>
-            )}
-            
-            {expiredItems > 0 && (
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                  <span className="text-sm">
-                    <strong>{expiredItems}</strong> products have already expired
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => navigate("/expiry?filter=expired")}>
-                  View Expired
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Real-time Data Visualization */}
       <div>

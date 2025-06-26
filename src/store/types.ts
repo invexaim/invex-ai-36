@@ -221,6 +221,7 @@ export interface CompanyState {
     companyName: string;
     registrationNumber: string;
     taxId: string;
+    gstin: string; // Add GSTIN field
     email: string;
     phone: string;
     website: string;

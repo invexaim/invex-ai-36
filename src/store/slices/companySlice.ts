@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { toast } from 'sonner';
 
@@ -5,6 +6,7 @@ interface CompanyDetails {
   companyName: string;
   registrationNumber: string;
   taxId: string;
+  gstin: string; // Add GSTIN field
   email: string;
   phone: string;
   website: string;
@@ -78,6 +80,7 @@ const defaultDetails: CompanyDetails = {
   companyName: localStorage.getItem('companyName') || '',
   registrationNumber: '',
   taxId: '',
+  gstin: '', // Add GSTIN to default details
   email: '',
   phone: '',
   website: '',

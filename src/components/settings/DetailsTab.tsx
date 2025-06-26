@@ -57,6 +57,15 @@ const DetailsTab = () => {
             </div>
             
             <div>
+              <Label htmlFor="gstin">GSTIN</Label>
+              <Input
+                id="gstin"
+                {...register("gstin")}
+                placeholder="Enter GSTIN number"
+              />
+            </div>
+            
+            <div>
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
