@@ -16,7 +16,7 @@ const ComplaintRaise = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'general' as const,
+    category: 'other' as const, // Changed from 'general' to 'other'
     priority: 'medium' as const,
     invoiceReference: ''
   });
@@ -47,7 +47,7 @@ const ComplaintRaise = () => {
       setFormData({
         title: '',
         description: '',
-        category: 'general',
+        category: 'other',
         priority: 'medium',
         invoiceReference: ''
       });
@@ -138,7 +138,7 @@ const ComplaintRaise = () => {
                       <SelectValue placeholder="Select related invoice" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No invoice reference</SelectItem>
+                      <SelectItem value="none">No invoice reference</SelectItem>
                       {sales.slice(0, 10).map((sale) => (
                         <SelectItem key={sale.sale_id} value={sale.sale_id.toString()}>
                           Invoice #{sale.sale_id} - ₹{(sale.selling_price * sale.quantity_sold).toLocaleString()}

@@ -136,7 +136,7 @@ export const integrateSlices = (
   const expirySlice = createExpirySlice(set, get);
   console.log("SLICE INTEGRATION: Expiry slice created");
 
-  const supportSlice = createSupportSlice(set, get);
+  const supportSlice = createSupportSlice(set, get, store);
   console.log("SLICE INTEGRATION: Support slice created");
 
   const result = {
