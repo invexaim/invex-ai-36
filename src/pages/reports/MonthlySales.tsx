@@ -9,11 +9,17 @@ import { Download, TrendingUp } from 'lucide-react';
 import useAppStore from '@/store/appStore';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 
+interface ProductSalesData {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
 const MonthlySales = () => {
   const { sales, products } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [monthlyData, setMonthlyData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
+  const [topProducts, setTopProducts] = useState<ProductSalesData[]>([]);
   const [dailyTrends, setDailyTrends] = useState([]);
 
   useEffect(() => {
@@ -30,7 +36,7 @@ const MonthlySales = () => {
     setMonthlyData(filteredSales);
 
     // Calculate top selling products based on product_id
-    const productSales = {};
+    const productSales: Record<number, ProductSalesData> = {};
     filteredSales.forEach(sale => {
       if (productSales[sale.product_id]) {
         productSales[sale.product_id].quantity += sale.quantity_sold;
