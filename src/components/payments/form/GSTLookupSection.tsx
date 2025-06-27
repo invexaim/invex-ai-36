@@ -1,10 +1,12 @@
 
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { lookupGSTDetails, validateGSTNumber } from "@/services/gstService";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { lookupGSTDetails } from '@/services/gstService';
 
 interface GSTLookupSectionProps {
   gstNumber: string;
@@ -39,128 +41,191 @@ const GSTLookupSection = ({
   isLoading,
   setIsLoading
 }: GSTLookupSectionProps) => {
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [lastLookedUpGST, setLastLookedUpGST] = useState<string>('');
+
   const handleGSTLookup = async () => {
     if (!gstNumber.trim()) {
-      toast.error("Please enter a GST number");
-      return;
-    }
-
-    if (!validateGSTNumber(gstNumber)) {
-      toast.error("Invalid GST number format");
+      setMessage({ type: 'error', text: 'Please enter a GST number' });
       return;
     }
 
     setIsLoading(true);
+    setMessage(null);
+
     try {
-      const gstDetails = await lookupGSTDetails(gstNumber);
+      const result = await lookupGSTDetails(gstNumber);
       
-      if (gstDetails) {
+      if (result.success && result.data) {
         onGSTDetailsUpdate({
-          companyName: gstDetails.companyName,
-          address: gstDetails.address,
-          city: gstDetails.city,
-          state: gstDetails.state,
-          pincode: gstDetails.pincode
+          companyName: result.data.companyName,
+          address: result.data.address,
+          city: result.data.city,
+          state: result.data.state,
+          pincode: result.data.pincode
         });
-        toast.success("GST details retrieved successfully");
+        setLastLookedUpGST(gstNumber);
+        setMessage({ 
+          type: 'success', 
+          text: `Successfully retrieved details for ${result.data.companyName}` 
+        });
       } else {
-        toast.error("GST number not found in database");
+        setMessage({ 
+          type: 'error', 
+          text: result.error || 'Failed to fetch GST details' 
+        });
       }
     } catch (error) {
-      toast.error("Failed to retrieve GST details");
+      setMessage({ 
+        type: 'error', 
+        text: 'An unexpected error occurred. Please try again.' 
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* GST Number Input */}
-      <div className="space-y-2">
-        <Label htmlFor="gstNumber">GST Number (Optional)</Label>
-        <div className="flex gap-2">
-          <Input
-            id="gstNumber"
-            name="gstNumber"
-            value={gstNumber}
-            onChange={onChange}
-            placeholder="Enter GST number (e.g., 27AABCU9603R1ZX)"
-            className={error ? "border-red-500" : ""}
-            maxLength={15}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGSTLookup}
-            disabled={isLoading || !gstNumber}
-            className="px-3"
-          >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-        {error && (
-          <p className="text-xs text-red-500">Invalid GST number format</p>
-        )}
-      </div>
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleGSTLookup();
+    }
+  };
 
-      {/* Auto-populated Address Section */}
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Registered Address</Label>
-          <Input
-            name="address"
-            value={address}
-            onChange={onChange}
-            placeholder="Address will auto-populate when GST is entered"
-            readOnly={!!address && address.length > 0}
-            className={address ? "bg-gray-50 border-gray-200" : ""}
-          />
-          <div className="grid grid-cols-2 gap-2">
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Search className="w-5 h-5" />
+          GST Lookup
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Label htmlFor="gst-number">GST Number</Label>
             <Input
-              name="city"
-              value={city}
+              id="gst-number"
+              name="gstNumber"
+              value={gstNumber}
               onChange={onChange}
-              placeholder="City"
-              readOnly={!!city && city.length > 0}
-              className={city ? "bg-gray-50 border-gray-200" : ""}
-            />
-            <Input
-              name="pincode"
-              value={pincode}
-              onChange={onChange}
-              placeholder="Pincode"
-              readOnly={!!pincode && pincode.length > 0}
-              className={pincode ? "bg-gray-50 border-gray-200" : ""}
+              onKeyPress={handleKeyPress}
+              placeholder="Enter 15-digit GST number (e.g., 27AABCU9603R1ZX)"
+              maxLength={15}
+              disabled={isLoading}
+              className={`mt-1 ${error ? 'border-red-500' : ''}`}
             />
           </div>
-          <Input
-            name="state"
-            value={state}
-            onChange={onChange}
-            placeholder="State"
-            readOnly={!!state && state.length > 0}
-            className={state ? "bg-gray-50 border-gray-200" : ""}
-          />
+          <div className="flex items-end">
+            <Button
+              onClick={handleGSTLookup}
+              disabled={isLoading || !gstNumber.trim()}
+              className="mb-0"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Looking up...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Lookup
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        
-        {/* Company Name Section */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Company Name</Label>
-          <Input
-            name="companyName"
-            value={companyName}
-            onChange={onChange}
-            placeholder="Company name will auto-populate when GST is entered"
-            readOnly={!!companyName && companyName.length > 0}
-            className={companyName ? "bg-gray-50 border-gray-200" : ""}
-          />
-        </div>
-      </div>
-    </div>
+
+        {message && (
+          <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
+            {message.type === 'success' ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            <AlertDescription>{message.text}</AlertDescription>
+          </Alert>
+        )}
+
+        {lastLookedUpGST && (
+          <div className="text-sm text-muted-foreground">
+            <p>Last lookup: {lastLookedUpGST}</p>
+            <p className="mt-1">
+              <span className="text-blue-600">Tip:</span> You can manually edit any auto-populated fields below if needed.
+            </p>
+          </div>
+        )}
+
+        {/* Auto-populated fields display */}
+        {(companyName || address || city || state || pincode) && (
+          <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
+            <Label className="text-sm font-medium text-gray-700">Auto-populated Details</Label>
+            
+            {companyName && (
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Company Name</Label>
+                <Input
+                  name="companyName"
+                  value={companyName}
+                  onChange={onChange}
+                  className="bg-white border-gray-200"
+                />
+              </div>
+            )}
+            
+            {address && (
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Address</Label>
+                <Input
+                  name="address"
+                  value={address}
+                  onChange={onChange}
+                  className="bg-white border-gray-200"
+                />
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-2">
+              {city && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">City</Label>
+                  <Input
+                    name="city"
+                    value={city}
+                    onChange={onChange}
+                    className="bg-white border-gray-200"
+                  />
+                </div>
+              )}
+              
+              {pincode && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-gray-600">Pincode</Label>
+                  <Input
+                    name="pincode"
+                    value={pincode}
+                    onChange={onChange}
+                    className="bg-white border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+            
+            {state && (
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">State</Label>
+                <Input
+                  name="state"
+                  value={state}
+                  onChange={onChange}
+                  className="bg-white border-gray-200"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
