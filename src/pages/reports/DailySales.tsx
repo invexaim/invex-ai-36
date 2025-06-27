@@ -7,27 +7,41 @@ import { Label } from '@/components/ui/label';
 import { DataTable } from '@/components/ui/data-table';
 import { BarChart } from '@/components/charts/BarChart';
 import { Download, Calendar } from 'lucide-react';
-import useAppStore from '@/store/appStore';
 import { format } from 'date-fns';
+import { fetchReportData, getFilteredSales, calculateSalesMetrics } from '@/services/reportService';
+import { Sale } from '@/types';
 
 const DailySales = () => {
-  const { sales } = useAppStore();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [dailyData, setDailyData] = useState([]);
+  const [dailyData, setDailyData] = useState<Sale[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalInvoices, setTotalInvoices] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Filter sales by selected date - using sale_date instead of date
-    const filteredSales = sales.filter(sale => 
-      format(new Date(sale.sale_date), 'yyyy-MM-dd') === selectedDate
-    );
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const { sales } = await fetchReportData();
+        
+        // Filter sales by selected date
+        const filteredSales = sales.filter(sale => 
+          format(new Date(sale.sale_date), 'yyyy-MM-dd') === selectedDate
+        );
 
-    setDailyData(filteredSales);
-    // Calculate total using selling_price * quantity_sold instead of totalAmount
-    setTotalSales(filteredSales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0));
-    setTotalInvoices(filteredSales.length);
-  }, [sales, selectedDate]);
+        setDailyData(filteredSales);
+        const metrics = calculateSalesMetrics(filteredSales);
+        setTotalSales(metrics.totalSales);
+        setTotalInvoices(metrics.totalInvoices);
+      } catch (error) {
+        console.error('Error loading daily sales data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedDate]);
 
   const columns = [
     {
@@ -74,6 +88,16 @@ const DailySales = () => {
     a.download = `daily-sales-${selectedDate}.csv`;
     a.click();
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading daily sales data...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

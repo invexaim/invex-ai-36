@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft } from "lucide-react";
 import PaymentDialog from "@/components/payments/PaymentDialog";
 import useAppStore from "@/store/appStore";
+import MainLayout from "@/components/layout/MainLayout";
 
 const AddPayment = () => {
   const navigate = useNavigate();
@@ -65,8 +66,8 @@ const AddPayment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button
@@ -80,7 +81,7 @@ const AddPayment = () => {
           </Button>
         </div>
 
-        <Card>
+        <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Add New Payment</CardTitle>
             <CardDescription>
@@ -100,7 +101,7 @@ const AddPayment = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

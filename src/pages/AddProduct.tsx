@@ -9,6 +9,7 @@ import useAppStore from "@/store/appStore";
 import { AddCategoryDialog } from "@/components/products/AddCategoryDialog";
 import { ProductFormFields } from "@/components/products/forms/ProductFormFields";
 import { ArrowLeft } from "lucide-react";
+import MainLayout from "@/components/layout/MainLayout";
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -108,8 +109,8 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button
@@ -123,7 +124,7 @@ const AddProduct = () => {
           </Button>
         </div>
 
-        <Card>
+        <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Add New Product</CardTitle>
             <CardDescription>
@@ -160,7 +161,7 @@ const AddProduct = () => {
           onOpenChange={setShowAddCategoryDialog} 
         />
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

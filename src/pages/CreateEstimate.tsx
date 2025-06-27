@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { CreateEstimateDialog } from "@/components/estimates/CreateEstimateDialog";
+import MainLayout from "@/components/layout/MainLayout";
 
 const CreateEstimate = () => {
   const navigate = useNavigate();
@@ -43,8 +44,8 @@ const CreateEstimate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button
@@ -58,7 +59,7 @@ const CreateEstimate = () => {
           </Button>
         </div>
 
-        <Card>
+        <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Create New Estimate</CardTitle>
             <CardDescription>
@@ -75,7 +76,7 @@ const CreateEstimate = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

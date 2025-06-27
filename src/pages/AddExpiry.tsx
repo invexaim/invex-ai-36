@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft } from "lucide-react";
 import { AddExpiryDialog } from "@/components/expiry/AddExpiryDialog";
 import useAppStore from "@/store/appStore";
+import MainLayout from "@/components/layout/MainLayout";
 
 const AddExpiry = () => {
   const navigate = useNavigate();
@@ -24,8 +25,8 @@ const AddExpiry = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button
@@ -39,7 +40,7 @@ const AddExpiry = () => {
           </Button>
         </div>
 
-        <Card>
+        <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Add Product Expiry</CardTitle>
             <CardDescription>
@@ -57,7 +58,7 @@ const AddExpiry = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
