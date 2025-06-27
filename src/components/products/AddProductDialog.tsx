@@ -36,6 +36,13 @@ export const AddProductDialog = ({
     price: 0,
     units: "0",
     reorder_level: 5,
+    // Supplier details
+    supplier_company_name: "",
+    supplier_gst_number: "",
+    supplier_address: "",
+    supplier_city: "",
+    supplier_state: "",
+    supplier_pincode: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +68,12 @@ export const AddProductDialog = ({
       price: 0,
       units: "0",
       reorder_level: 5,
+      supplier_company_name: "",
+      supplier_gst_number: "",
+      supplier_address: "",
+      supplier_city: "",
+      supplier_state: "",
+      supplier_pincode: "",
     });
     setExpiryDate(undefined);
   };
@@ -87,20 +100,20 @@ export const AddProductDialog = ({
       return;
     }
 
-    // Submit product with expiry date - this will now automatically create expiry record
+    // Submit product with expiry date and supplier details
     const productData = {
       ...formData,
       expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : undefined,
     };
     
-    console.log("ADD PRODUCT DIALOG: Submitting product with expiry:", productData);
+    console.log("ADD PRODUCT DIALOG: Submitting product with supplier details:", productData);
     onAddProduct(productData);
     
-    // Show appropriate success message
+    // Show success message
     if (expiryDate) {
-      toast.success("Product added and expiry record created successfully");
+      toast.success("Product added with supplier details and expiry record");
     } else {
-      toast.success("Product added successfully");
+      toast.success("Product added with supplier details successfully");
     }
     
     // Reset form and close dialog
@@ -111,11 +124,11 @@ export const AddProductDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Product</DialogTitle>
             <DialogDescription>
-              Enter the details for the new product below.
+              Enter the product details and supplier information. Use GST lookup to auto-populate supplier details.
             </DialogDescription>
           </DialogHeader>
           

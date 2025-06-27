@@ -150,4 +150,24 @@ export interface GSTDetails {
   city: string;
   state: string;
   pincode: string;
+  registrationDate?: string;
+  businessType?: string;
+  stateCode?: string;
+}
+
+export interface GSTLookupResult {
+  success: boolean;
+  data?: GSTDetails;
+  error?: string;
+}
+
+export interface SupplierDetails {
+  companyName: string;
+  gstNumber: string;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  registrationDate?: string;
+  businessType?: string;
 }

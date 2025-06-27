@@ -22,6 +22,13 @@ const AddProduct = () => {
     price: 0,
     units: "0",
     reorder_level: 5,
+    // Supplier details
+    supplier_company_name: "",
+    supplier_gst_number: "",
+    supplier_address: "",
+    supplier_city: "",
+    supplier_state: "",
+    supplier_pincode: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,6 +54,12 @@ const AddProduct = () => {
       price: 0,
       units: "0",
       reorder_level: 5,
+      supplier_company_name: "",
+      supplier_gst_number: "",
+      supplier_address: "",
+      supplier_city: "",
+      supplier_state: "",
+      supplier_pincode: "",
     });
     setExpiryDate(undefined);
   };
@@ -73,20 +86,20 @@ const AddProduct = () => {
       return;
     }
 
-    // Submit product with expiry date
+    // Submit product with expiry date and supplier details
     const productData = {
       ...formData,
       expiry_date: expiryDate ? expiryDate.toISOString().split('T')[0] : undefined,
     };
     
-    console.log("ADD PRODUCT PAGE: Submitting product with expiry:", productData);
+    console.log("ADD PRODUCT PAGE: Submitting product with supplier details:", productData);
     addProduct(productData);
     
-    // Show appropriate success message
+    // Show success message
     if (expiryDate) {
-      toast.success("Product added and expiry record created successfully");
+      toast.success("Product added with supplier details and expiry record");
     } else {
-      toast.success("Product added successfully");
+      toast.success("Product added with supplier details successfully");
     }
     
     // Reset form and navigate back
@@ -96,7 +109,7 @@ const AddProduct = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button
@@ -114,7 +127,7 @@ const AddProduct = () => {
           <CardHeader>
             <CardTitle className="text-2xl">Add New Product</CardTitle>
             <CardDescription>
-              Enter the details for the new product below. All fields marked with * are required.
+              Enter the product and supplier details below. Use GST lookup to auto-populate supplier information.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
