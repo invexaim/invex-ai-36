@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -151,6 +152,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* DataSyncStatus positioned at top of sidebar */}
+      <div className="fixed top-3 left-4 z-50 hidden md:block">
+        <DataSyncStatus />
+      </div>
+      
       <DesktopSidebar
         sidebarItems={sidebarItems}
         dropdownItems={dropdownItems}
@@ -161,11 +167,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       />
       
       <div className="md:ml-64">
-        {/* DataSyncStatus positioned in top left corner */}
-        <div className="fixed top-2 left-2 z-50 md:left-[270px]">
-          <DataSyncStatus />
-        </div>
-        
         {/* NotificationCenter positioned in top right corner */}
         <div className="fixed top-2 right-4 z-50">
           <NotificationCenter />
