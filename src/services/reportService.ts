@@ -22,10 +22,10 @@ export const fetchReportData = async (): Promise<ReportData> => {
     }
 
     return {
-      sales: (userData?.sales as Sale[]) || [],
-      products: (userData?.products as Product[]) || [],
-      clients: (userData?.clients as Client[]) || [],
-      payments: (userData?.payments as Payment[]) || []
+      sales: (userData?.sales as unknown as Sale[]) || [],
+      products: (userData?.products as unknown as Product[]) || [],
+      clients: (userData?.clients as unknown as Client[]) || [],
+      payments: (userData?.payments as unknown as Payment[]) || []
     };
   } catch (error) {
     console.error('Error in fetchReportData:', error);
