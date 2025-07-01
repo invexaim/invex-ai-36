@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
 import { Package, Users, CreditCard, TrendingUp, Calendar, AlertTriangle, ShoppingCart, Bell } from "lucide-react";
 import { CardStat } from "@/components/ui/card-stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,22 +11,50 @@ import useAppStore from "@/store/appStore";
 import UserProfile from "@/components/layout/UserProfile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { fetchReportData } from "@/services/reportService";
+import { Sale, Product, Client, Payment } from "@/types";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { 
-    products, 
-    clients, 
-    sales, 
-    payments,
     productExpiries,
     getExpiringProducts,
     getExpiredProducts
   } = useAppStore();
 
-  // Calculate today's revenue and purchases
+  // State for real data from Supabase
+  const [dashboardData, setDashboardData] = useState<{
+    sales: Sale[];
+    products: Product[];
+    clients: Client[];
+    payments: Payment[];
+  }>({
+    sales: [],
+    products: [],
+    clients: [],
+    payments: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real data from Supabase
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const data = await fetchReportData();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  // Calculate today's revenue and purchases from real data
   const today = new Date().toDateString();
-  const todaysRevenue = sales
+  const todaysRevenue = dashboardData.sales
     .filter(sale => new Date(sale.sale_date).toDateString() === today)
     .reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
 
@@ -39,18 +68,18 @@ const Dashboard = () => {
     .filter(purchase => new Date(purchase.date).toDateString() === today)
     .reduce((sum, purchase) => sum + purchase.amount, 0);
 
-  const lowStockItems = products.filter(product => 
+  const lowStockItems = dashboardData.products.filter(product => 
     parseInt(product.units as string) < product.reorder_level
   ).length;
 
   const expiringSoonItems = getExpiringProducts(7).length;
   const expiredItems = getExpiredProducts().length;
 
-  // Calculate pending returns and credit dues
+  // Calculate pending returns and credit dues from real data
   const pendingReturns = 3; // Mock data - will be replaced with actual returns data
-  const creditDues = payments.filter(payment => payment.status === 'pending').length;
+  const creditDues = dashboardData.payments.filter(payment => payment.status === 'pending').length;
 
-  // Main stats for the dashboard
+  // Main stats for the dashboard using real data
   const mainStats = [
     {
       title: "Today's Sales",
@@ -66,13 +95,13 @@ const Dashboard = () => {
     },
     {
       title: "Total Products",
-      value: products.length,
+      value: dashboardData.products.length,
       icon: <Package className="h-5 w-5 text-primary" />,
       onClick: () => navigate("/products"),
     },
     {
       title: "Total Clients",
-      value: clients.length,
+      value: dashboardData.clients.length,
       icon: <Users className="h-5 w-5 text-purple-500" />,
       onClick: () => navigate("/clients"),
     },
@@ -118,7 +147,7 @@ const Dashboard = () => {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       
-      const dayRevenue = sales
+      const dayRevenue = dashboardData.sales
         .filter(sale => new Date(sale.sale_date).toDateString() === date.toDateString())
         .reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
       
@@ -136,7 +165,7 @@ const Dashboard = () => {
   };
 
   const prepareRecentActivity = () => {
-    const recentSales = sales
+    const recentSales = dashboardData.sales
       .sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())
       .slice(0, 5);
     
@@ -152,8 +181,8 @@ const Dashboard = () => {
   const revenueByCategoryData = (() => {
     const categoryRevenue = new Map();
     
-    sales.forEach(sale => {
-      const product = products.find(p => p.product_id === sale.product_id);
+    dashboardData.sales.forEach(sale => {
+      const product = dashboardData.products.find(p => p.product_id === sale.product_id);
       const category = product?.category || 'Unknown';
       const revenue = sale.selling_price * sale.quantity_sold;
       
@@ -166,6 +195,16 @@ const Dashboard = () => {
       .slice(0, 5)
       .map(([name, sales]) => ({ name, sales }));
   })();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading dashboard data...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -276,7 +315,7 @@ const Dashboard = () => {
             <div className="space-y-3">
               {recentSales.length > 0 ? (
                 recentSales.map((sale, index) => {
-                  const product = products.find(p => p.product_id === sale.product_id);
+                  const product = dashboardData.products.find(p => p.product_id === sale.product_id);
                   return (
                     <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
