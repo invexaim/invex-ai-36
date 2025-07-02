@@ -20,6 +20,7 @@ interface InvoiceForm {
   terms: string;
   discount: number;
   gstRate: number;
+  paymentMode: string;
 }
 
 interface InvoiceNotesSectionProps {
