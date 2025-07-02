@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,13 +38,16 @@ const CustomerCare = () => {
     setIsSubmitting(true);
     
     try {
-      addTicket({
+      console.log("CUSTOMER CARE: Creating ticket with immediate save:", ticketForm.subject);
+      
+      // Use the enhanced addTicket method which includes immediate auto-save
+      await addTicket({
         ...ticketForm,
         userId: currentUser?.id || 'anonymous',
         status: 'open'
       });
       
-      toast.success('Support ticket created successfully! We\'ll get back to you soon.');
+      toast.success('Support ticket created and saved successfully! We\'ll get back to you soon.');
       
       setTicketForm({
         subject: '',
@@ -53,6 +55,7 @@ const CustomerCare = () => {
         priority: 'medium'
       });
     } catch (error) {
+      console.error("CUSTOMER CARE: Error creating ticket:", error);
       toast.error('Failed to create ticket. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -178,6 +181,7 @@ const CustomerCare = () => {
                     onChange={(e) => setTicketForm(prev => ({ ...prev, subject: e.target.value }))}
                     placeholder="Brief description of your issue"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -204,6 +208,7 @@ const CustomerCare = () => {
                     placeholder="Provide detailed information about your issue..."
                     rows={4}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 

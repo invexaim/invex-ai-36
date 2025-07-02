@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,13 +42,16 @@ const Feedback = () => {
     setIsSubmitting(true);
     
     try {
-      addFeedback({
+      console.log("FEEDBACK: Submitting feedback with immediate save:", formData.title);
+      
+      // Use the enhanced addFeedback method which includes immediate auto-save
+      await addFeedback({
         ...formData,
         rating: ratings,
         userId: formData.isAnonymous ? undefined : currentUser?.id
       });
       
-      toast.success('Thank you for your feedback! We appreciate your input.');
+      toast.success('Thank you for your feedback! We appreciate your input and it has been saved.');
       
       // Reset form
       setFormData({
@@ -64,6 +66,7 @@ const Feedback = () => {
         overall: 0
       });
     } catch (error) {
+      console.error("FEEDBACK: Error submitting feedback:", error);
       toast.error('Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -82,6 +85,7 @@ const Feedback = () => {
             className={`p-1 hover:scale-110 transition-transform ${
               star <= rating ? 'text-yellow-500' : 'text-gray-300'
             }`}
+            disabled={isSubmitting}
           >
             <Star className="w-6 h-6 fill-current" />
           </button>
@@ -143,6 +147,7 @@ const Feedback = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Brief summary of your feedback"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -155,6 +160,7 @@ const Feedback = () => {
                     placeholder="Provide detailed feedback..."
                     rows={4}
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -163,6 +169,7 @@ const Feedback = () => {
                     id="anonymous"
                     checked={formData.isAnonymous}
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isAnonymous: checked as boolean }))}
+                    disabled={isSubmitting}
                   />
                   <Label htmlFor="anonymous" className="text-sm">
                     Submit anonymously
@@ -170,7 +177,12 @@ const Feedback = () => {
                 </div>
                 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => window.history.back()}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => window.history.back()}
+                    disabled={isSubmitting}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>

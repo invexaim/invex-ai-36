@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ const ComplaintRaise = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'other' as const, // Changed from 'general' to 'other'
+    category: 'other' as const,
     priority: 'medium' as const,
     invoiceReference: ''
   });
@@ -34,14 +33,17 @@ const ComplaintRaise = () => {
     setIsSubmitting(true);
     
     try {
-      addComplaint({
+      console.log("COMPLAINT RAISE: Submitting complaint with immediate save:", formData.title);
+      
+      // Use the enhanced addComplaint method which includes immediate auto-save
+      await addComplaint({
         ...formData,
         attachments,
         userId: currentUser?.id || 'anonymous',
         status: 'open'
       });
       
-      toast.success('Complaint submitted successfully! You will receive updates on the status.');
+      toast.success('Complaint submitted and saved successfully! You will receive updates on the status.');
       
       // Reset form
       setFormData({
@@ -53,6 +55,7 @@ const ComplaintRaise = () => {
       });
       setAttachments([]);
     } catch (error) {
+      console.error("COMPLAINT RAISE: Error submitting complaint:", error);
       toast.error('Failed to submit complaint. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -97,6 +100,7 @@ const ComplaintRaise = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Brief description of the issue"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 
@@ -158,6 +162,7 @@ const ComplaintRaise = () => {
                   placeholder="Provide detailed information about your complaint..."
                   rows={4}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               
@@ -171,12 +176,14 @@ const ComplaintRaise = () => {
                     onChange={handleFileUpload}
                     accept="image/*,.pdf,.doc,.docx"
                     className="hidden"
+                    disabled={isSubmitting}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById('attachments')?.click()}
                     className="flex items-center gap-2"
+                    disabled={isSubmitting}
                   >
                     <Upload className="w-4 h-4" />
                     Upload Files
@@ -198,7 +205,12 @@ const ComplaintRaise = () => {
               </div>
               
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => window.history.back()}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => window.history.back()}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
