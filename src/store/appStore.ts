@@ -1,3 +1,4 @@
+
 import { AppState } from './types';
 import { createPersistedStore } from './createStore';
 import { createStoreConfiguration } from './config/storeConfig';
@@ -18,34 +19,40 @@ const useAppStore = createPersistedStore<AppState>(
     
     // Combine all slices and methods - ENSURE storeMethods override slice methods
     const combinedStore = {
-      // Product slice
+      // Initialize with default values from slices
+      products: [],
+      sales: [],
+      clients: [],
+      payments: [],
+      meetings: [],
+      productExpiries: [],
+      
+      // Product slice methods
       ...slices.productSlice,
-      // Sale slice - but recordSale will be overridden by storeMethods
+      // Sale slice methods
       ...slices.saleSlice,
-      // Client slice
+      // Client slice methods
       ...slices.clientSlice,
-      // Payment slice with deletePayment explicitly included
+      // Payment slice methods
       ...slices.paymentSlice,
-      deletePayment: slices.paymentSlice.deletePayment,
-      // User slice
+      // User slice methods
       ...slices.userSlice,
-      // Company slice
+      // Company slice methods
       ...slices.companySlice,
-      // Meeting slice
+      // Meeting slice methods
       ...slices.meetingSlice,
-      // Expiry slice
+      // Expiry slice methods
       ...slices.expirySlice,
-      // Support slice
+      // Support slice methods
       ...slices.supportSlice,
+      
       // Store methods - these OVERRIDE any slice methods with same names
       ...storeMethods,
-      // EXPLICITLY ensure recordSale is from storeMethods
-      recordSale: storeMethods.recordSale,
-      addSale: storeMethods.addSale
     };
     
     console.log("APP STORE: Final store recordSale type:", typeof combinedStore.recordSale);
-    return combinedStore;
+    console.log("APP STORE: Final store addSale type:", typeof combinedStore.addSale);
+    return combinedStore as AppState;
   }
 );
 

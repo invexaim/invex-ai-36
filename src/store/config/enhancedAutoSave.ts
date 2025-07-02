@@ -28,23 +28,23 @@ export const createDefaultAutoSave = (set: any, get: any) => {
   return immediateAutoSave;
 };
 
-// Wrapper for store actions that need immediate saving
-export const withImmediateSave = (set: any, get: any, actionName: string, action: () => void) => {
+// Wrapper for store actions that need immediate saving - fixed to handle parameters
+export const withImmediateSave = (set: any, get: any, actionName: string, action: (...args: any[]) => any) => {
   const immediateAutoSave = createDefaultAutoSave(set, get);
   
-  return async () => {
+  return async (...args: any[]) => {
     try {
-      // Execute the action
-      action();
+      // Execute the action with its parameters
+      const result = action(...args);
       
       // Immediately save to Supabase
       await immediateAutoSave(actionName);
       
-      return true;
+      return result;
     } catch (error) {
       console.error(`Error in ${actionName}:`, error);
       toast.error(`Failed to ${actionName}. Please try again.`);
-      return false;
+      throw error;
     }
   };
 };
