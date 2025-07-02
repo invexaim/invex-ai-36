@@ -226,7 +226,7 @@ export const AddClientDialog = ({
         </DialogHeader>
         <FormContent />
         <FormActions />
-      </Dialog>
+      </DialogContent>
     </Dialog>
   );
 };
