@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -27,18 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-
-interface InvoiceForm {
-  clientName: string;
-  date: Date;
-  dueDate: Date;
-  items: any[];
-  notes: string;
-  terms: string;
-  discount: number;
-  gstRate: number;
-  paymentMode: string;
-}
+import { InvoiceForm } from "../types/invoiceTypes";
 
 interface InvoiceFormHeaderProps {
   control: Control<InvoiceForm>;

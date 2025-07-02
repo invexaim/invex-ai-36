@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Control } from "react-hook-form";
 
@@ -10,18 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-
-interface InvoiceForm {
-  clientName: string;
-  date: Date;
-  dueDate: Date;
-  items: any[];
-  notes: string;
-  terms: string;
-  discount: number;
-  gstRate: number;
-  paymentMode: string;
-}
+import { InvoiceForm } from "../types/invoiceTypes";
 
 interface InvoiceNotesSectionProps {
   control: Control<InvoiceForm>;

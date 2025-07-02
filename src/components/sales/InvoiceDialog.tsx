@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -8,13 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceFormHeader } from "./form/InvoiceFormHeader";
 import { EstimateItemsSection } from "@/components/estimates/form/EstimateItemsSection";
 import { InvoiceNotesSection } from "./form/InvoiceNotesSection";
+import { InvoicePaymentSection } from "./components/InvoicePaymentSection";
+import { InvoiceTotalsSection } from "./components/InvoiceTotalsSection";
+import { InvoiceForm, InvoiceItem } from "./types/invoiceTypes";
+import { useInvoiceCalculations } from "./hooks/useInvoiceCalculations";
 
 interface InvoiceDialogProps {
   open: boolean;
@@ -23,38 +27,6 @@ interface InvoiceDialogProps {
   prefilledClientName?: string;
   editingInvoice?: any;
 }
-
-interface InvoiceForm {
-  clientName: string;
-  date: Date;
-  dueDate: Date;
-  items: InvoiceItem[];
-  notes: string;
-  terms: string;
-  discount: number;
-  gstRate: number;
-  paymentMode: string;
-}
-
-interface InvoiceItem {
-  id: number;
-  name: string;
-  quantity: number;
-  price: number;
-  gstRate: number;
-  total: number;
-}
-
-const paymentModes = [
-  "Cash",
-  "Credit Card",
-  "Debit Card",
-  "UPI",
-  "Bank Transfer",
-  "Cheque",
-  "Net Banking",
-  "Digital Wallet"
-];
 
 export function InvoiceDialog({
   open,
@@ -81,23 +53,10 @@ export function InvoiceDialog({
     },
   });
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-  };
-
-  const calculateGST = () => {
-    return items.reduce((sum, item) => {
-      const itemTotal = item.quantity * item.price;
-      return sum + (itemTotal * item.gstRate / 100);
-    }, 0);
-  };
-
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const gst = calculateGST();
-    const discount = form.getValues("discount") || 0;
-    return subtotal + gst - discount;
-  };
+  const { subtotal, gstAmount, totalAmount } = useInvoiceCalculations(
+    items, 
+    form.watch("discount") || 0
+  );
 
   const onSubmit = (data: InvoiceForm) => {
     if (items.some(item => !item.name || item.quantity <= 0)) {
@@ -108,9 +67,9 @@ export function InvoiceDialog({
     const invoiceData = {
       ...data,
       items: items,
-      subtotal: calculateSubtotal(),
-      gstAmount: calculateGST(),
-      totalAmount: calculateTotal(),
+      subtotal,
+      gstAmount,
+      totalAmount,
       invoiceNo: editingInvoice?.invoiceNo || `INV-${Date.now().toString().slice(-6)}`,
       status: editingInvoice?.status || "pending",
       createdAt: editingInvoice?.createdAt || new Date().toISOString(),
@@ -142,62 +101,18 @@ export function InvoiceDialog({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <InvoiceFormHeader control={form.control} />
               
-              <FormField
-                control={form.control}
-                name="paymentMode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Mode</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment mode" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {paymentModes.map((mode) => (
-                          <SelectItem key={mode} value={mode}>
-                            {mode}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <InvoicePaymentSection control={form.control} />
               
               <EstimateItemsSection 
                 items={items}
                 setItems={setItems}
               />
 
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₹{calculateSubtotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST:</span>
-                    <span>₹{calculateGST().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Discount:</span>
-                    <span>₹{form.watch("discount")?.toFixed(2) || "0.00"}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total:</span>
-                    <span>₹{calculateTotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Payment Mode:</span>
-                    <span>{form.watch("paymentMode")}</span>
-                  </div>
-                </div>
-              </div>
+              <InvoiceTotalsSection
+                items={items}
+                discount={form.watch("discount") || 0}
+                paymentMode={form.watch("paymentMode")}
+              />
               
               <InvoiceNotesSection control={form.control} />
               
