@@ -7,14 +7,36 @@ import { ArrowLeft } from "lucide-react";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import useAppStore from "@/store/appStore";
 import MainLayout from "@/components/layout/MainLayout";
+import { toast } from "sonner";
 
 const AddClient = () => {
   const navigate = useNavigate();
-  const { addClient } = useAppStore();
+  const { addClient, saveDataToSupabase } = useAppStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddClient = (clientData: any) => {
-    addClient(clientData);
-    navigate("/clients");
+  const handleAddClient = async (clientData: any) => {
+    setIsSubmitting(true);
+    try {
+      console.log("CLIENT ADD PAGE: Adding new client:", clientData.name);
+      
+      // Add client to local state
+      addClient(clientData);
+      
+      // Immediately save to Supabase to prevent data loss on tab switches
+      console.log("CLIENT ADD PAGE: Saving to Supabase immediately");
+      await saveDataToSupabase();
+      
+      console.log("CLIENT ADD PAGE: Client saved successfully");
+      toast.success("Client created and saved successfully");
+      
+      // Navigate back to clients list
+      navigate("/clients");
+    } catch (error) {
+      console.error("CLIENT ADD PAGE: Error saving client:", error);
+      toast.error("Error saving client. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,6 +49,7 @@ const AddClient = () => {
             size="sm"
             onClick={() => navigate("/clients")}
             className="flex items-center gap-2"
+            disabled={isSubmitting}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Clients
@@ -46,6 +69,7 @@ const AddClient = () => {
               onOpenChange={() => {}}
               onAddClient={handleAddClient}
               isFullPage={true}
+              disabled={isSubmitting}
             />
           </CardContent>
         </Card>

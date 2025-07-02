@@ -18,19 +18,25 @@ export const createClientSlice = (set: any, get: any) => ({
   addClient: (clientData) => set((state: ClientState) => {
     const newClient = createNewClient(clientData, state.clients);
     
-    console.log("CLIENT ADD: Adding new client:", newClient.name);
-    toast.success("Client added successfully");
-    return { clients: [...state.clients, newClient] };
+    console.log("CLIENT ADD: Adding new client:", newClient.name, "Total clients will be:", state.clients.length + 1);
+    toast.success(`Client "${newClient.name}" added successfully`);
+    
+    const updatedClients = [...state.clients, newClient];
+    console.log("CLIENT ADD: Updated clients array:", updatedClients.map(c => c.name));
+    
+    return { clients: updatedClients };
   }),
   
   deleteClient: (clientId) => set((state: ClientState) => {
-    console.log("CLIENT DELETE: Deleting client:", clientId);
+    const clientToDelete = state.clients.find(c => c.id === clientId);
+    console.log("CLIENT DELETE: Deleting client:", clientToDelete?.name || clientId);
     toast.success("Client deleted successfully");
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),
   
   removeClient: (clientId) => set((state: ClientState) => {
-    console.log("CLIENT REMOVE: Removing client:", clientId);
+    const clientToRemove = state.clients.find(c => c.id === clientId);
+    console.log("CLIENT REMOVE: Removing client:", clientToRemove?.name || clientId);
     toast.success("Client deleted successfully");
     return { clients: state.clients.filter(client => client.id !== clientId) };
   }),

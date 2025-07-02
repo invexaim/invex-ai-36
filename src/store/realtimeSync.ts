@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { AppState } from './types';
 
@@ -76,24 +75,24 @@ if (typeof document !== 'undefined') {
 const shouldIgnoreUpdate = (userData: any): boolean => {
   const currentTime = Date.now();
   
-  // Ignore if tab was recently switched (within 30 seconds - reduced from 60)
-  if (currentTime - lastTabVisibilityChange < 30000) {
+  // Ignore if tab was recently switched (within 10 seconds - reduced from 30)
+  if (currentTime - lastTabVisibilityChange < 10000) {
     logDataEvent("Ignoring update - recent tab visibility change", {
       timeSinceChange: currentTime - lastTabVisibilityChange
     });
     return true;
   }
   
-  // Ignore if this is a recent update from this device (reduced to 30 seconds)
-  if (currentTime - lastUpdateTimestamp < 30000) {
+  // Ignore if this is a recent update from this device (reduced to 15 seconds)
+  if (currentTime - lastUpdateTimestamp < 15000) {
     logDataEvent("Ignoring recent update from this device", {
       timeSinceLastUpdate: currentTime - lastUpdateTimestamp
     });
     return true;
   }
   
-  // Ignore if user was recently active (within 5 seconds - reduced from 10)
-  if (currentTime - lastUserActivity < 5000) {
+  // Ignore if user was recently active (within 2 seconds - reduced from 5)
+  if (currentTime - lastUserActivity < 2000) {
     logDataEvent("Ignoring update - recent user activity", {
       timeSinceActivity: currentTime - lastUserActivity
     });
@@ -214,17 +213,16 @@ export function configureAutoSave(
     
     // Schedule a save operation if auto-sync is enabled and user is logged in
     if (autoSyncEnabled && !isProcessingRealtimeUpdate) {
-      setTimeout(() => {
-        const state = get();
-        if (state.currentUser && !isProcessingRealtimeUpdate) {
-          logDataEvent("AUTO-SAVE: Triggering auto-save after state change");
-          updateLastTimestamp(); // Mark this as a local update
-          saveDataToSupabase().catch(error => {
-            logDataEvent("AUTO-SAVE: Error saving data", { error: error.message });
-            console.error("Error auto-saving data after state change:", error);
-          });
-        }
-      }, 500); // Reduced debounce time for more responsive saving
+      // Immediate save for critical operations (like adding clients)
+      const state = get();
+      if (state.currentUser && !isProcessingRealtimeUpdate) {
+        logDataEvent("AUTO-SAVE: Triggering immediate auto-save after state change");
+        updateLastTimestamp(); // Mark this as a local update
+        saveDataToSupabase().catch(error => {
+          logDataEvent("AUTO-SAVE: Error saving data", { error: error.message });
+          console.error("Error auto-saving data after state change:", error);
+        });
+      }
     } else {
       logDataEvent("AUTO-SAVE: Skipped", {
         autoSyncEnabled,
@@ -278,8 +276,8 @@ export function processRealtimeUpdate(
     }
     
     // Only prompt user for significant conflicts during active use
-    const isUserActive = (Date.now() - lastUserActivity) < 30000;
-    const hasLocalChanges = localDataBackup && (Date.now() - localDataBackup.timestamp) < 300000; // 5 minutes
+    const isUserActive = (Date.now() - lastUserActivity) < 10000; // Reduced from 30 seconds
+    const hasLocalChanges = localDataBackup && (Date.now() - localDataBackup.timestamp) < 60000; // Reduced from 5 minutes
     
     if (isUserActive && hasLocalChanges) {
       // User is actively working and has recent local changes
@@ -288,7 +286,7 @@ export function processRealtimeUpdate(
       // Show a non-intrusive notification
       toast.info("Data updated on another device. Changes will sync when you're done.", {
         id: "deferred-sync",
-        duration: 5000
+        duration: 3000
       });
       
       return false;
@@ -320,10 +318,6 @@ export function processRealtimeUpdate(
     
     // Only show success message if there were actual meaningful changes applied
     if (JSON.stringify(mergedData) !== JSON.stringify(currentState)) {
-      toast.success("Data synchronized", {
-        id: "background-sync",
-        duration: 2000
-      });
       logDataEvent("Successfully applied realtime update");
     }
     
@@ -334,7 +328,7 @@ export function processRealtimeUpdate(
       isProcessingRealtimeUpdate = false;
       updateMutex = false;
       logDataEvent("Processing flags cleared");
-    }, 1000); // Reduced to 1 second for better responsiveness
+    }, 500); // Reduced to 0.5 seconds for better responsiveness
   }
 }
 
