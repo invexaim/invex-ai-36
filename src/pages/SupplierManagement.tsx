@@ -6,6 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Search, Users, Plus, Eye, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react";
+import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Supplier {
   id: string;
@@ -23,6 +36,8 @@ interface Supplier {
 const SupplierManagement = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
   const filteredSuppliers = suppliers.filter((supplier) =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,6 +51,40 @@ const SupplierManagement = () => {
       case "inactive": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleSupplierCreated = (supplierData: any) => {
+    if (editingSupplier) {
+      // Update existing supplier
+      setSuppliers(prevSuppliers => 
+        prevSuppliers.map(supplier => 
+          supplier.id === editingSupplier.id ? supplierData : supplier
+        )
+      );
+      toast.success("Supplier updated successfully");
+    } else {
+      // Add new supplier
+      setSuppliers(prevSuppliers => [...prevSuppliers, supplierData]);
+      toast.success("Supplier created successfully");
+    }
+    setEditingSupplier(null);
+  };
+
+  const handleAddSupplier = () => {
+    setEditingSupplier(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditSupplier = (supplier: Supplier) => {
+    setEditingSupplier(supplier);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteSupplier = (supplierId: string) => {
+    setSuppliers(prevSuppliers => 
+      prevSuppliers.filter(supplier => supplier.id !== supplierId)
+    );
+    toast.success("Supplier deleted successfully");
   };
 
   return (
@@ -98,7 +147,7 @@ const SupplierManagement = () => {
                 Manage supplier information and relationships
               </CardDescription>
             </div>
-            <Button>
+            <Button onClick={handleAddSupplier}>
               <Plus className="h-4 w-4 mr-2" />
               Add Supplier
             </Button>
@@ -128,7 +177,7 @@ const SupplierManagement = () => {
                 }
               </p>
               {suppliers.length === 0 && (
-                <Button>
+                <Button onClick={handleAddSupplier}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Supplier
                 </Button>
@@ -181,12 +230,30 @@ const SupplierManagement = () => {
                           <Button size="sm" variant="outline">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleEditSupplier(supplier)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Supplier</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {supplier.name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSupplier(supplier.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -197,6 +264,13 @@ const SupplierManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <SupplierDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSupplierCreated={handleSupplierCreated}
+        editingSupplier={editingSupplier}
+      />
     </div>
   );
 };
