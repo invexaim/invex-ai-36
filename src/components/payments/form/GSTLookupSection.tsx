@@ -26,6 +26,7 @@ interface GSTLookupSectionProps {
   error: boolean;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  disabled?: boolean;
 }
 
 const GSTLookupSection = ({ 
@@ -39,7 +40,8 @@ const GSTLookupSection = ({
   onGSTDetailsUpdate,
   error, 
   isLoading,
-  setIsLoading
+  setIsLoading,
+  disabled = false
 }: GSTLookupSectionProps) => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [lastLookedUpGST, setLastLookedUpGST] = useState<string>('');
@@ -111,14 +113,14 @@ const GSTLookupSection = ({
               onKeyPress={handleKeyPress}
               placeholder="Enter 15-digit GST number (e.g., 27AABCU9603R1ZX)"
               maxLength={15}
-              disabled={isLoading}
+              disabled={disabled || isLoading}
               className={`mt-1 ${error ? 'border-red-500' : ''}`}
             />
           </div>
           <div className="flex items-end">
             <Button
               onClick={handleGSTLookup}
-              disabled={isLoading || !gstNumber.trim()}
+              disabled={disabled || isLoading || !gstNumber.trim()}
               className="mb-0"
             >
               {isLoading ? (
@@ -168,6 +170,7 @@ const GSTLookupSection = ({
                   name="companyName"
                   value={companyName}
                   onChange={onChange}
+                  disabled={disabled}
                   className="bg-white border-gray-200"
                 />
               </div>
@@ -180,6 +183,7 @@ const GSTLookupSection = ({
                   name="address"
                   value={address}
                   onChange={onChange}
+                  disabled={disabled}
                   className="bg-white border-gray-200"
                 />
               </div>
@@ -193,6 +197,7 @@ const GSTLookupSection = ({
                     name="city"
                     value={city}
                     onChange={onChange}
+                    disabled={disabled}
                     className="bg-white border-gray-200"
                   />
                 </div>
@@ -205,6 +210,7 @@ const GSTLookupSection = ({
                     name="pincode"
                     value={pincode}
                     onChange={onChange}
+                    disabled={disabled}
                     className="bg-white border-gray-200"
                   />
                 </div>
@@ -218,6 +224,7 @@ const GSTLookupSection = ({
                   name="state"
                   value={state}
                   onChange={onChange}
+                  disabled={disabled}
                   className="bg-white border-gray-200"
                 />
               </div>
