@@ -7,8 +7,8 @@ export const createEnhancedStoreMethods = (set: any, get: any, setWithAutoSave: 
   const immediateAutoSave = createDefaultAutoSave(set, get);
 
   return {
-    // Enhanced product methods with immediate save
-    addProduct: withImmediateSave(set, get, 'add product', (productData: Omit<Product, 'product_id' | 'created_at'>) => {
+    // Enhanced product methods with immediate save - return original results
+    addProduct: async (productData: Omit<Product, 'product_id' | 'created_at'>) => {
       console.log("ENHANCED STORE: Adding product with immediate save:", productData);
       const result = slices.productSlice.addProduct(productData);
       
@@ -32,32 +32,75 @@ export const createEnhancedStoreMethods = (set: any, get: any, setWithAutoSave: 
         }
       }
       
+      try {
+        await immediateAutoSave('add product');
+      } catch (error) {
+        console.error("Failed to auto-save after adding product:", error);
+        toast.error("Failed to save product. Please try again.");
+      }
+      
       return result;
-    }),
+    },
 
-    updateProduct: withImmediateSave(set, get, 'update product', (updatedProduct: Product) => {
+    updateProduct: async (updatedProduct: Product) => {
       console.log("ENHANCED STORE: Updating product with immediate save:", updatedProduct.product_id);
-      return slices.productSlice.updateProduct(updatedProduct);
-    }),
+      const result = slices.productSlice.updateProduct(updatedProduct);
+      
+      try {
+        await immediateAutoSave('update product');
+      } catch (error) {
+        console.error("Failed to auto-save after updating product:", error);
+        toast.error("Failed to save product update. Please try again.");
+      }
+      
+      return result;
+    },
 
-    deleteProduct: withImmediateSave(set, get, 'delete product', (productId: number) => {
+    deleteProduct: async (productId: number) => {
       console.log("ENHANCED STORE: Deleting product with immediate save:", productId);
-      return slices.productSlice.deleteProduct(productId);
-    }),
+      const result = slices.productSlice.deleteProduct(productId);
+      
+      try {
+        await immediateAutoSave('delete product');
+      } catch (error) {
+        console.error("Failed to auto-save after deleting product:", error);
+        toast.error("Failed to save product deletion. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced client methods with immediate save
-    addClient: withImmediateSave(set, get, 'add client', (clientData: Omit<Client, "id" | "totalPurchases" | "totalSpent" | "lastPurchase">) => {
+    // Enhanced client methods with immediate save - return original results
+    addClient: async (clientData: Omit<Client, "id" | "totalPurchases" | "totalSpent" | "lastPurchase">) => {
       console.log("ENHANCED STORE: Adding client with immediate save:", clientData.name);
-      return slices.clientSlice.addClient(clientData);
-    }),
+      const result = slices.clientSlice.addClient(clientData);
+      
+      try {
+        await immediateAutoSave('add client');
+      } catch (error) {
+        console.error("Failed to auto-save after adding client:", error);
+        toast.error("Failed to save client. Please try again.");
+      }
+      
+      return result;
+    },
 
-    deleteClient: withImmediateSave(set, get, 'delete client', (clientId: string) => {
+    deleteClient: async (clientId: string) => {
       console.log("ENHANCED STORE: Deleting client with immediate save:", clientId);
-      return slices.clientSlice.deleteClient(clientId);
-    }),
+      const result = slices.clientSlice.deleteClient(clientId);
+      
+      try {
+        await immediateAutoSave('delete client');
+      } catch (error) {
+        console.error("Failed to auto-save after deleting client:", error);
+        toast.error("Failed to save client deletion. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced sale methods with immediate save
-    recordSale: withImmediateSave(set, get, 'record sale', (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => {
+    // Enhanced sale methods with immediate save - return original results
+    recordSale: async (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => {
       console.log("ENHANCED STORE: Recording sale with immediate save:", saleData);
       
       const state = get();
@@ -101,73 +144,188 @@ export const createEnhancedStoreMethods = (set: any, get: any, setWithAutoSave: 
         }
       }
       
+      try {
+        await immediateAutoSave('record sale');
+      } catch (error) {
+        console.error("Failed to auto-save after recording sale:", error);
+        toast.error("Failed to save sale. Please try again.");
+      }
+      
       return newSale;
-    }),
+    },
 
-    // Add the missing addSale method
-    addSale: withImmediateSave(set, get, 'add sale', (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => {
+    // Add the missing addSale method - return original result
+    addSale: async (saleData: Omit<Sale, 'sale_id' | 'sale_date'>) => {
       console.log("ENHANCED STORE: Adding sale with immediate save:", saleData);
-      return slices.saleSlice.addSale(saleData);
-    }),
+      const result = slices.saleSlice.addSale(saleData);
+      
+      try {
+        await immediateAutoSave('add sale');
+      } catch (error) {
+        console.error("Failed to auto-save after adding sale:", error);
+        toast.error("Failed to save sale. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced payment methods with immediate save
-    addPayment: withImmediateSave(set, get, 'add payment', (paymentData: Omit<Payment, 'payment_id' | 'payment_date'>) => {
+    // Enhanced payment methods with immediate save - return original results
+    addPayment: async (paymentData: Omit<Payment, 'payment_id' | 'payment_date'>) => {
       console.log("ENHANCED STORE: Adding payment with immediate save:", paymentData);
-      return slices.paymentSlice.addPayment(paymentData);
-    }),
+      const result = slices.paymentSlice.addPayment(paymentData);
+      
+      try {
+        await immediateAutoSave('add payment');
+      } catch (error) {
+        console.error("Failed to auto-save after adding payment:", error);
+        toast.error("Failed to save payment. Please try again.");
+      }
+      
+      return result;
+    },
 
-    deletePayment: withImmediateSave(set, get, 'delete payment', (paymentId: number) => {
+    deletePayment: async (paymentId: number) => {
       console.log("ENHANCED STORE: Deleting payment with immediate save:", paymentId);
-      return slices.paymentSlice.deletePayment(paymentId);
-    }),
+      const result = slices.paymentSlice.deletePayment(paymentId);
+      
+      try {
+        await immediateAutoSave('delete payment');
+      } catch (error) {
+        console.error("Failed to auto-save after deleting payment:", error);
+        toast.error("Failed to save payment deletion. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced expiry methods with immediate save - fix return types
-    addProductExpiry: withImmediateSave(set, get, 'add product expiry', (expiryData: any) => {
+    // Enhanced expiry methods with immediate save - return original results
+    addProductExpiry: async (expiryData: any) => {
       console.log("ENHANCED STORE: Adding product expiry with immediate save:", expiryData);
-      return slices.expirySlice.addProductExpiry(expiryData);
-    }),
+      const result = slices.expirySlice.addProductExpiry(expiryData);
+      
+      try {
+        await immediateAutoSave('add product expiry');
+      } catch (error) {
+        console.error("Failed to auto-save after adding product expiry:", error);
+        toast.error("Failed to save product expiry. Please try again.");
+      }
+      
+      return result;
+    },
 
-    updateProductExpiry: withImmediateSave(set, get, 'update product expiry', (id: string, updates: any) => {
+    updateProductExpiry: async (id: string, updates: any) => {
       console.log("ENHANCED STORE: Updating product expiry with immediate save:", id);
-      return slices.expirySlice.updateProductExpiry(id, updates);
-    }),
+      const result = slices.expirySlice.updateProductExpiry(id, updates);
+      
+      try {
+        await immediateAutoSave('update product expiry');
+      } catch (error) {
+        console.error("Failed to auto-save after updating product expiry:", error);
+        toast.error("Failed to save product expiry update. Please try again.");
+      }
+      
+      return result;
+    },
 
-    deleteProductExpiry: withImmediateSave(set, get, 'delete product expiry', (id: string) => {
+    deleteProductExpiry: async (id: string) => {
       console.log("ENHANCED STORE: Deleting product expiry with immediate save:", id);
-      return slices.expirySlice.deleteProductExpiry(id);
-    }),
+      const result = slices.expirySlice.deleteProductExpiry(id);
+      
+      try {
+        await immediateAutoSave('delete product expiry');
+      } catch (error) {
+        console.error("Failed to auto-save after deleting product expiry:", error);
+        toast.error("Failed to save product expiry deletion. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced support methods with immediate save
-    addComplaint: withImmediateSave(set, get, 'add complaint', (complaintData: any) => {
+    // Enhanced support methods with immediate save - return original results
+    addComplaint: async (complaintData: any) => {
       console.log("ENHANCED STORE: Adding complaint with immediate save:", complaintData);
-      return slices.supportSlice.addComplaint(complaintData);
-    }),
+      const result = slices.supportSlice.addComplaint(complaintData);
+      
+      try {
+        await immediateAutoSave('add complaint');
+      } catch (error) {
+        console.error("Failed to auto-save after adding complaint:", error);
+        toast.error("Failed to save complaint. Please try again.");
+      }
+      
+      return result;
+    },
 
-    addFeedback: withImmediateSave(set, get, 'add feedback', (feedbackData: any) => {
+    addFeedback: async (feedbackData: any) => {
       console.log("ENHANCED STORE: Adding feedback with immediate save:", feedbackData);
-      return slices.supportSlice.addFeedback(feedbackData);
-    }),
+      const result = slices.supportSlice.addFeedback(feedbackData);
+      
+      try {
+        await immediateAutoSave('add feedback');
+      } catch (error) {
+        console.error("Failed to auto-save after adding feedback:", error);
+        toast.error("Failed to save feedback. Please try again.");
+      }
+      
+      return result;
+    },
 
-    addTicket: withImmediateSave(set, get, 'add ticket', (ticketData: any) => {
+    addTicket: async (ticketData: any) => {
       console.log("ENHANCED STORE: Adding ticket with immediate save:", ticketData);
-      return slices.supportSlice.addTicket(ticketData);
-    }),
+      const result = slices.supportSlice.addTicket(ticketData);
+      
+      try {
+        await immediateAutoSave('add ticket');
+      } catch (error) {
+        console.error("Failed to auto-save after adding ticket:", error);
+        toast.error("Failed to save ticket. Please try again.");
+      }
+      
+      return result;
+    },
 
-    // Enhanced meeting methods with immediate save
-    addMeeting: withImmediateSave(set, get, 'add meeting', (meetingData: any) => {
+    // Enhanced meeting methods with immediate save - return original results
+    addMeeting: async (meetingData: any) => {
       console.log("ENHANCED STORE: Adding meeting with immediate save:", meetingData);
-      return slices.meetingSlice.addMeeting(meetingData);
-    }),
+      const result = slices.meetingSlice.addMeeting(meetingData);
+      
+      try {
+        await immediateAutoSave('add meeting');
+      } catch (error) {
+        console.error("Failed to auto-save after adding meeting:", error);
+        toast.error("Failed to save meeting. Please try again.");
+      }
+      
+      return result;
+    },
 
-    updateMeeting: withImmediateSave(set, get, 'update meeting', (id: string, updates: any) => {
+    updateMeeting: async (id: string, updates: any) => {
       console.log("ENHANCED STORE: Updating meeting with immediate save:", id);
-      return slices.meetingSlice.updateMeeting(id, updates);
-    }),
+      const result = slices.meetingSlice.updateMeeting(id, updates);
+      
+      try {
+        await immediateAutoSave('update meeting');
+      } catch (error) {
+        console.error("Failed to auto-save after updating meeting:", error);
+        toast.error("Failed to save meeting update. Please try again.");
+      }
+      
+      return result;
+    },
 
-    deleteMeeting: withImmediateSave(set, get, 'delete meeting', (id: string) => {
+    deleteMeeting: async (id: string) => {
       console.log("ENHANCED STORE: Deleting meeting with immediate save:", id);
-      return slices.meetingSlice.deleteMeeting(id);
-    }),
+      const result = slices.meetingSlice.deleteMeeting(id);
+      
+      try {
+        await immediateAutoSave('delete meeting');
+      } catch (error) {
+        console.error("Failed to auto-save after deleting meeting:", error);
+        toast.error("Failed to save meeting deletion. Please try again.");
+      }
+      
+      return result;
+    },
 
     // Keep existing methods from slices that don't need enhancement
     saveDataToSupabase: slices.userSlice.saveDataToSupabase,

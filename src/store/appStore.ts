@@ -52,7 +52,9 @@ const useAppStore = createPersistedStore<AppState>(
     
     console.log("APP STORE: Final store recordSale type:", typeof combinedStore.recordSale);
     console.log("APP STORE: Final store addSale type:", typeof combinedStore.addSale);
-    return combinedStore as AppState;
+    
+    // Return the combined store (type assertion is safe here as we're combining all required parts)
+    return combinedStore as unknown as AppState;
   }
 );
 
