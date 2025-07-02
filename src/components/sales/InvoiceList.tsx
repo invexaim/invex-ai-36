@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Eye, Edit, Trash2, Download } from "lucide-react";
+import { Search, FileText, Eye, Edit, Trash2, Download, RotateCcw } from "lucide-react";
 import { InvoiceDialog } from "./InvoiceDialog";
+import { useNavigate } from "react-router-dom";
 
 interface Invoice {
   id: string;
@@ -28,6 +29,7 @@ export function InvoiceList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const navigate = useNavigate();
 
   const filteredInvoices = invoices.filter((invoice) =>
     invoice.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,6 +44,21 @@ export function InvoiceList() {
   const handleEditInvoice = (invoice: Invoice) => {
     setEditingInvoice(invoice);
     setIsInvoiceDialogOpen(true);
+  };
+
+  const handleReturnInvoice = (invoice: Invoice) => {
+    // Navigate to sales returns page with invoice data
+    navigate('/sales/returns', { 
+      state: { 
+        returnData: {
+          originalInvoiceId: invoice.id,
+          invoiceNo: invoice.invoiceNo,
+          clientName: invoice.clientName,
+          items: invoice.items,
+          totalAmount: invoice.totalAmount
+        }
+      }
+    });
   };
 
   const handleInvoiceCreated = (invoiceData: any) => {
@@ -166,6 +183,14 @@ export function InvoiceList() {
                             onClick={() => handleEditInvoice(invoice)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleReturnInvoice(invoice)}
+                            title="Return Invoice"
+                          >
+                            <RotateCcw className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline">
                             <Download className="h-4 w-4" />

@@ -9,9 +9,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceFormHeader } from "./form/InvoiceFormHeader";
 import { EstimateItemsSection } from "@/components/estimates/form/EstimateItemsSection";
 import { InvoiceNotesSection } from "./form/InvoiceNotesSection";
@@ -33,6 +34,7 @@ interface InvoiceForm {
   terms: string;
   discount: number;
   gstRate: number;
+  paymentMode: string;
 }
 
 interface InvoiceItem {
@@ -43,6 +45,17 @@ interface InvoiceItem {
   gstRate: number;
   total: number;
 }
+
+const paymentModes = [
+  "Cash",
+  "Credit Card",
+  "Debit Card",
+  "UPI",
+  "Bank Transfer",
+  "Cheque",
+  "Net Banking",
+  "Digital Wallet"
+];
 
 export function InvoiceDialog({
   open,
@@ -65,6 +78,7 @@ export function InvoiceDialog({
       terms: "Payment due within 30 days of issue.",
       discount: 0,
       gstRate: 18,
+      paymentMode: "Cash",
     },
   });
 
@@ -129,6 +143,31 @@ export function InvoiceDialog({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <InvoiceFormHeader control={form.control} />
               
+              <FormField
+                control={form.control}
+                name="paymentMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Mode</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment mode" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {paymentModes.map((mode) => (
+                          <SelectItem key={mode} value={mode}>
+                            {mode}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <EstimateItemsSection 
                 items={items}
                 setItems={setItems}
@@ -153,6 +192,10 @@ export function InvoiceDialog({
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total:</span>
                     <span>₹{calculateTotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Payment Mode:</span>
+                    <span>{form.watch("paymentMode")}</span>
                   </div>
                 </div>
               </div>

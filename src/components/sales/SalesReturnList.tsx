@@ -1,46 +1,92 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, RotateCcw, Eye, FileText } from "lucide-react";
-import useAppStore from "@/store/appStore";
+import { Search, RotateCcw, Eye, Trash2 } from "lucide-react";
 import { SalesReturnDialog } from "./SalesReturnDialog";
+import { useLocation } from "react-router-dom";
+import useAppStore from "@/store/appStore";
 
 interface SalesReturn {
-  id: number;
-  originalSaleId: number;
+  id: string;
+  originalSaleId?: number;
+  originalInvoiceId?: string;
+  invoiceNo?: string;
+  productId?: number;
   productName: string;
   clientName: string;
   returnQuantity: number;
   returnAmount: number;
   returnReason: string;
   refundType: string;
+  notes: string;
   returnDate: string;
-  status: "pending" | "approved" | "completed";
+  status: "pending" | "approved" | "completed" | "rejected";
 }
 
 export function SalesReturnList() {
-  const { sales } = useAppStore();
   const [returns, setReturns] = useState<SalesReturn[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
-  const [selectedSale, setSelectedSale] = useState<any>(null);
+  const [selectedSale, setSelectedSale] = useState(null);
+  
+  const location = useLocation();
+  const { sales } = useAppStore();
+
+  // Handle invoice return from navigation state
+  useEffect(() => {
+    if (location.state?.returnData) {
+      const { returnData } = location.state;
+      
+      // Create a return entry from invoice data
+      const invoiceReturn: SalesReturn = {
+        id: Date.now().toString(),
+        originalInvoiceId: returnData.originalInvoiceId,
+        invoiceNo: returnData.invoiceNo,
+        productName: returnData.items?.map((item: any) => item.name).join(", ") || "Multiple Items",
+        clientName: returnData.clientName,
+        returnQuantity: returnData.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 1,
+        returnAmount: returnData.totalAmount,
+        returnReason: "Invoice Return",
+        refundType: "refund",
+        notes: `Return for invoice ${returnData.invoiceNo}`,
+        returnDate: new Date().toISOString(),
+        status: "pending"
+      };
+      
+      setReturns(prev => [invoiceReturn, ...prev]);
+      
+      // Clear the navigation state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const filteredReturns = returns.filter((returnItem) =>
-    returnItem.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    returnItem.clientName?.toLowerCase().includes(searchTerm.toLowerCase())
+    returnItem.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    returnItem.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (returnItem.invoiceNo && returnItem.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleCreateReturn = (sale: any) => {
-    setSelectedSale(sale);
+  const handleCreateReturn = () => {
+    setSelectedSale(null);
     setIsReturnDialogOpen(true);
   };
 
   const handleReturnCreated = (returnData: any) => {
-    setReturns(prev => [returnData, ...prev]);
+    const newReturn: SalesReturn = {
+      ...returnData,
+      id: Date.now().toString(),
+    };
+    setReturns(prev => [newReturn, ...prev]);
+  };
+
+  const handleDeleteReturn = (returnId: string) => {
+    if (confirm("Are you sure you want to delete this return?")) {
+      setReturns(prev => prev.filter(returnItem => returnItem.id !== returnId));
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -48,65 +94,22 @@ export function SalesReturnList() {
       case "completed": return "bg-green-100 text-green-800";
       case "approved": return "bg-blue-100 text-blue-800";
       case "pending": return "bg-yellow-100 text-yellow-800";
+      case "rejected": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getRefundTypeColor = (type: string) => {
+    switch (type) {
+      case "refund": return "bg-green-100 text-green-800";
+      case "credit": return "bg-blue-100 text-blue-800";
+      case "exchange": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Available Sales for Return */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Available Sales for Return
-          </CardTitle>
-          <CardDescription>
-            Select a sale to create a return
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.slice(0, 10).map((sale) => (
-                  <TableRow key={sale.sale_id}>
-                    <TableCell>
-                      {new Date(sale.sale_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{sale.product?.product_name}</TableCell>
-                    <TableCell>{sale.clientName || "No client"}</TableCell>
-                    <TableCell>{sale.quantity_sold}</TableCell>
-                    <TableCell>₹{(sale.quantity_sold * sale.selling_price).toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleCreateReturn(sale)}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Return
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Returns List */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -116,9 +119,12 @@ export function SalesReturnList() {
                 Sales Returns
               </CardTitle>
               <CardDescription>
-                Track all sales returns and refunds
+                Manage product returns and refunds
               </CardDescription>
             </div>
+            <Button onClick={handleCreateReturn}>
+              Create Return
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -138,25 +144,30 @@ export function SalesReturnList() {
             <div className="text-center py-12">
               <RotateCcw className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No returns found</h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 mb-4">
                 {returns.length === 0 
-                  ? "No sales returns have been created yet" 
+                  ? "No sales returns have been processed yet" 
                   : "No returns match your search criteria"
                 }
               </p>
+              {returns.length === 0 && (
+                <Button onClick={handleCreateReturn}>
+                  Create First Return
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Return Date</TableHead>
-                    <TableHead>Product</TableHead>
+                    <TableHead>Product/Invoice</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Reason</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Refund Type</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -164,24 +175,48 @@ export function SalesReturnList() {
                 <TableBody>
                   {filteredReturns.map((returnItem) => (
                     <TableRow key={returnItem.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div>{returnItem.productName}</div>
+                          {returnItem.invoiceNo && (
+                            <div className="text-sm text-gray-500">
+                              Invoice: {returnItem.invoiceNo}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{returnItem.clientName}</TableCell>
+                      <TableCell>{returnItem.returnQuantity}</TableCell>
+                      <TableCell>₹{returnItem.returnAmount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <span className="text-sm">{returnItem.returnReason}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getRefundTypeColor(returnItem.refundType)}>
+                          {returnItem.refundType}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         {new Date(returnItem.returnDate).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{returnItem.productName}</TableCell>
-                      <TableCell>{returnItem.clientName || "No client"}</TableCell>
-                      <TableCell>{returnItem.returnQuantity}</TableCell>
-                      <TableCell>₹{returnItem.returnAmount.toFixed(2)}</TableCell>
-                      <TableCell>{returnItem.returnReason}</TableCell>
-                      <TableCell className="capitalize">{returnItem.refundType}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(returnItem.status)}>
                           {returnItem.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteReturn(returnItem.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
