@@ -1,11 +1,11 @@
-
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingCart, Eye, Edit, Trash2, Download } from "lucide-react";
+import { Search, ShoppingCart, Eye, Edit, Trash2, Download, RotateCcw } from "lucide-react";
 import { PurchaseOrderDialog } from "./PurchaseOrderDialog";
 
 interface PurchaseOrder {
@@ -24,6 +24,7 @@ interface PurchaseOrder {
 }
 
 export function PurchaseOrderList() {
+  const navigate = useNavigate();
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
@@ -42,6 +43,20 @@ export function PurchaseOrderList() {
   const handleEditPurchaseOrder = (purchaseOrder: PurchaseOrder) => {
     setEditingPurchaseOrder(purchaseOrder);
     setIsPurchaseOrderDialogOpen(true);
+  };
+
+  const handleCreateReturn = (purchaseOrder: PurchaseOrder) => {
+    navigate("/purchases/returns/create", {
+      state: {
+        returnData: {
+          purchaseOrderNo: purchaseOrder.poNo,
+          supplierName: purchaseOrder.supplierName,
+          items: purchaseOrder.items,
+          totalAmount: purchaseOrder.totalAmount,
+          originalPurchaseOrder: purchaseOrder
+        }
+      }
+    });
   };
 
   const handlePurchaseOrderCreated = (purchaseOrderData: any) => {
@@ -167,6 +182,14 @@ export function PurchaseOrderList() {
                             onClick={() => handleEditPurchaseOrder(purchaseOrder)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleCreateReturn(purchaseOrder)}
+                            title="Create Return"
+                          >
+                            <RotateCcw className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline">
                             <Download className="h-4 w-4" />

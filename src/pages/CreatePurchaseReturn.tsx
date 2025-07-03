@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
@@ -8,6 +8,7 @@ import { PurchaseReturnDialog } from "@/components/purchases/PurchaseReturnDialo
 
 const CreatePurchaseReturn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(true);
 
   const handleReturnCreated = (returnData: any) => {

@@ -1,7 +1,8 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,7 @@ export function PurchaseReturnDialog({
   onReturnCreated,
   isFullScreen = false
 }: PurchaseReturnDialogProps) {
+  const location = useLocation();
   const form = useForm<ReturnForm>({
     defaultValues: {
       purchaseOrderNo: "",
@@ -58,6 +60,21 @@ export function PurchaseReturnDialog({
     },
   });
 
+  // Pre-fill form data when coming from purchase order
+  useEffect(() => {
+    if (location.state?.returnData) {
+      const { returnData } = location.state;
+      form.reset({
+        purchaseOrderNo: returnData.purchaseOrderNo || "",
+        supplierName: returnData.supplierName || "",
+        productName: returnData.items?.map((item: any) => item.name).join(", ") || "",
+        returnQuantity: 1,
+        returnReason: "",
+        notes: `Return for PO: ${returnData.purchaseOrderNo}`,
+      });
+    }
+  }, [location.state, form]);
+
   const onSubmit = (data: ReturnForm) => {
     const returnData = {
       id: Date.now().toString(),
@@ -65,7 +82,7 @@ export function PurchaseReturnDialog({
       ...data,
       returnDate: new Date().toISOString(),
       status: "pending",
-      totalAmount: 0, // This would be calculated based on purchase price
+      totalAmount: location.state?.returnData?.totalAmount || 0,
     };
 
     console.log("Creating purchase return:", returnData);
