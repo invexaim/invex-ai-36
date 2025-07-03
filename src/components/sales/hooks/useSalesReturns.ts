@@ -37,7 +37,6 @@ export const useSalesReturns = () => {
     }
 
     try {
-      // For now, store in user_data as we don't have a separate sales_returns table
       const { data: userData, error } = await supabase
         .from('user_data')
         .select('*')
@@ -49,7 +48,7 @@ export const useSalesReturns = () => {
       }
 
       if (userData?.sales_returns) {
-        setReturns(userData.sales_returns);
+        setReturns(userData.sales_returns as SalesReturn[]);
       }
     } catch (error) {
       console.error('Error loading sales returns:', error);
