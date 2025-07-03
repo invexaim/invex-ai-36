@@ -5,36 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, RotateCcw, Eye, Trash2 } from "lucide-react";
+import { Search, RotateCcw, Eye, Trash2, Loader2 } from "lucide-react";
 import { SalesReturnDialog } from "./SalesReturnDialog";
 import { useLocation } from "react-router-dom";
-import useAppStore from "@/store/appStore";
-
-interface SalesReturn {
-  id: string;
-  originalSaleId?: number;
-  originalInvoiceId?: string;
-  invoiceNo?: string;
-  productId?: number;
-  productName: string;
-  clientName: string;
-  returnQuantity: number;
-  returnAmount: number;
-  returnReason: string;
-  refundType: string;
-  notes: string;
-  returnDate: string;
-  status: "pending" | "approved" | "completed" | "rejected";
-}
+import { useSalesReturns, type SalesReturn } from "./hooks/useSalesReturns";
 
 export function SalesReturnList() {
-  const [returns, setReturns] = useState<SalesReturn[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   
   const location = useLocation();
-  const { sales } = useAppStore();
+  const { returns, loading, addReturn, deleteReturn } = useSalesReturns();
 
   // Handle invoice return from navigation state
   useEffect(() => {
@@ -42,32 +24,31 @@ export function SalesReturnList() {
       const { returnData } = location.state;
       
       // Create a return entry from invoice data
-      const invoiceReturn: SalesReturn = {
-        id: Date.now().toString(),
-        originalInvoiceId: returnData.originalInvoiceId,
-        invoiceNo: returnData.invoiceNo,
-        productName: returnData.items?.map((item: any) => item.name).join(", ") || "Multiple Items",
-        clientName: returnData.clientName,
-        returnQuantity: returnData.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 1,
-        returnAmount: returnData.totalAmount,
-        returnReason: "Invoice Return",
-        refundType: "refund",
+      const invoiceReturnData = {
+        original_invoice_id: returnData.originalInvoiceId,
+        invoice_no: returnData.invoiceNo,
+        product_name: returnData.items?.map((item: any) => item.name).join(", ") || "Multiple Items",
+        client_name: returnData.clientName,
+        return_quantity: returnData.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 1,
+        return_amount: returnData.totalAmount,
+        return_reason: "Invoice Return",
+        refund_type: "refund",
         notes: `Return for invoice ${returnData.invoiceNo}`,
-        returnDate: new Date().toISOString(),
-        status: "pending"
+        return_date: new Date().toISOString(),
+        status: "pending" as const
       };
       
-      setReturns(prev => [invoiceReturn, ...prev]);
+      addReturn(invoiceReturnData);
       
       // Clear the navigation state
       window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.state, addReturn]);
 
   const filteredReturns = returns.filter((returnItem) =>
-    returnItem.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    returnItem.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (returnItem.invoiceNo && returnItem.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()))
+    returnItem.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    returnItem.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (returnItem.invoice_no && returnItem.invoice_no.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleCreateReturn = () => {
@@ -75,17 +56,13 @@ export function SalesReturnList() {
     setIsReturnDialogOpen(true);
   };
 
-  const handleReturnCreated = (returnData: any) => {
-    const newReturn: SalesReturn = {
-      ...returnData,
-      id: Date.now().toString(),
-    };
-    setReturns(prev => [newReturn, ...prev]);
+  const handleReturnCreated = async (returnData: any) => {
+    await addReturn(returnData);
   };
 
-  const handleDeleteReturn = (returnId: string) => {
+  const handleDeleteReturn = async (returnId: string) => {
     if (confirm("Are you sure you want to delete this return?")) {
-      setReturns(prev => prev.filter(returnItem => returnItem.id !== returnId));
+      await deleteReturn(returnId);
     }
   };
 
@@ -107,6 +84,15 @@ export function SalesReturnList() {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading sales returns...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -177,27 +163,27 @@ export function SalesReturnList() {
                     <TableRow key={returnItem.id}>
                       <TableCell className="font-medium">
                         <div>
-                          <div>{returnItem.productName}</div>
-                          {returnItem.invoiceNo && (
+                          <div>{returnItem.product_name}</div>
+                          {returnItem.invoice_no && (
                             <div className="text-sm text-gray-500">
-                              Invoice: {returnItem.invoiceNo}
+                              Invoice: {returnItem.invoice_no}
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{returnItem.clientName}</TableCell>
-                      <TableCell>{returnItem.returnQuantity}</TableCell>
-                      <TableCell>₹{returnItem.returnAmount.toFixed(2)}</TableCell>
+                      <TableCell>{returnItem.client_name}</TableCell>
+                      <TableCell>{returnItem.return_quantity}</TableCell>
+                      <TableCell>₹{returnItem.return_amount.toFixed(2)}</TableCell>
                       <TableCell>
-                        <span className="text-sm">{returnItem.returnReason}</span>
+                        <span className="text-sm">{returnItem.return_reason}</span>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getRefundTypeColor(returnItem.refundType)}>
-                          {returnItem.refundType}
+                        <Badge className={getRefundTypeColor(returnItem.refund_type)}>
+                          {returnItem.refund_type}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(returnItem.returnDate).toLocaleDateString()}
+                        {new Date(returnItem.return_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(returnItem.status)}>
