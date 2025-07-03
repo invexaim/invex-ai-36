@@ -47,8 +47,10 @@ export const useSalesReturns = () => {
         throw error;
       }
 
-      if (userData?.sales_returns) {
-        setReturns(userData.sales_returns as SalesReturn[]);
+      // Cast userData to any to access sales_returns field until types are updated
+      const userDataWithReturns = userData as any;
+      if (userDataWithReturns?.sales_returns) {
+        setReturns(userDataWithReturns.sales_returns as SalesReturn[]);
       }
     } catch (error) {
       console.error('Error loading sales returns:', error);
@@ -67,9 +69,9 @@ export const useSalesReturns = () => {
         .from('user_data')
         .upsert({
           user_id: currentUser.id,
-          sales_returns: updatedReturns,
+          sales_returns: updatedReturns as any,
           updated_at: new Date().toISOString()
-        }, {
+        } as any, {
           onConflict: 'user_id'
         });
 
