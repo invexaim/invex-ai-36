@@ -19,6 +19,8 @@ interface SupplierDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   supplier?: any;
+  onSupplierCreated?: (supplierData: any) => void;
+  isFullScreen?: boolean;
 }
 
 interface SupplierForm {
@@ -32,7 +34,9 @@ interface SupplierForm {
 export function SupplierDialog({
   open,
   onOpenChange,
-  supplier
+  supplier,
+  onSupplierCreated,
+  isFullScreen = false
 }: SupplierDialogProps) {
   const { addSupplier, updateSupplier } = useSuppliers();
   const form = useForm<SupplierForm>({
@@ -68,12 +72,19 @@ export function SupplierDialog({
 
   const onSubmit = async (data: SupplierForm) => {
     try {
+      let savedSupplier;
       if (supplier) {
         await updateSupplier(supplier.id, data);
         toast.success("Supplier updated successfully");
+        savedSupplier = { ...supplier, ...data };
       } else {
-        await addSupplier(data);
+        savedSupplier = await addSupplier(data);
         toast.success("Supplier created successfully");
+      }
+      
+      // Call the onSupplierCreated callback if provided
+      if (onSupplierCreated && !supplier) {
+        onSupplierCreated(savedSupplier);
       }
       
       onOpenChange(false);
@@ -86,7 +97,7 @@ export function SupplierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={isFullScreen ? "w-full h-full max-w-none max-h-none m-0 rounded-none" : "sm:max-w-[600px]"}>
         <DialogHeader>
           <DialogTitle>
             {supplier ? "Edit Supplier" : "Add New Supplier"}
