@@ -1,288 +1,176 @@
-import React, { useState } from "react";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Receipt, Calendar, DollarSign, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
-import MainLayout from "@/components/layout/MainLayout";
-
-interface ExpenseForm {
-  expenseNo: string;
-  date: string;
-  category: string;
-  vendor: string;
-  amount: number;
-  description: string;
-  notes: string;
-  paymentMethod: string;
-}
-
-const expenseCategories = [
-  "Rent", "Utilities", "Marketing", "Office Supplies", "Travel",
-  "Meals & Entertainment", "Equipment", "Software", "Professional Services",
-  "Insurance", "Other"
-];
-
-const paymentMethods = [
-  "Cash", "Credit Card", "Debit Card", "Bank Transfer", "Check", "Online Payment"
-];
 
 const ExpenseNew = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Use the enhanced store methods for immediate auto-save
-  const { saveDataToSupabase } = useAppStore();
-
-  const form = useForm<ExpenseForm>({
-    defaultValues: {
-      expenseNo: `EXP-${Date.now().toString().slice(-6)}`,
-      date: new Date().toISOString().split('T')[0],
-      category: "",
-      vendor: "",
-      amount: 0,
-      description: "",
-      notes: "",
-      paymentMethod: "",
-    },
+  const [formData, setFormData] = useState({
+    title: "",
+    amount: "",
+    category: "",
+    date: new Date().toISOString().split('T')[0],
+    description: "",
+    paymentMethod: ""
   });
 
-  const onSubmit = async (data: ExpenseForm) => {
-    setIsSubmitting(true);
-    try {
-      const expenseData = {
-        ...data,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        status: "recorded"
-      };
+  const categories = [
+    "Office Supplies",
+    "Travel",
+    "Meals & Entertainment",
+    "Utilities",
+    "Marketing",
+    "Software & Subscriptions",
+    "Equipment",
+    "Other"
+  ];
 
-      console.log("EXPENSE NEW: Creating expense with immediate save:", expenseData);
-      
-      // Immediately save to prevent data loss on tab switches
-      await saveDataToSupabase();
-      
-      toast.success("Expense recorded and saved successfully");
-      navigate("/expense/list");
-    } catch (error) {
-      console.error("EXPENSE NEW: Error creating expense:", error);
-      toast.error("Failed to record expense. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+  const paymentMethods = [
+    "Cash",
+    "Credit Card",
+    "Debit Card",
+    "Bank Transfer",
+    "UPI",
+    "Other"
+  ];
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title || !formData.amount || !formData.category) {
+      toast.error("Please fill in all required fields");
+      return;
     }
+
+    console.log("Creating expense:", formData);
+    toast.success("Expense created successfully");
+    navigate("/expense");
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/expense/list")}
-            className="flex items-center gap-2"
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Expense List
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Receipt className="h-8 w-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold">New Expense</h1>
-            <p className="text-muted-foreground">Record a new business expense</p>
-          </div>
-        </div>
-
-        {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Expense Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="expenseNo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Expense Number</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly className="bg-muted" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {expenseCategories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="vendor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vendor/Supplier</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter vendor name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              className="pl-10"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payment method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {paymentMethods.map((method) => (
-                              <SelectItem key={method} value={method}>
-                                {method}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Brief description of the expense" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Additional notes or details..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate("/expense/list")}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Recording..." : "Record Expense"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+    <div className="p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/expense")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Expenses
+        </Button>
       </div>
-    </MainLayout>
+
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Add New Expense</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="title">Expense Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Enter expense title"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="amount">Amount *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => handleInputChange("amount", e.target.value)}
+                placeholder="0.00"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category *</Label>
+              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => handleInputChange("date", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select value={formData.paymentMethod} onValueChange={(value) => handleInputChange("paymentMethod", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentMethods.map((method) => (
+                    <SelectItem key={method} value={method}>
+                      {method}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                placeholder="Add any additional details..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => navigate("/expense")}>
+                Cancel
+              </Button>
+              <Button type="submit" className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                Save Expense
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

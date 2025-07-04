@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePurchaseReturns } from "./hooks/usePurchaseReturns";
 
 interface PurchaseReturnDialogProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function PurchaseReturnDialog({
   isFullScreen = false
 }: PurchaseReturnDialogProps) {
   const location = useLocation();
+  const { addReturn } = usePurchaseReturns();
   const form = useForm<ReturnForm>({
     defaultValues: {
       purchaseOrderNo: "",
@@ -65,35 +67,46 @@ export function PurchaseReturnDialog({
     if (location.state?.returnData) {
       const { returnData } = location.state;
       form.reset({
-        purchaseOrderNo: returnData.purchaseOrderNo || "",
+        purchaseOrderNo: returnData.orderNo || "",
         supplierName: returnData.supplierName || "",
         productName: returnData.items?.map((item: any) => item.name).join(", ") || "",
         returnQuantity: 1,
         returnReason: "",
-        notes: `Return for PO: ${returnData.purchaseOrderNo}`,
+        notes: `Return for PO: ${returnData.orderNo}`,
       });
     }
   }, [location.state, form]);
 
-  const onSubmit = (data: ReturnForm) => {
-    const returnData = {
-      id: Date.now().toString(),
-      returnNo: `RET-${Date.now().toString().slice(-6)}`,
-      ...data,
-      returnDate: new Date().toISOString(),
-      status: "pending",
-      totalAmount: location.state?.returnData?.totalAmount || 0,
-    };
+  const onSubmit = async (data: ReturnForm) => {
+    try {
+      const returnData = {
+        purchaseOrderNo: data.purchaseOrderNo,
+        supplierName: data.supplierName,
+        productName: data.productName,
+        returnQuantity: data.returnQuantity,
+        returnReason: data.returnReason,
+        notes: data.notes,
+        returnDate: new Date().toISOString(),
+        status: "pending" as const,
+        returnNo: `RET-${Date.now().toString().slice(-6)}`,
+        totalAmount: location.state?.returnData?.totalAmount || 0,
+      };
 
-    console.log("Creating purchase return:", returnData);
-    toast.success("Purchase return created successfully");
-    
-    if (onReturnCreated) {
-      onReturnCreated(returnData);
+      await addReturn(returnData);
+      
+      console.log("Creating purchase return:", returnData);
+      toast.success("Purchase return created successfully");
+      
+      if (onReturnCreated) {
+        onReturnCreated(returnData);
+      }
+      
+      onOpenChange(false);
+      form.reset();
+    } catch (error) {
+      console.error("Error creating purchase return:", error);
+      toast.error("Failed to create purchase return");
     }
-    
-    onOpenChange(false);
-    form.reset();
   };
 
   return (

@@ -1,217 +1,173 @@
 
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, Plus } from "lucide-react";
-import { Control } from "react-hook-form";
-
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import React from "react";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { SupplierDialog } from "@/components/suppliers/SupplierDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UseFormReturn } from "react-hook-form";
 
-interface PurchaseOrderForm {
+interface PurchaseOrderFormData {
+  orderNo: string;
   supplierName: string;
-  orderDate: Date;
-  expectedDate: Date;
-  items: any[];
+  supplierEmail: string;
+  supplierPhone: string;
+  supplierAddress: string;
+  supplierGST: string;
+  orderDate: string;
+  expectedDelivery: string;
+  paymentMode: string;
   notes: string;
-  terms: string;
-  discount: number;
-  gstRate: number;
 }
 
 interface PurchaseOrderHeaderProps {
-  control: Control<PurchaseOrderForm>;
+  form: UseFormReturn<PurchaseOrderFormData>;
 }
 
-interface Supplier {
-  id: string;
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  address: string;
-  gstNumber: string;
-  status: string;
-  totalOrders: number;
-  totalAmount: number;
-}
+const paymentModes = [
+  { value: "cash", label: "Cash" },
+  { value: "upi", label: "UPI" },
+  { value: "card", label: "Card" },
+  { value: "pending", label: "Pending" }
+];
 
-export function PurchaseOrderHeader({ control }: PurchaseOrderHeaderProps) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
-
-  // Load suppliers from localStorage
-  useEffect(() => {
-    const savedSuppliers = localStorage.getItem('suppliers');
-    if (savedSuppliers) {
-      setSuppliers(JSON.parse(savedSuppliers));
-    }
-  }, []);
-
-  const handleSupplierCreated = (supplierData: Supplier) => {
-    const updatedSuppliers = [...suppliers, supplierData];
-    setSuppliers(updatedSuppliers);
-    localStorage.setItem('suppliers', JSON.stringify(updatedSuppliers));
-  };
-
+export function PurchaseOrderHeader({ form }: PurchaseOrderHeaderProps) {
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <FormField
-          control={control}
-          name="supplierName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Supplier</FormLabel>
-              <div className="flex gap-2">
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a supplier" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.name}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsSupplierDialogOpen(true)}
-                  className="shrink-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={control}
-          name="orderDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Order Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className="pl-3 text-left font-normal"
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="expectedDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Expected Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className="pl-3 text-left font-normal"
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="discount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Discount (₹)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <SupplierDialog
-        open={isSupplierDialogOpen}
-        onOpenChange={setIsSupplierDialogOpen}
-        onSupplierCreated={handleSupplierCreated}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormField
+        control={form.control}
+        name="orderNo"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Purchase Order Number</FormLabel>
+            <FormControl>
+              <Input placeholder="PO001" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
-    </>
+
+      <FormField
+        control={form.control}
+        name="orderDate"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Order Date</FormLabel>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="supplierName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Supplier Name</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter supplier name" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="supplierEmail"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Supplier Email</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="supplier@example.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="supplierPhone"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Supplier Phone</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter phone number" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="supplierGST"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Supplier GST</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter GST number" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="expectedDelivery"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Expected Delivery</FormLabel>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="paymentMode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Payment Mode</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment mode" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {paymentModes.map((mode) => (
+                  <SelectItem key={mode.value} value={mode.value}>
+                    {mode.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="supplierAddress"
+        render={({ field }) => (
+          <FormItem className="md:col-span-2">
+            <FormLabel>Supplier Address</FormLabel>
+            <FormControl>
+              <Input placeholder="Enter complete address" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 }

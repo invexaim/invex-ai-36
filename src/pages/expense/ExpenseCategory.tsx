@@ -1,221 +1,211 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Tags, Plus, FolderOpen } from "lucide-react";
-import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
-import MainLayout from "@/components/layout/MainLayout";
 
-interface CategoryForm {
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+interface Category {
+  id: string;
   name: string;
   description: string;
   color: string;
+  expenseCount: number;
 }
 
 const ExpenseCategory = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Use the enhanced store methods for immediate auto-save
-  const { saveDataToSupabase } = useAppStore();
-
-  const form = useForm<CategoryForm>({
-    defaultValues: {
-      name: "",
-      description: "",
-      color: "#3b82f6",
+  const [categories, setCategories] = useState<Category[]>([
+    {
+      id: "1",
+      name: "Office Supplies",
+      description: "Stationery, equipment, and office materials",
+      color: "blue",
+      expenseCount: 12
     },
+    {
+      id: "2",
+      name: "Travel",
+      description: "Business travel expenses and transportation",
+      color: "green",
+      expenseCount: 8
+    },
+    {
+      id: "3",
+      name: "Marketing",
+      description: "Advertising and promotional expenses",
+      color: "purple",
+      expenseCount: 5
+    }
+  ]);
+
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+    color: "blue"
   });
 
-  const onSubmit = async (data: CategoryForm) => {
-    setIsSubmitting(true);
-    try {
-      const categoryData = {
-        ...data,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
+  const colors = [
+    { value: "blue", label: "Blue" },
+    { value: "green", label: "Green" },
+    { value: "purple", label: "Purple" },
+    { value: "red", label: "Red" },
+    { value: "yellow", label: "Yellow" },
+    { value: "pink", label: "Pink" }
+  ];
 
-      console.log("EXPENSE CATEGORY: Creating category with immediate save:", categoryData);
-      
-      // Immediately save to prevent data loss on tab switches
-      await saveDataToSupabase();
-      
-      toast.success("Expense category created and saved successfully");
-      navigate("/expense/category-list");
-    } catch (error) {
-      console.error("EXPENSE CATEGORY: Error creating category:", error);
-      toast.error("Failed to create category. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+  const getColorClass = (color: string) => {
+    const colorMap = {
+      blue: "bg-blue-100 text-blue-800",
+      green: "bg-green-100 text-green-800",
+      purple: "bg-purple-100 text-purple-800",
+      red: "bg-red-100 text-red-800",
+      yellow: "bg-yellow-100 text-yellow-800",
+      pink: "bg-pink-100 text-pink-800"
+    };
+    return colorMap[color as keyof typeof colorMap] || "bg-gray-100 text-gray-800";
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategory.name.trim()) {
+      toast.error("Please enter a category name");
+      return;
+    }
+
+    const category: Category = {
+      id: Date.now().toString(),
+      name: newCategory.name,
+      description: newCategory.description,
+      color: newCategory.color,
+      expenseCount: 0
+    };
+
+    setCategories(prev => [...prev, category]);
+    setNewCategory({ name: "", description: "", color: "blue" });
+    setIsAddingCategory(false);
+    toast.success("Category added successfully");
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    if (confirm("Are you sure you want to delete this category?")) {
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      toast.success("Category deleted successfully");
     }
   };
 
-  const predefinedColors = [
-    "#3b82f6", "#ef4444", "#10b981", "#f59e0b", 
-    "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"
-  ];
-
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/expense/category-list")}
-            className="flex items-center gap-2"
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Category List
-          </Button>
-        </div>
+    <div className="p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/expense")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Expenses
+        </Button>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <Tags className="h-8 w-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold">New Expense Category</h1>
-            <p className="text-muted-foreground">Define a new type of expense for better organization</p>
-          </div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Expense Categories</h1>
+          <p className="text-gray-600">Manage your expense categories</p>
         </div>
+        <Button onClick={() => setIsAddingCategory(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Category
+        </Button>
+      </div>
 
-        {/* Quick Access */}
-        <Card>
+      {isAddingCategory && (
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
+            <CardTitle>Add New Category</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/expense/category-list")}
-                className="flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                <FolderOpen className="h-4 w-4" />
-                View All Categories
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => navigate("/expense/new")}
-                className="flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                <Plus className="h-4 w-4" />
-                Record Expense
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="categoryName">Category Name</Label>
+                <Input
+                  id="categoryName"
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter category name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="categoryColor">Color</Label>
+                <select
+                  id="categoryColor"
+                  value={newCategory.color}
+                  onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  {colors.map((color) => (
+                    <option key={color.value} value={color.value}>
+                      {color.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="categoryDescription">Description</Label>
+                <Input
+                  id="categoryDescription"
+                  value={newCategory.description}
+                  onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter category description"
+                />
+              </div>
+            </div>
+            <div className="flex gap-4 mt-4">
+              <Button onClick={handleAddCategory}>Add Category</Button>
+              <Button variant="outline" onClick={() => setIsAddingCategory(false)}>
+                Cancel
               </Button>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tags className="h-5 w-5" />
-              Category Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Office Supplies, Marketing, Travel" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Brief description of this expense category..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category Color</FormLabel>
-                      <FormControl>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Input
-                              type="color"
-                              {...field}
-                              className="w-16 h-10 p-1 rounded border"
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              Choose a color to identify this category
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="text-sm text-muted-foreground mr-2">Quick colors:</span>
-                            {predefinedColors.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                className="w-8 h-8 rounded border-2 border-gray-300 hover:border-gray-500 transition-colors"
-                                style={{ backgroundColor: color }}
-                                onClick={() => form.setValue("color", color)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate("/expense/category-list")}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((category) => (
+          <Card key={category.id}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">{category.name}</CardTitle>
+                  <Badge className={getColorClass(category.color)}>
+                    {category.expenseCount} expenses
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost">
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Creating..." : "Create Category"}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteCategory(category.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">{category.description}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

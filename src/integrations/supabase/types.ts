@@ -58,8 +58,10 @@ export type Database = {
           id: string
           payments: Json | null
           products: Json | null
+          purchase_returns: Json | null
           sales: Json | null
           sales_returns: Json | null
+          suppliers: Json | null
           updated_at: string | null
           user_id: string
         }
@@ -69,8 +71,10 @@ export type Database = {
           id?: string
           payments?: Json | null
           products?: Json | null
+          purchase_returns?: Json | null
           sales?: Json | null
           sales_returns?: Json | null
+          suppliers?: Json | null
           updated_at?: string | null
           user_id: string
         }
@@ -80,8 +84,10 @@ export type Database = {
           id?: string
           payments?: Json | null
           products?: Json | null
+          purchase_returns?: Json | null
           sales?: Json | null
           sales_returns?: Json | null
+          suppliers?: Json | null
           updated_at?: string | null
           user_id?: string
         }
@@ -100,8 +106,10 @@ export type Database = {
           id: string
           payments: Json | null
           products: Json | null
+          purchase_returns: Json | null
           sales: Json | null
           sales_returns: Json | null
+          suppliers: Json | null
           updated_at: string | null
           user_id: string
         }[]
