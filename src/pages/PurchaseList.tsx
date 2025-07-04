@@ -37,8 +37,23 @@ const PurchaseList = () => {
     }
   });
 
-  // Safely convert the data to an array of purchases
-  const purchases: PurchaseOrder[] = Array.isArray(purchasesData) ? purchasesData : [];
+  // Safely convert the data to an array of purchases with proper type casting
+  const purchases: PurchaseOrder[] = Array.isArray(purchasesData) 
+    ? (purchasesData as any[]).filter(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        typeof item.order_no === 'string' &&
+        typeof item.supplier_name === 'string'
+      ).map(item => ({
+        id: item.id || '',
+        order_no: item.order_no || '',
+        supplier_name: item.supplier_name || '',
+        order_date: item.order_date || '',
+        status: item.status || 'pending',
+        items: item.items || [],
+        total_amount: item.total_amount || 0
+      }))
+    : [];
 
   const filteredPurchases = purchases.filter((purchase: PurchaseOrder) =>
     purchase.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
