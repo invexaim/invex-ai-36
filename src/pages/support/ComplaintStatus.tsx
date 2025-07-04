@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { format } from 'date-fns';
 import { Search, Eye, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import useAppStore from '@/store/appStore';
-import MainLayout from '@/components/layout/MainLayout';
 import { Complaint } from '@/types/support';
 
 const ComplaintStatus = () => {
@@ -193,8 +192,8 @@ const ComplaintStatus = () => {
   ];
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Complaint Status</h1>
           <p className="text-muted-foreground">Track the status of your submitted complaints.</p>
@@ -233,11 +232,44 @@ const ComplaintStatus = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={filteredComplaints} />
+            {filteredComplaints.length === 0 ? (
+              <div className="text-center py-8">
+                <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No complaints found</h3>
+                <p className="mt-1 text-sm text-gray-500">You haven't submitted any complaints yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredComplaints.map((complaint) => (
+                  <Card key={complaint.id} className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{complaint.title}</h3>
+                          <Badge variant={getStatusColor(complaint.status)} className="capitalize">
+                            {complaint.status.replace('_', ' ')}
+                          </Badge>
+                          <Badge variant={getPriorityColor(complaint.priority)} className="capitalize">
+                            {complaint.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{complaint.description}</p>
+                        <div className="text-xs text-muted-foreground">
+                          Created: {format(new Date(complaint.createdAt), 'MMM dd, yyyy HH:mm')}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Star, MessageSquare, Lightbulb, Bug } from 'lucide-react';
 import useAppStore from '@/store/appStore';
-import MainLayout from '@/components/layout/MainLayout';
 
 const Feedback = () => {
   const { addFeedback, currentUser } = useAppStore();
@@ -42,16 +41,13 @@ const Feedback = () => {
     setIsSubmitting(true);
     
     try {
-      console.log("FEEDBACK: Submitting feedback with immediate save:", formData.title);
-      
-      // Use the enhanced addFeedback method which includes immediate auto-save
       await addFeedback({
         ...formData,
         rating: ratings,
         userId: formData.isAnonymous ? undefined : currentUser?.id
       });
       
-      toast.success('Thank you for your feedback! We appreciate your input and it has been saved.');
+      toast.success('Thank you for your feedback!');
       
       // Reset form
       setFormData({
@@ -66,7 +62,7 @@ const Feedback = () => {
         overall: 0
       });
     } catch (error) {
-      console.error("FEEDBACK: Error submitting feedback:", error);
+      console.error("Error submitting feedback:", error);
       toast.error('Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -94,18 +90,9 @@ const Feedback = () => {
     </div>
   );
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'suggestion': return <Lightbulb className="w-5 h-5" />;
-      case 'bug_report': return <Bug className="w-5 h-5" />;
-      case 'feature_request': return <MessageSquare className="w-5 h-5" />;
-      default: return <MessageSquare className="w-5 h-5" />;
-    }
-  };
-
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Share Your Feedback</h1>
           <p className="text-muted-foreground">Help us improve by sharing your suggestions and experience.</p>
@@ -236,7 +223,7 @@ const Feedback = () => {
           </Card>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

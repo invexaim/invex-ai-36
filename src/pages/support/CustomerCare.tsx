@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Phone, Mail, Clock, MessageCircle, Headphones, HelpCircle, Users } from 'lucide-react';
 import useAppStore from '@/store/appStore';
-import MainLayout from '@/components/layout/MainLayout';
 
 const CustomerCare = () => {
   const { addTicket, currentUser } = useAppStore();
@@ -38,16 +37,13 @@ const CustomerCare = () => {
     setIsSubmitting(true);
     
     try {
-      console.log("CUSTOMER CARE: Creating ticket with immediate save:", ticketForm.subject);
-      
-      // Use the enhanced addTicket method which includes immediate auto-save
       await addTicket({
         ...ticketForm,
         userId: currentUser?.id || 'anonymous',
         status: 'open'
       });
       
-      toast.success('Support ticket created and saved successfully! We\'ll get back to you soon.');
+      toast.success('Support ticket created successfully!');
       
       setTicketForm({
         subject: '',
@@ -55,7 +51,7 @@ const CustomerCare = () => {
         priority: 'medium'
       });
     } catch (error) {
-      console.error("CUSTOMER CARE: Error creating ticket:", error);
+      console.error("Error creating ticket:", error);
       toast.error('Failed to create ticket. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -108,8 +104,8 @@ const CustomerCare = () => {
   ];
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Customer Care</h1>
           <p className="text-muted-foreground">Get help and support for your questions and issues.</p>
@@ -358,7 +354,7 @@ const CustomerCare = () => {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

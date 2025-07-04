@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { FileText, Upload, AlertCircle } from 'lucide-react';
 import useAppStore from '@/store/appStore';
-import MainLayout from '@/components/layout/MainLayout';
 
 const ComplaintRaise = () => {
   const { addComplaint, sales, currentUser } = useAppStore();
@@ -35,7 +35,6 @@ const ComplaintRaise = () => {
     try {
       console.log("COMPLAINT RAISE: Submitting complaint with immediate save:", formData.title);
       
-      // Use the enhanced addComplaint method which includes immediate auto-save
       await addComplaint({
         ...formData,
         attachments,
@@ -43,7 +42,7 @@ const ComplaintRaise = () => {
         status: 'open'
       });
       
-      toast.success('Complaint submitted and saved successfully! You will receive updates on the status.');
+      toast.success('Complaint submitted and saved successfully!');
       
       // Reset form
       setFormData({
@@ -72,8 +71,8 @@ const ComplaintRaise = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Raise a Complaint</h1>
           <p className="text-muted-foreground">Submit your issue or complaint and we'll get back to you soon.</p>
@@ -221,7 +220,7 @@ const ComplaintRaise = () => {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 
