@@ -20,6 +20,7 @@ interface PurchaseOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOrderCreated?: (orderData: any) => void;
+  isFullScreen?: boolean;
 }
 
 interface PurchaseOrderFormData {
@@ -35,11 +36,12 @@ interface PurchaseOrderFormData {
   notes: string;
 }
 
-interface OrderItem {
-  id: string;
+interface PurchaseOrderItem {
+  id: number;
   name: string;
   quantity: number;
-  unitPrice: number;
+  price: number;
+  gstRate: number;
   total: number;
 }
 
@@ -47,8 +49,11 @@ export function PurchaseOrderDialog({
   open,
   onOpenChange,
   onOrderCreated,
+  isFullScreen = false,
 }: PurchaseOrderDialogProps) {
-  const [items, setItems] = useState<OrderItem[]>([]);
+  const [items, setItems] = useState<PurchaseOrderItem[]>([
+    { id: 1, name: "", quantity: 1, price: 0, gstRate: 18, total: 0 }
+  ]);
   const { addSupplier } = useSuppliers();
   
   const form = useForm<PurchaseOrderFormData>({
@@ -71,13 +76,14 @@ export function PurchaseOrderDialog({
   };
 
   const onSubmit = async (data: PurchaseOrderFormData) => {
-    if (items.length === 0) {
+    if (items.length === 0 || items.every(item => !item.name.trim())) {
       toast.error("Please add at least one item");
       return;
     }
 
-    // Determine status based on payment mode
+    // Determine status and payment status based on payment mode
     const status = data.paymentMode === "pending" ? "pending" : "completed";
+    const paymentStatus = data.paymentMode === "pending" ? "pending" : "paid";
 
     const orderData = {
       id: Date.now().toString(),
@@ -85,7 +91,7 @@ export function PurchaseOrderDialog({
       items,
       totalAmount: calculateTotal(),
       status,
-      paymentStatus: data.paymentMode === "pending" ? "pending" : "paid",
+      paymentStatus,
       createdAt: new Date().toISOString(),
     };
 
@@ -114,12 +120,12 @@ export function PurchaseOrderDialog({
     
     onOpenChange(false);
     form.reset();
-    setItems([]);
+    setItems([{ id: 1, name: "", quantity: 1, price: 0, gstRate: 18, total: 0 }]);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={isFullScreen ? "w-full h-full max-w-none max-h-none m-0 rounded-none" : "max-w-4xl max-h-[90vh] overflow-y-auto"}>
         <DialogHeader>
           <DialogTitle>Create Purchase Order</DialogTitle>
         </DialogHeader>

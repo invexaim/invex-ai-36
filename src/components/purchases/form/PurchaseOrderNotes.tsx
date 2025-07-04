@@ -1,7 +1,6 @@
 
 import React from "react";
-import { Control } from "react-hook-form";
-
+import { UseFormReturn } from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -11,51 +10,35 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 
-interface PurchaseOrderForm {
+interface PurchaseOrderFormData {
+  orderNo: string;
   supplierName: string;
-  orderDate: Date;
-  expectedDate: Date;
-  items: any[];
+  supplierEmail: string;
+  supplierPhone: string;
+  supplierAddress: string;
+  supplierGST: string;
+  orderDate: string;
+  expectedDelivery: string;
+  paymentMode: string;
   notes: string;
-  terms: string;
-  discount: number;
-  gstRate: number;
 }
 
 interface PurchaseOrderNotesProps {
-  control: Control<PurchaseOrderForm>;
+  form: UseFormReturn<PurchaseOrderFormData>;
 }
 
-export function PurchaseOrderNotes({ control }: PurchaseOrderNotesProps) {
+export function PurchaseOrderNotes({ form }: PurchaseOrderNotesProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4">
       <FormField
-        control={control}
+        control={form.control}
         name="notes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Internal Notes</FormLabel>
+            <FormLabel>Additional Notes</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Additional notes for internal use"
-                className="resize-none h-20"
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      <FormField
-        control={control}
-        name="terms"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Terms & Conditions</FormLabel>
-            <FormControl>
-              <Textarea
-                placeholder="Terms and conditions for the supplier"
+                placeholder="Any additional notes for this purchase order..."
                 className="resize-none h-20"
                 {...field}
               />

@@ -10,9 +10,9 @@ const CreatePurchaseOrder = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(true);
 
-  const handlePurchaseOrderCreated = (purchaseOrderData: any) => {
-    console.log("Purchase order created:", purchaseOrderData);
-    navigate("/purchases/list");
+  const handleOrderCreated = (orderData: any) => {
+    console.log("Purchase order created:", orderData);
+    navigate("/purchases/orders");
   };
 
   const handleCancel = () => {
@@ -41,7 +41,7 @@ const CreatePurchaseOrder = () => {
               onOpenChange={(open) => {
                 if (!open) handleCancel();
               }}
-              onPurchaseOrderCreated={handlePurchaseOrderCreated}
+              onOrderCreated={handleOrderCreated}
               isFullScreen={true}
             />
           </CardContent>
