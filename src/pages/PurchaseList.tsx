@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
+interface PurchaseOrder {
+  id: string;
+  order_no: string;
+  supplier_name: string;
+  order_date: string;
+  status: string;
+  items?: any[];
+  total_amount: number;
+}
+
 const PurchaseList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: purchases = [], isLoading } = useQuery({
+  const { data: purchasesData, isLoading } = useQuery({
     queryKey: ['purchases'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,24 +37,27 @@ const PurchaseList = () => {
     }
   });
 
-  const filteredPurchases = purchases.filter((purchase: any) =>
+  // Safely convert the data to an array of purchases
+  const purchases: PurchaseOrder[] = Array.isArray(purchasesData) ? purchasesData : [];
+
+  const filteredPurchases = purchases.filter((purchase: PurchaseOrder) =>
     purchase.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     purchase.order_no?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <div className="min-h-screen bg-background p-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Purchase List</h1>
@@ -83,7 +95,7 @@ const PurchaseList = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPurchases.map((purchase: any) => (
+            {filteredPurchases.map((purchase: PurchaseOrder) => (
               <Card key={purchase.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -125,7 +137,7 @@ const PurchaseList = () => {
           </div>
         )}
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

@@ -1,5 +1,4 @@
 
-import MainLayout from "@/components/layout/MainLayout";
 import { InvoiceList } from "@/components/sales/InvoiceList";
 import useAppStore from "@/store/appStore";
 
@@ -10,7 +9,7 @@ const SalesInvoices = () => {
   const invoices = sales.map(sale => ({
     id: sale.sale_id.toString(),
     invoiceNumber: `INV-${sale.sale_id}`,
-    clientName: clients.find(c => c.client_id === sale.client_id)?.client_name || 'Unknown Client',
+    clientName: clients.find(c => c.id === sale.clientId)?.name || 'Unknown Client',
     date: sale.sale_date,
     amount: sale.selling_price * sale.quantity_sold,
     status: 'paid' as const,
@@ -23,15 +22,15 @@ const SalesInvoices = () => {
   }));
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Invoice List</h1>
           <p className="text-muted-foreground">Manage and view all your sales invoices</p>
         </div>
         <InvoiceList invoices={invoices} />
       </div>
-    </MainLayout>
+    </div>
   );
 };
 
