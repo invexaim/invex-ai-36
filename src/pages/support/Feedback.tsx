@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,8 +92,8 @@ const Feedback = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Share Your Feedback</h1>
           <p className="text-muted-foreground">Help us improve by sharing your suggestions and experience.</p>
@@ -223,7 +224,7 @@ const Feedback = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
