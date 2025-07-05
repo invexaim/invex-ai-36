@@ -1,5 +1,4 @@
 
-import React from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -10,21 +9,22 @@ interface SidebarItemProps {
   isActive: boolean;
 }
 
-const SidebarItem = ({ icon, label, href, isActive }: SidebarItemProps) => {
+export const SidebarItem = ({ icon, label, href, isActive }: SidebarItemProps) => {
   return (
     <Link
       to={href}
       className={cn(
-        "flex items-center space-x-3 px-4 py-3 rounded-md transition-all",
+        "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-150",
         isActive
-          ? "bg-slate-900 text-white dark:bg-white dark:text-black"
-          : "hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
-      {icon}
-      <span className="font-medium">{label}</span>
+      <span className="mr-3 flex-shrink-0">
+        {icon}
+      </span>
+      {label}
     </Link>
   );
 };
 
-export default SidebarItem;

@@ -1,31 +1,16 @@
 
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Moon, Sun, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SidebarItem from "./SidebarItem";
-import DropdownSidebarItem from "./DropdownSidebarItem";
-import { SidebarItemType } from "./types";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
-import AuthService from "@/services/authService";
-import { useState } from "react";
-
-interface DropdownMenuItemType {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}
-
-interface DropdownSidebarItemType {
-  icon: React.ReactNode;
-  label: string;
-  items: DropdownMenuItemType[];
-  href?: string;
-}
+import { SidebarItem } from "./SidebarItem";
+import { DropdownSidebarItem } from "./DropdownSidebarItem";
+import { UserProfile } from "./UserProfile";
+import { SidebarItemType, DropdownItemType } from "./types";
 
 interface DesktopSidebarProps {
   sidebarItems: SidebarItemType[];
-  dropdownItems: DropdownSidebarItemType[];
+  dropdownItems: DropdownItemType[];
   currentPath: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -40,83 +25,87 @@ const DesktopSidebar = ({
   toggleTheme,
   onLogout
 }: DesktopSidebarProps) => {
-  const navigate = useNavigate();
-  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
-  const {
-    companyName,
-    setCompanyName
-  } = useAppStore();
+  const [expandedDropdowns, setExpandedDropdowns] = useState<string[]>([]);
 
-  const handleLogout = async () => {
-    try {
-      console.log("Desktop logout triggered");
-
-      // First save all data to Supabase to ensure it's persisted before logout
-      await saveDataToSupabase();
-      console.log("Data saved to Supabase before logout");
-
-      // Then sign out using AuthService
-      const { error } = await AuthService.signOut();
-      if (error) {
-        console.error("Error signing out:", error);
-        throw error;
-      }
-
-      // Then call the onLogout function from props
-      await onLogout();
-    } catch (error) {
-      console.error("Error logging out:", error);
-      toast.error("Failed to log out. Please try again.");
-    }
+  const toggleDropdown = (label: string) => {
+    setExpandedDropdowns(prev => 
+      prev.includes(label) 
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
   };
 
+  const isDropdownExpanded = (label: string) => expandedDropdowns.includes(label);
+
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-64 border-r border-border hidden md:flex flex-col">
-      <div className="px-4 py-6 border-b">
-        <h1 className="text-xl font-semibold">Invex AI</h1>
-      </div>
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-        {sidebarItems.map(item => (
-          <SidebarItem 
-            key={item.href} 
-            icon={item.icon} 
-            label={item.label} 
-            href={item.href} 
-            isActive={currentPath === item.href} 
-          />
-        ))}
+    <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+      <div className="flex flex-col flex-1 min-h-0 bg-card border-r">
+        <div className="flex flex-col flex-1 pt-5 pb-4 overflow-y-auto">
+          <div className="flex items-center flex-shrink-0 px-4 mb-8">
+            <h1 className="text-xl font-bold text-primary">Business Manager</h1>
+          </div>
+          
+          <nav className="mt-5 flex-1 px-2 space-y-1">
+            {sidebarItems.map((item) => (
+              <SidebarItem
+                key={item.href}
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                isActive={currentPath === item.href}
+              />
+            ))}
+            
+            {dropdownItems.map((dropdown) => (
+              <DropdownSidebarItem
+                key={dropdown.label}
+                icon={dropdown.icon}
+                label={dropdown.label}
+                items={dropdown.items}
+                isExpanded={isDropdownExpanded(dropdown.label)}
+                onToggle={() => toggleDropdown(dropdown.label)}
+                currentPath={currentPath}
+              />
+            ))}
+          </nav>
+        </div>
         
-        {dropdownItems.map(dropdownItem => (
-          <DropdownSidebarItem
-            key={dropdownItem.label}
-            icon={dropdownItem.icon}
-            label={dropdownItem.label}
-            items={dropdownItem.items}
-            isActive={dropdownItem.href ? currentPath === dropdownItem.href : false}
-          />
-        ))}
-        
-        {/* Settings navigation item */}
-        <SidebarItem 
-          icon={<Settings className="w-5 h-5" />} 
-          label="Settings" 
-          href="/settings" 
-          isActive={currentPath === '/settings'} 
-        />
-      </nav>
-      <div className="p-4 border-t flex flex-col gap-2">
-        <Button onClick={handleLogout} className="flex items-center justify-start text-destructive" variant="ghost">
-          <span className="flex items-center gap-3">
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </span>
-        </Button>
-        <Button onClick={toggleTheme} variant="outline" size="icon">
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-        </Button>
+        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+          <div className="flex flex-col w-full space-y-2">
+            <UserProfile />
+            
+            <div className="flex justify-between items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="flex items-center gap-2"
+              >
+                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                {theme === 'light' ? 'Dark' : 'Light'}
+              </Button>
+              
+              <Link to="/settings">
+                <Button variant="ghost" size="icon">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onLogout}
+                className="text-destructive hover:text-destructive"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-    </aside>
+    </div>
   );
 };
 
 export default DesktopSidebar;
+

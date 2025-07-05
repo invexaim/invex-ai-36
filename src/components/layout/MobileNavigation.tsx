@@ -1,33 +1,15 @@
 
-import { Moon, Sun, Menu, LogOut, Settings } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Menu, X, Moon, Sun, LogOut, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import SidebarItem from "./SidebarItem";
-import DropdownSidebarItem from "./DropdownSidebarItem";
-import UserProfile from "./UserProfile";
-import { SidebarItemType } from "./types";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import useAppStore from "@/store/appStore";
-import AuthService from "@/services/authService";
-
-interface DropdownMenuItemType {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}
-
-interface DropdownSidebarItemType {
-  icon: React.ReactNode;
-  label: string;
-  items: DropdownMenuItemType[];
-  href?: string;
-}
+import { cn } from "@/lib/utils";
+import { SidebarItemType, DropdownItemType } from "./types";
 
 interface MobileNavigationProps {
   sidebarItems: SidebarItemType[];
-  dropdownItems: DropdownSidebarItemType[];
+  dropdownItems: DropdownItemType[];
   currentPath: string;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -42,101 +24,141 @@ const MobileNavigation = ({
   toggleTheme,
   onLogout
 }: MobileNavigationProps) => {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const saveDataToSupabase = useAppStore(state => state.saveDataToSupabase);
-  const { companyName, setCompanyName } = useAppStore();
-  
-  const handleItemClick = () => {
-    setOpen(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedDropdowns, setExpandedDropdowns] = useState<string[]>([]);
+
+  const toggleDropdown = (label: string) => {
+    setExpandedDropdowns(prev => 
+      prev.includes(label) 
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
   };
-  
-  const handleLogout = async () => {
-    try {
-      setOpen(false); // Close the mobile menu first
-      console.log("Mobile logout triggered");
-      
-      // First save all data to Supabase to ensure it's persisted
-      await saveDataToSupabase();
-      console.log("Data saved to Supabase before logout");
-      
-      // Then sign out using AuthService
-      const { error } = await AuthService.signOut();
-      
-      if (error) {
-        console.error("Error signing out:", error);
-        throw error;
-      }
-      
-      // Then call the onLogout function from props
-      await onLogout();
-      
-    } catch (error) {
-      console.error("Error logging out:", error);
-      toast.error("Failed to log out. Please try again.");
-    }
+
+  const isDropdownExpanded = (label: string) => expandedDropdowns.includes(label);
+
+  const handleLinkClick = () => {
+    setIsOpen(false);
+    setExpandedDropdowns([]);
   };
-  
+
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 border-b flex items-center justify-between z-10 md:hidden px-4 bg-background">
-      <div className="flex items-center">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 flex flex-col transition-all duration-700 ease-in-out">
-            <div className="px-4 py-6 border-b flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Menu</h2>
-            </div>
-            <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-              {sidebarItems.map(item => (
-                <div key={item.href} onClick={handleItemClick}>
-                  <SidebarItem icon={item.icon} label={item.label} href={item.href} isActive={currentPath === item.href} />
-                </div>
-              ))}
-              
-              {dropdownItems.map(dropdownItem => (
-                <DropdownSidebarItem
-                  key={dropdownItem.label}
-                  icon={dropdownItem.icon}
-                  label={dropdownItem.label}
-                  items={dropdownItem.items}
-                  isActive={dropdownItem.href ? currentPath === dropdownItem.href : false}
-                />
-              ))}
-              
-              {/* Settings navigation item */}
-              <div onClick={handleItemClick}>
-                <SidebarItem 
-                  icon={<Settings className="w-5 h-5" />} 
-                  label="Settings" 
-                  href="/settings" 
-                  isActive={currentPath === '/settings'} 
-                />
-              </div>
-            </nav>
-            <div className="p-4 border-t">
-              <Button onClick={handleLogout} className="flex items-center justify-start w-full text-destructive" variant="ghost">
-                <span className="flex items-center gap-3">
-                  <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
-                </span>
+    <div className="md:hidden">
+      <div className="fixed top-0 left-0 right-0 z-40 bg-card border-b px-4 py-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold text-primary">Business Manager</h1>
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
               </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
-        <h1 className="text-xl font-semibold ml-3">Invex AI</h1>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="text-lg font-semibold">Menu</h2>
+                </div>
+                
+                <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {sidebarItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        currentPath === item.href
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <span className="mr-3 flex-shrink-0">
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </Link>
+                  ))}
+                  
+                  {dropdownItems.map((dropdown) => (
+                    <div key={dropdown.label}>
+                      <button
+                        onClick={() => toggleDropdown(dropdown.label)}
+                        className="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <span className="mr-3 flex-shrink-0">
+                          {dropdown.icon}
+                        </span>
+                        <span className="flex-1 text-left">{dropdown.label}</span>
+                        {isDropdownExpanded(dropdown.label) ? (
+                          <ChevronDown className="ml-auto h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="ml-auto h-4 w-4" />
+                        )}
+                      </button>
+                      
+                      {isDropdownExpanded(dropdown.label) && (
+                        <div className="mt-1 space-y-1 pl-4">
+                          {dropdown.items.map((item) => (
+                            <Link
+                              key={item.href}
+                              to={item.href}
+                              onClick={handleLinkClick}
+                              className={cn(
+                                "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+                                currentPath === item.href
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <span className="mr-3 flex-shrink-0">
+                                {item.icon}
+                              </span>
+                              {item.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </nav>
+                
+                <div className="border-t p-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2"
+                    >
+                      {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                      {theme === 'light' ? 'Dark' : 'Light'}
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        onLogout();
+                        handleLinkClick();
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Button onClick={toggleTheme} variant="outline" size="icon">
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-        </Button>
-        <UserProfile />
-      </div>
+      
+      {/* Spacer to account for fixed header */}
+      <div className="h-14"></div>
     </div>
   );
 };
 
 export default MobileNavigation;
+

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import DesktopSidebar from "./DesktopSidebar";
@@ -48,7 +48,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const clearLocalData = useAppStore(state => state.clearLocalData);
 
-  const sidebarItems: SidebarItemType[] = [
+  // Memoize sidebar items to prevent recreation on every render
+  const sidebarItems: SidebarItemType[] = useMemo(() => [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard", href: "/dashboard" },
     { icon: <Package className="w-5 h-5" />, label: "Products", href: "/products" },
     { icon: <History className="w-5 h-5" />, label: "History", href: "/history" },  
@@ -57,9 +58,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { icon: <FileText className="w-5 h-5" />, label: "Estimates", href: "/estimates" },
     { icon: <Truck className="w-5 h-5" />, label: "Delivery", href: "/delivery" },
     { icon: <Calendar className="w-5 h-5" />, label: "Expiry", href: "/expiry" },
-  ];
+  ], []);
 
-  const dropdownItems = [
+  // Memoize dropdown items to prevent recreation on every render
+  const dropdownItems = useMemo(() => [
     {
       icon: <ShoppingCart className="w-5 h-5" />,
       label: "Sales",
@@ -127,7 +129,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         { icon: <Users className="w-4 h-4" />, label: "Customer Care", href: "/support/customer-care" },
       ]
     }
-  ];
+  ], []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -190,3 +192,4 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 };
 
 export default MainLayout;
+

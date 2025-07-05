@@ -1,71 +1,63 @@
 
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface DropdownMenuItemType {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}
+import { DropdownItemType } from "./types";
 
 interface DropdownSidebarItemProps {
   icon: React.ReactNode;
   label: string;
-  items: DropdownMenuItemType[];
-  isActive: boolean;
+  items: DropdownItemType['items'];
+  isExpanded: boolean;
+  onToggle: () => void;
+  currentPath: string;
 }
 
-const DropdownSidebarItem = ({ icon, label, items, isActive }: DropdownSidebarItemProps) => {
-  const [isOpen, setIsOpen] = useState(isActive);
-  const location = useLocation();
-
-  const isAnyChildActive = items.some(item => location.pathname === item.href);
-
-  React.useEffect(() => {
-    if (isAnyChildActive) {
-      setIsOpen(true);
-    }
-  }, [isAnyChildActive]);
-
+export const DropdownSidebarItem = ({
+  icon,
+  label,
+  items,
+  isExpanded,
+  onToggle,
+  currentPath
+}: DropdownSidebarItemProps) => {
   return (
-    <div className="space-y-1">
+    <div>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
         className={cn(
-          "flex items-center justify-between w-full px-4 py-3 rounded-md transition-all",
-          isActive || isAnyChildActive
-            ? "bg-slate-900 text-white dark:bg-white dark:text-black"
-            : "hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          "group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors duration-150",
+          "text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
       >
-        <div className="flex items-center space-x-3">
+        <span className="mr-3 flex-shrink-0">
           {icon}
-          <span className="font-medium">{label}</span>
-        </div>
-        {isOpen ? (
-          <ChevronDown className="h-4 w-4" />
+        </span>
+        <span className="flex-1 text-left">{label}</span>
+        {isExpanded ? (
+          <ChevronDown className="ml-auto h-4 w-4" />
         ) : (
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="ml-auto h-4 w-4" />
         )}
       </button>
       
-      {isOpen && (
-        <div className="ml-4 space-y-1">
+      {isExpanded && (
+        <div className="mt-1 space-y-1">
           {items.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               className={cn(
-                "flex items-center space-x-3 px-4 py-2 rounded-md transition-all text-sm",
-                location.pathname === item.href
-                  ? "bg-slate-800 text-white dark:bg-gray-200 dark:text-black"
-                  : "hover:bg-gray-100 text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+                "group flex items-center pl-8 pr-2 py-2 text-sm rounded-md transition-colors duration-150",
+                currentPath === item.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className="mr-3 flex-shrink-0">
+                {item.icon}
+              </span>
+              {item.label}
             </Link>
           ))}
         </div>
@@ -74,4 +66,3 @@ const DropdownSidebarItem = ({ icon, label, items, isActive }: DropdownSidebarIt
   );
 };
 
-export default DropdownSidebarItem;
