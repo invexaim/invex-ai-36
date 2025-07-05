@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      inventory: {
+        Row: {
+          current_stock: number
+          id: string
+          last_updated: string
+          location: string | null
+          product_id: number
+          product_name: string
+          reorder_level: number
+          reserved_stock: number
+          user_id: string
+        }
+        Insert: {
+          current_stock?: number
+          id?: string
+          last_updated?: string
+          location?: string | null
+          product_id: number
+          product_name: string
+          reorder_level?: number
+          reserved_stock?: number
+          user_id: string
+        }
+        Update: {
+          current_stock?: number
+          id?: string
+          last_updated?: string
+          location?: string | null
+          product_id?: number
+          product_name?: string
+          reorder_level?: number
+          reserved_stock?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_expiry: {
         Row: {
           batch_number: string | null
@@ -47,6 +83,89 @@ export type Database = {
           quantity?: number | null
           status?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_name: string
+          purchase_order_id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_name: string
+          purchase_order_id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_name?: string
+          purchase_order_id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          expected_delivery_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: string
+          status: string
+          supplier_contact: string | null
+          supplier_name: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number: string
+          status?: string
+          supplier_contact?: string | null
+          supplier_name: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expected_delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: string
+          status?: string
+          supplier_contact?: string | null
+          supplier_name?: string
+          total_amount?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

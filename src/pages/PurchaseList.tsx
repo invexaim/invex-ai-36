@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,67 +13,50 @@ import { format } from "date-fns";
 
 interface PurchaseOrder {
   id: string;
-  order_no: string;
+  order_number: string;
   supplier_name: string;
   order_date: string;
   status: string;
-  items?: any[];
   total_amount: number;
+  supplier_contact?: string;
+  notes?: string;
 }
 
 const PurchaseList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: purchasesData, isLoading } = useQuery({
-    queryKey: ['purchases'],
+  const { data: purchaseOrders, isLoading } = useQuery({
+    queryKey: ['purchase-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_data')
-        .select('purchase_returns')
-        .single();
+        .from('purchase_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data?.purchase_returns || [];
+      return data || [];
     }
   });
 
-  // Safely convert the data to an array of purchases with proper type casting
-  const purchases: PurchaseOrder[] = Array.isArray(purchasesData) 
-    ? (purchasesData as any[]).filter(item => 
-        typeof item === 'object' && 
-        item !== null && 
-        typeof item.order_no === 'string' &&
-        typeof item.supplier_name === 'string'
-      ).map(item => ({
-        id: item.id || '',
-        order_no: item.order_no || '',
-        supplier_name: item.supplier_name || '',
-        order_date: item.order_date || '',
-        status: item.status || 'pending',
-        items: item.items || [],
-        total_amount: item.total_amount || 0
-      }))
-    : [];
-
-  const filteredPurchases = purchases.filter((purchase: PurchaseOrder) =>
+  const filteredPurchases = purchaseOrders?.filter((purchase: PurchaseOrder) =>
     purchase.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    purchase.order_no?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    purchase.order_number?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <MainLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">Purchase List</h1>
@@ -115,7 +99,7 @@ const PurchaseList = () => {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{purchase.order_no}</CardTitle>
+                      <CardTitle className="text-lg">{purchase.order_number}</CardTitle>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant={purchase.status === "completed" ? "default" : "secondary"}>
                           {purchase.status}
@@ -138,12 +122,8 @@ const PurchaseList = () => {
                       </span>
                     </div>
                     
-                    <div className="text-sm text-gray-600">
-                      <strong>Items:</strong> {purchase.items?.length || 0}
-                    </div>
-                    
                     <div className="text-lg font-semibold pt-2 border-t">
-                      Total: ₹{purchase.total_amount?.toFixed(2) || '0.00'}
+                      Total: ₹{Number(purchase.total_amount)?.toFixed(2) || '0.00'}
                     </div>
                   </div>
                 </CardContent>
@@ -152,7 +132,7 @@ const PurchaseList = () => {
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

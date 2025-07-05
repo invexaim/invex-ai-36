@@ -7,7 +7,9 @@ import { ChartsSection } from "@/components/dashboard/ChartsSection";
 import { RecentActivitySection } from "@/components/dashboard/RecentActivitySection";
 import { InsightsSection } from "@/components/products/InsightsSection";
 import { fetchReportData } from "@/services/reportService";
+import { supabase } from "@/integrations/supabase/client";
 import { Sale, Product, Client, Payment } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 
 const Dashboard = () => {
   // State for real data from Supabase
@@ -23,6 +25,20 @@ const Dashboard = () => {
     payments: []
   });
   const [loading, setLoading] = useState(true);
+
+  // Fetch real purchase orders from Supabase
+  const { data: purchaseOrders } = useQuery({
+    queryKey: ['purchase-orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Fetch real data from Supabase
   useEffect(() => {
@@ -40,16 +56,13 @@ const Dashboard = () => {
     loadDashboardData();
   }, []);
 
-  // Mock purchase data for now (will be replaced when purchase functionality is fully implemented)
-  const mockPurchases = [
-    { id: 1, date: new Date().toISOString(), amount: 15000, supplier: "ABC Suppliers" },
-    { id: 2, date: new Date().toISOString(), amount: 8500, supplier: "XYZ Corp" }
-  ];
-  
+  // Calculate today's purchases from real Supabase data
   const today = new Date().toDateString();
-  const todaysPurchases = mockPurchases
-    .filter(purchase => new Date(purchase.date).toDateString() === today)
-    .reduce((sum, purchase) => sum + purchase.amount, 0);
+  const todaysPurchases = purchaseOrders
+    ? purchaseOrders
+        .filter(order => new Date(order.order_date).toDateString() === today)
+        .reduce((sum, order) => sum + Number(order.total_amount), 0)
+    : 0;
 
   if (loading) {
     return (

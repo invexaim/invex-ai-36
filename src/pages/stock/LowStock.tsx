@@ -5,19 +5,52 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Package, Search, AlertTriangle } from "lucide-react";
 import { useState } from "react";
-import useAppStore from "@/store/appStore";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+interface InventoryItem {
+  id: string;
+  product_id: number;
+  product_name: string;
+  current_stock: number;
+  reserved_stock: number;
+  reorder_level: number;
+  location: string;
+  last_updated: string;
+}
 
 const LowStock = () => {
-  const { products } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter products that are low in stock (below reorder level)
-  const lowStockProducts = products.filter(product => {
-    const matchesSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
-    // Assume low stock means current stock is below reorder level
-    // In a real app, you'd have current stock quantities to compare
-    return matchesSearch && product.reorder_level > 0;
+  const { data: inventory, isLoading } = useQuery({
+    queryKey: ['low-stock-inventory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*')
+        .order('product_name');
+      
+      if (error) throw error;
+      return data || [];
+    }
   });
+
+  // Filter products that are low in stock (current stock <= reorder level)
+  const lowStockProducts = inventory?.filter(item => {
+    const matchesSearch = item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const isLowStock = item.current_stock <= item.reorder_level && item.reorder_level > 0;
+    return matchesSearch && isLowStock;
+  }) || [];
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -52,15 +85,12 @@ const LowStock = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lowStockProducts.map((product) => (
-              <Card key={product.product_id} className="hover:shadow-lg transition-shadow">
+            {lowStockProducts.map((item: InventoryItem) => (
+              <Card key={item.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{product.product_name}</CardTitle>
-                      <Badge variant="secondary" className="mt-2">
-                        {product.category}
-                      </Badge>
+                      <CardTitle className="text-lg">{item.product_name}</CardTitle>
                     </div>
                     <Badge variant="destructive" className="bg-orange-100 text-orange-800">
                       Low Stock
@@ -70,22 +100,27 @@ const LowStock = () => {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Price:</span>
-                      <span className="font-semibold">₹{product.price.toFixed(2)}</span>
+                      <span className="text-sm text-gray-600">Current Stock:</span>
+                      <span className="font-semibold text-orange-600">{item.current_stock}</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Unit:</span>
-                      <span className="text-sm">{product.units}</span>
+                      <span className="text-sm text-gray-600">Reserved:</span>
+                      <span className="text-sm">{item.reserved_stock}</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Reorder Level:</span>
-                      <span className="text-sm font-medium text-orange-600">{product.reorder_level}</span>
+                      <span className="text-sm font-medium text-orange-600">{item.reorder_level}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Location:</span>
+                      <span className="text-sm">{item.location}</span>
                     </div>
                     
                     <div className="text-xs text-gray-500 pt-2 border-t">
-                      Added: {new Date(product.created_at).toLocaleDateString()}
+                      Updated: {new Date(item.last_updated).toLocaleDateString()}
                     </div>
                   </div>
                 </CardContent>
