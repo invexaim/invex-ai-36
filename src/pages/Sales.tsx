@@ -20,8 +20,8 @@ const Sales = () => {
   };
 
   const filteredSales = sales.filter(sale =>
-    sale.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sale.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    sale.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.sale_id.toString().includes(searchTerm.toLowerCase())
   );
 
   return (
