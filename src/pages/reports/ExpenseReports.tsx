@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,38 +8,35 @@ import { Label } from '@/components/ui/label';
 import { DataTable } from '@/components/ui/data-table';
 import { BarChart } from '@/components/charts/BarChart';
 import { Download, Tags, TrendingUp } from 'lucide-react';
-import useAppStore from '@/store/appStore';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
+import { expenseService, expenseCategoryService } from '@/services/supabaseService';
+import { useQuery } from '@tanstack/react-query';
 
 const ExpenseReports = () => {
-  const { expenses } = useAppStore();
-  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDataTo] = useState('');
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [trendData, setTrendData] = useState([]);
 
-  // Mock expense data
-  const mockExpenses = [
-    { id: '1', description: 'Office Rent', amount: 15000, category: 'Rent', date: '2024-01-01', vendor: 'Property Owner' },
-    { id: '2', description: 'Electricity Bill', amount: 3000, category: 'Utilities', date: '2024-01-05', vendor: 'Power Company' },
-    { id: '3', description: 'Marketing Campaign', amount: 8000, category: 'Marketing', date: '2024-01-10', vendor: 'Ad Agency' },
-    { id: '4', description: 'Office Supplies', amount: 2500, category: 'Office Expenses', date: '2024-01-15', vendor: 'Stationery Store' },
-    { id: '5', description: 'Internet Bill', amount: 1500, category: 'Utilities', date: '2024-01-20', vendor: 'ISP Provider' },
-    { id: '6', description: 'Travel Expense', amount: 4000, category: 'Travel', date: '2024-01-25', vendor: 'Travel Agency' }
-  ];
+  const { data: expenses = [], isLoading } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: expenseService.getAll,
+  });
 
-  const expenseCategories = ['Rent', 'Utilities', 'Marketing', 'Office Expenses', 'Travel', 'Miscellaneous'];
+  const { data: categories = [] } = useQuery({
+    queryKey: ['expense-categories'],
+    queryFn: expenseCategoryService.getAll,
+  });
 
   useEffect(() => {
-    const expenseData = mockExpenses;
-    let filtered = [...expenseData];
+    let filtered = [...expenses];
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(expense => expense.category === selectedCategory);
+      filtered = filtered.filter(expense => expense.category_id === selectedCategory);
     }
 
     // Filter by date range
@@ -52,11 +50,11 @@ const ExpenseReports = () => {
     setFilteredExpenses(filtered);
 
     // Calculate category-wise expenses
-    const categoryTotals = expenseCategories.map(category => {
-      const categoryExpenses = filtered.filter(expense => expense.category === category);
-      const total = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const categoryTotals = categories.map(category => {
+      const categoryExpenses = filtered.filter(expense => expense.category_id === category.id);
+      const total = categoryExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
       return {
-        category,
+        category: category.name,
         total,
         count: categoryExpenses.length
       };
@@ -66,14 +64,13 @@ const ExpenseReports = () => {
 
     // Calculate trend data based on selected period
     if (selectedPeriod === 'month') {
-      // Group by month
       const monthlyData = {};
       filtered.forEach(expense => {
         const month = format(new Date(expense.date), 'MMM yyyy');
         if (!monthlyData[month]) {
           monthlyData[month] = 0;
         }
-        monthlyData[month] += expense.amount;
+        monthlyData[month] += Number(expense.amount);
       });
       
       const trendArray = Object.entries(monthlyData).map(([month, total]) => ({
@@ -82,7 +79,6 @@ const ExpenseReports = () => {
       }));
       setTrendData(trendArray);
     } else if (selectedPeriod === 'quarter') {
-      // Group by quarter
       const quarterlyData = {};
       filtered.forEach(expense => {
         const date = new Date(expense.date);
@@ -90,7 +86,7 @@ const ExpenseReports = () => {
         if (!quarterlyData[quarter]) {
           quarterlyData[quarter] = 0;
         }
-        quarterlyData[quarter] += expense.amount;
+        quarterlyData[quarter] += Number(expense.amount);
       });
       
       const trendArray = Object.entries(quarterlyData).map(([quarter, total]) => ({
@@ -99,41 +95,43 @@ const ExpenseReports = () => {
       }));
       setTrendData(trendArray);
     }
-  }, [selectedCategory, selectedPeriod, dateFrom, dateTo]);
+  }, [expenses, categories, selectedCategory, selectedPeriod, dateFrom, dateTo]);
 
   const columns = [
     {
-      accessorKey: 'description',
+      accessorKey: 'title',
       header: 'Description',
     },
     {
-      accessorKey: 'category',
+      accessorKey: 'expense_categories',
       header: 'Category',
+      cell: ({ row }: any) => row.original.expense_categories?.name || 'Uncategorized',
     },
     {
       accessorKey: 'amount',
       header: 'Amount',
-      cell: ({ row }) => `₹${row.getValue('amount').toLocaleString()}`,
+      cell: ({ row }: any) => `₹${Number(row.getValue('amount')).toLocaleString()}`,
     },
     {
-      accessorKey: 'vendor',
-      header: 'Vendor',
+      accessorKey: 'payment_method',
+      header: 'Payment Method',
+      cell: ({ row }: any) => row.getValue('payment_method') || 'Cash',
     },
     {
       accessorKey: 'date',
       header: 'Date',
-      cell: ({ row }) => format(new Date(row.getValue('date')), 'dd/MM/yyyy'),
+      cell: ({ row }: any) => format(new Date(row.getValue('date')), 'dd/MM/yyyy'),
     },
   ];
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Description', 'Category', 'Amount', 'Vendor', 'Date'],
+      ['Description', 'Category', 'Amount', 'Payment Method', 'Date'],
       ...filteredExpenses.map(expense => [
-        expense.description,
-        expense.category,
+        expense.title,
+        expense.expense_categories?.name || 'Uncategorized',
         expense.amount,
-        expense.vendor,
+        expense.payment_method || 'Cash',
         format(new Date(expense.date), 'dd/MM/yyyy')
       ])
     ].map(row => row.join(',')).join('\n');
@@ -146,8 +144,18 @@ const ExpenseReports = () => {
     a.click();
   };
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
   const averageExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading expense reports...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -176,9 +184,9 @@ const ExpenseReports = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {expenseCategories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -257,45 +265,47 @@ const ExpenseReports = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Tags className="w-5 h-5" />
-              Category-wise Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <BarChart
-                data={categoryData}
-                dataKey="total"
-                xAxisDataKey="category"
-                fill="#f59e0b"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      {categoryData.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tags className="w-5 h-5" />
+                Category-wise Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <BarChart
+                  data={categoryData}
+                  dataKey="total"
+                  xAxisDataKey="category"
+                  fill="#f59e0b"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Expense Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <BarChart
-                data={trendData}
-                dataKey="amount"
-                xAxisDataKey="period"
-                fill="#ef4444"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Expense Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <BarChart
+                  data={trendData}
+                  dataKey="amount"
+                  xAxisDataKey="period"
+                  fill="#ef4444"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

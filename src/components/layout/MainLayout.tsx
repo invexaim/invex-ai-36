@@ -154,8 +154,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* DataSyncStatus positioned at top of sidebar */}
-      <div className="fixed top-3 left-4 z-50 hidden md:block">
+      {/* DataSyncStatus positioned at top of sidebar with proper z-index */}
+      <div className="fixed top-3 left-4 z-40 hidden md:block">
         <DataSyncStatus />
       </div>
       
@@ -169,14 +169,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       />
       
       <div className="md:ml-64">
-        {/* NotificationCenter positioned in top right corner */}
-        <div className="fixed top-2 right-4 z-50">
+        {/* NotificationCenter positioned in top right corner with proper z-index */}
+        <div className="fixed top-2 right-4 z-40">
           <NotificationCenter />
         </div>
         
-        <div className="p-6">
+        {/* Main content area with proper spacing and no overlapping elements */}
+        <main className="p-6 min-h-screen">
           {children}
-        </div>
+        </main>
       </div>
 
       <MobileNavigation
@@ -192,4 +193,3 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 };
 
 export default MainLayout;
-

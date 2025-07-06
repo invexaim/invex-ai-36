@@ -8,42 +8,27 @@ import { DataTable } from '@/components/ui/data-table';
 import { BarChart } from '@/components/charts/BarChart';
 import { Download, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { fetchReportData, getFilteredSales, calculateSalesMetrics } from '@/services/reportService';
+import { getDailySalesReport } from '@/services/reportService';
+import { useQuery } from '@tanstack/react-query';
 
 const DailySales = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [dailyData, setDailyData] = useState<any[]>([]);
-  const [totalSales, setTotalSales] = useState(0);
-  const [totalInvoices, setTotalInvoices] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const { sales } = await fetchReportData();
-        
-        // Filter sales by selected date
-        const filteredSales = getFilteredSales(sales, selectedDate);
-
-        setDailyData(filteredSales);
-        const metrics = calculateSalesMetrics(filteredSales);
-        setTotalSales(metrics.totalSales);
-        setTotalInvoices(metrics.totalInvoices);
-      } catch (error) {
-        console.error('Error loading daily sales data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [selectedDate]);
+  const { data: dailyData = [], isLoading } = useQuery({
+    queryKey: ['daily-sales', selectedDate],
+    queryFn: () => getDailySalesReport(selectedDate),
+    enabled: !!selectedDate,
+  });
 
   const columns = [
     {
       accessorKey: 'id',
       header: 'Sale ID',
+      cell: ({ row }: any) => (
+        <span className="font-mono text-sm">
+          {row.original.id.slice(0, 8)}...
+        </span>
+      ),
     },
     {
       accessorKey: 'clients',
@@ -61,6 +46,9 @@ const DailySales = () => {
       cell: ({ row }: any) => format(new Date(row.getValue('sale_date')), 'HH:mm'),
     },
   ];
+
+  const totalSales = dailyData.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+  const totalInvoices = dailyData.length;
 
   const chartData = dailyData.map((sale, index) => ({
     name: `Sale ${index + 1}`,
@@ -86,7 +74,7 @@ const DailySales = () => {
     a.click();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-center items-center h-64">
@@ -136,7 +124,7 @@ const DailySales = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl">{totalInvoices}</CardTitle>
-            <CardDescription>Total Sales</CardDescription>
+            <CardDescription>Total Invoices</CardDescription>
           </CardHeader>
         </Card>
 
@@ -171,7 +159,13 @@ const DailySales = () => {
           <CardTitle>Sales Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={dailyData} />
+          {dailyData.length > 0 ? (
+            <DataTable columns={columns} data={dailyData} />
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No sales found for {selectedDate}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
