@@ -6,3 +6,13 @@ export interface SidebarItemType {
   label: string;
   href: string;
 }
+
+export interface DropdownItemType {
+  icon: React.ReactNode;
+  label: string;
+  items: {
+    icon: React.ReactNode;
+    label: string;
+    href: string;
+  }[];
+}

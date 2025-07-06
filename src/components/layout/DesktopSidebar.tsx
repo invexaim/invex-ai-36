@@ -5,7 +5,7 @@ import { Moon, Sun, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarItem } from "./SidebarItem";
 import { DropdownSidebarItem } from "./DropdownSidebarItem";
-import { UserProfile } from "./UserProfile";
+import UserProfile from "./UserProfile";
 import { SidebarItemType, DropdownItemType } from "./types";
 
 interface DesktopSidebarProps {
