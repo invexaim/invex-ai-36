@@ -8,23 +8,15 @@ import { RecentActivitySection } from "@/components/dashboard/RecentActivitySect
 import { InsightsSection } from "@/components/products/InsightsSection";
 import { fetchReportData } from "@/services/reportService";
 import { supabase } from "@/integrations/supabase/client";
-import { Sale, Product, Client, Payment } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
 const Dashboard = () => {
-  // State for real data from Supabase
-  const [dashboardData, setDashboardData] = useState<{
-    sales: Sale[];
-    products: Product[];
-    clients: Client[];
-    payments: Payment[];
-  }>({
-    sales: [],
-    products: [],
-    clients: [],
-    payments: []
+  // Fetch real data from Supabase using React Query
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['dashboard-data'],
+    queryFn: fetchReportData,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
-  const [loading, setLoading] = useState(true);
 
   // Fetch real purchase orders from Supabase
   const { data: purchaseOrders } = useQuery({
@@ -40,22 +32,6 @@ const Dashboard = () => {
     }
   });
 
-  // Fetch real data from Supabase
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const data = await fetchReportData();
-        setDashboardData(data);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, []);
-
   // Calculate today's purchases from real Supabase data
   const today = new Date().toDateString();
   const todaysPurchases = purchaseOrders
@@ -64,7 +40,7 @@ const Dashboard = () => {
         .reduce((sum, order) => sum + Number(order.total_amount), 0)
     : 0;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-center items-center h-64">
@@ -74,6 +50,13 @@ const Dashboard = () => {
     );
   }
 
+  const data = dashboardData || {
+    sales: [],
+    products: [],
+    clients: [],
+    payments: []
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -81,29 +64,29 @@ const Dashboard = () => {
 
       {/* Main Business Stats */}
       <DashboardStats 
-        sales={dashboardData.sales}
-        products={dashboardData.products}
-        clients={dashboardData.clients}
+        sales={data.sales}
+        products={data.products}
+        clients={data.clients}
         todaysPurchases={todaysPurchases}
       />
 
       {/* Alerts & Notifications */}
       <AlertsSection 
-        products={dashboardData.products}
-        payments={dashboardData.payments}
+        products={data.products}
+        payments={data.payments}
       />
 
       {/* Real-time Data Visualization */}
       <ChartsSection 
-        sales={dashboardData.sales}
-        products={dashboardData.products}
+        sales={data.sales}
+        products={data.products}
         todaysPurchases={todaysPurchases}
       />
 
       {/* Recent Activity */}
       <RecentActivitySection 
-        sales={dashboardData.sales}
-        products={dashboardData.products}
+        sales={data.sales}
+        products={data.products}
       />
 
       {/* AI Insights Section */}

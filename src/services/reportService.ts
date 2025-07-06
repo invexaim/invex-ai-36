@@ -1,79 +1,216 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Sale, Product, Client, Payment } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  productService, 
+  salesService, 
+  clientService, 
+  paymentService,
+  expenseService,
+  supplierService,
+  purchaseReturnService,
+  salesReturnService 
+} from "./supabaseService";
 
 export interface ReportData {
-  sales: Sale[];
-  products: Product[];
-  clients: Client[];
-  payments: Payment[];
+  sales: any[];
+  products: any[];
+  clients: any[];
+  payments: any[];
+  expenses?: any[];
+  suppliers?: any[];
+  purchaseReturns?: any[];
+  salesReturns?: any[];
 }
 
 export const fetchReportData = async (): Promise<ReportData> => {
   try {
-    const { data: userData, error } = await supabase
-      .from('user_data')
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error fetching user data:', error);
-      return { sales: [], products: [], clients: [], payments: [] };
-    }
+    const [sales, products, clients, payments, expenses, suppliers, purchaseReturns, salesReturns] = await Promise.all([
+      salesService.getAll(),
+      productService.getAll(),
+      clientService.getAll(),
+      paymentService.getAll(),
+      expenseService.getAll(),
+      supplierService.getAll(),
+      purchaseReturnService.getAll(),
+      salesReturnService.getAll()
+    ]);
 
     return {
-      sales: (userData?.sales as unknown as Sale[]) || [],
-      products: (userData?.products as unknown as Product[]) || [],
-      clients: (userData?.clients as unknown as Client[]) || [],
-      payments: (userData?.payments as unknown as Payment[]) || []
+      sales: sales || [],
+      products: products || [],
+      clients: clients || [],
+      payments: payments || [],
+      expenses: expenses || [],
+      suppliers: suppliers || [],
+      purchaseReturns: purchaseReturns || [],
+      salesReturns: salesReturns || []
     };
   } catch (error) {
-    console.error('Error in fetchReportData:', error);
-    return { sales: [], products: [], clients: [], payments: [] };
+    console.error('Error fetching report data:', error);
+    return {
+      sales: [],
+      products: [],
+      clients: [],
+      payments: [],
+      expenses: [],
+      suppliers: [],
+      purchaseReturns: [],
+      salesReturns: []
+    };
   }
 };
 
-export const getFilteredSales = (sales: Sale[], dateFilter: { start?: Date; end?: Date }) => {
-  if (!dateFilter.start && !dateFilter.end) return sales;
-  
-  return sales.filter(sale => {
-    const saleDate = new Date(sale.sale_date);
-    if (dateFilter.start && saleDate < dateFilter.start) return false;
-    if (dateFilter.end && saleDate > dateFilter.end) return false;
-    return true;
-  });
+// Daily Sales Report
+export const getDailySalesReport = async (date: string) => {
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      products(product_name),
+      clients(name)
+    `)
+    .gte('sale_date', `${date}T00:00:00`)
+    .lte('sale_date', `${date}T23:59:59`)
+    .order('sale_date', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 };
 
-export const calculateSalesMetrics = (sales: Sale[]) => {
-  const totalSales = sales.reduce((sum, sale) => sum + (sale.selling_price * sale.quantity_sold), 0);
-  const totalInvoices = sales.length;
-  const averageSale = totalInvoices > 0 ? totalSales / totalInvoices : 0;
+// Monthly Sales Report
+export const getMonthlySalesReport = async (year: number, month: number) => {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
+
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      products(product_name),
+      clients(name)
+    `)
+    .gte('sale_date', startDate.toISOString())
+    .lte('sale_date', endDate.toISOString())
+    .order('sale_date', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// Yearly Sales Report
+export const getYearlySalesReport = async (year: number) => {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31);
+
+  const { data, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      products(product_name),
+      clients(name)
+    `)
+    .gte('sale_date', startDate.toISOString())
+    .lte('sale_date', endDate.toISOString())
+    .order('sale_date', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// Stock Reports
+export const getStockReport = async () => {
+  const { data, error } = await supabase
+    .from('inventory')
+    .select(`
+      *,
+      products(product_name, category, price)
+    `)
+    .order('current_stock', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// Low Stock Report
+export const getLowStockReport = async () => {
+  const { data, error } = await supabase
+    .from('inventory')
+    .select(`
+      *,
+      products(product_name, category, price)
+    `)
+    .lt('current_stock', supabase.rpc('current_stock', { column: 'reorder_level' }))
+    .order('current_stock', { ascending: true });
+
+  if (error) {
+    // Fallback query if RPC doesn't work
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('inventory')
+      .select(`
+        *,
+        products(product_name, category, price)
+      `)
+      .order('current_stock', { ascending: true });
+    
+    if (fallbackError) throw fallbackError;
+    return (fallbackData || []).filter(item => item.current_stock <= item.reorder_level);
+  }
+  return data || [];
+};
+
+// Profit & Loss Report
+export const getProfitLossReport = async (startDate: string, endDate: string) => {
+  const [salesData, expenseData] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('total_amount, selling_price, quantity_sold')
+      .gte('sale_date', startDate)
+      .lte('sale_date', endDate),
+    supabase
+      .from('expenses')
+      .select('amount')
+      .gte('date', startDate)
+      .lte('date', endDate)
+  ]);
+
+  if (salesData.error) throw salesData.error;
+  if (expenseData.error) throw expenseData.error;
+
+  const totalRevenue = (salesData.data || []).reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+  const totalExpenses = (expenseData.data || []).reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const profit = totalRevenue - totalExpenses;
 
   return {
-    totalSales,
-    totalInvoices,
-    averageSale
+    totalRevenue,
+    totalExpenses,
+    profit,
+    sales: salesData.data || [],
+    expenses: expenseData.data || []
   };
 };
 
-export const getTopProducts = (sales: Sale[], products: Product[], limit = 10) => {
-  const productSales: Record<number, { name: string; quantity: number; revenue: number }> = {};
-  
-  sales.forEach(sale => {
-    if (productSales[sale.product_id]) {
-      productSales[sale.product_id].quantity += sale.quantity_sold;
-      productSales[sale.product_id].revenue += sale.quantity_sold * sale.selling_price;
-    } else {
-      const product = products.find(p => p.product_id === sale.product_id);
-      productSales[sale.product_id] = {
-        name: product?.product_name || 'Unknown Product',
-        quantity: sale.quantity_sold,
-        revenue: sale.quantity_sold * sale.selling_price
-      };
-    }
-  });
+// GST Report
+export const getGSTReport = async (startDate: string, endDate: string) => {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select(`
+      *,
+      invoice_items(*)
+    `)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: false });
 
-  return Object.values(productSales)
-    .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, limit);
+  if (error) throw error;
+
+  const gstSummary = (data || []).reduce((acc, invoice) => {
+    acc.totalGST += Number(invoice.gst_amount);
+    acc.totalSales += Number(invoice.total_amount);
+    return acc;
+  }, { totalGST: 0, totalSales: 0 });
+
+  return {
+    ...gstSummary,
+    invoices: data || []
+  };
 };
