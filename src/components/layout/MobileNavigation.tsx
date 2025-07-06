@@ -46,7 +46,7 @@ const MobileNavigation = ({
     <div className="md:hidden">
       <div className="fixed top-0 left-0 right-0 z-40 bg-card border-b px-4 py-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-primary">Business Manager</h1>
+          <h1 className="text-lg font-bold text-black">Invex AI</h1>
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -161,4 +161,3 @@ const MobileNavigation = ({
 };
 
 export default MobileNavigation;
-

@@ -42,7 +42,7 @@ const DesktopSidebar = ({
       <div className="flex flex-col flex-1 min-h-0 bg-card border-r">
         <div className="flex flex-col flex-1 pt-5 pb-4 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4 mb-8">
-            <h1 className="text-xl font-bold text-primary">Business Manager</h1>
+            <h1 className="text-xl font-bold text-black">Invex AI</h1>
           </div>
           
           <nav className="mt-5 flex-1 px-2 space-y-1">
@@ -72,8 +72,6 @@ const DesktopSidebar = ({
         
         <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
           <div className="flex flex-col w-full space-y-2">
-            <UserProfile />
-            
             <div className="flex justify-between items-center">
               <Button
                 variant="ghost"
@@ -108,4 +106,3 @@ const DesktopSidebar = ({
 };
 
 export default DesktopSidebar;
-
