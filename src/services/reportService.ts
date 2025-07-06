@@ -60,6 +60,23 @@ export const fetchReportData = async (): Promise<ReportData> => {
   }
 };
 
+// Helper functions for DailySales component
+export const getFilteredSales = (sales: any[], date: string) => {
+  return sales.filter(sale => 
+    new Date(sale.sale_date).toDateString() === new Date(date).toDateString()
+  );
+};
+
+export const calculateSalesMetrics = (sales: any[]) => {
+  const totalSales = sales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+  const totalInvoices = sales.length;
+  
+  return {
+    totalSales,
+    totalInvoices
+  };
+};
+
 // Daily Sales Report
 export const getDailySalesReport = async (date: string) => {
   const { data, error } = await supabase
@@ -131,31 +148,21 @@ export const getStockReport = async () => {
   return data || [];
 };
 
-// Low Stock Report
+// Low Stock Report - Fixed RPC call
 export const getLowStockReport = async () => {
+  // Direct query without RPC since we can filter this way
   const { data, error } = await supabase
     .from('inventory')
     .select(`
       *,
       products(product_name, category, price)
     `)
-    .lt('current_stock', supabase.rpc('current_stock', { column: 'reorder_level' }))
     .order('current_stock', { ascending: true });
-
-  if (error) {
-    // Fallback query if RPC doesn't work
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('inventory')
-      .select(`
-        *,
-        products(product_name, category, price)
-      `)
-      .order('current_stock', { ascending: true });
-    
-    if (fallbackError) throw fallbackError;
-    return (fallbackData || []).filter(item => item.current_stock <= item.reorder_level);
-  }
-  return data || [];
+  
+  if (error) throw error;
+  
+  // Filter low stock items where current_stock <= reorder_level
+  return (data || []).filter(item => item.current_stock <= item.reorder_level);
 };
 
 // Profit & Loss Report

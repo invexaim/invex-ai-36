@@ -9,11 +9,10 @@ import { BarChart } from '@/components/charts/BarChart';
 import { Download, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchReportData, getFilteredSales, calculateSalesMetrics } from '@/services/reportService';
-import { Sale } from '@/types';
 
 const DailySales = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [dailyData, setDailyData] = useState<Sale[]>([]);
+  const [dailyData, setDailyData] = useState<any[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalInvoices, setTotalInvoices] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -25,9 +24,7 @@ const DailySales = () => {
         const { sales } = await fetchReportData();
         
         // Filter sales by selected date
-        const filteredSales = sales.filter(sale => 
-          format(new Date(sale.sale_date), 'yyyy-MM-dd') === selectedDate
-        );
+        const filteredSales = getFilteredSales(sales, selectedDate);
 
         setDailyData(filteredSales);
         const metrics = calculateSalesMetrics(filteredSales);
@@ -45,38 +42,38 @@ const DailySales = () => {
 
   const columns = [
     {
-      accessorKey: 'sale_id',
+      accessorKey: 'id',
       header: 'Sale ID',
     },
     {
-      accessorKey: 'clientName',
+      accessorKey: 'clients',
       header: 'Customer',
-      cell: ({ row }) => row.original.clientName || 'Walk-in Customer',
+      cell: ({ row }: any) => row.original.clients?.name || 'Walk-in Customer',
     },
     {
-      accessorKey: 'selling_price',
+      accessorKey: 'total_amount',
       header: 'Amount',
-      cell: ({ row }) => `₹${(row.getValue('selling_price') * row.original.quantity_sold).toLocaleString()}`,
+      cell: ({ row }: any) => `₹${Number(row.getValue('total_amount')).toLocaleString()}`,
     },
     {
       accessorKey: 'sale_date',
       header: 'Time',
-      cell: ({ row }) => format(new Date(row.getValue('sale_date')), 'HH:mm'),
+      cell: ({ row }: any) => format(new Date(row.getValue('sale_date')), 'HH:mm'),
     },
   ];
 
   const chartData = dailyData.map((sale, index) => ({
     name: `Sale ${index + 1}`,
-    amount: sale.selling_price * sale.quantity_sold,
+    amount: Number(sale.total_amount || 0),
   }));
 
   const exportToCSV = () => {
     const csvContent = [
       ['Sale ID', 'Customer', 'Amount', 'Time'],
       ...dailyData.map(sale => [
-        sale.sale_id,
-        sale.clientName || 'Walk-in Customer',
-        sale.selling_price * sale.quantity_sold,
+        sale.id,
+        sale.clients?.name || 'Walk-in Customer',
+        sale.total_amount,
         format(new Date(sale.sale_date), 'HH:mm')
       ])
     ].map(row => row.join(',')).join('\n');
